@@ -1,4 +1,4 @@
--- CONSULTAS SHARIHT MOSQUERA, VALENTINA RAMIREZ, SAIDA ROZO
+-- CONSULTAS SHARIHT MOSQUERA, VALENTINA RAMIREZ, SAIDA ROZO ,JUAN FORERO
 
 /* 2. CONSULTAS DE SELECCIÓN                                                             */
 /* 2.1. Unión Externa : .............. UNION, UNION ALL                                  */
