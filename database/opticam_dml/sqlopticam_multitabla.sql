@@ -283,3 +283,143 @@ WHERE id_producto NOT IN (
   SELECT id_producto
   FROM PEDIDOS_PRODUCTOS
 );
+-- CONSULTAS JUAN (PROYECTO ÓPTICA)
+
+/* 2. CONSULTAS DE SELECCIÓN                                                                 */
+/* 2.1. Unión Externa : .............. UNION, UNION ALL                                   */
+/* 2.1.1. UNION : .................... SELECT _ FROM _ UNION SELECT _ FROM _              */
+
+-- Genera una lista única de categorías de productos y tipos de tratamientos de lentes (catálogo general)
+SELECT tipo_categoria AS lista_general
+FROM CATEGORIAS
+UNION
+SELECT tipo_atributo
+FROM ATRIBUTOS_LENTE;
+
+-- Generar una lista única de identificadores de productos y atributos de lentes registrados
+SELECT id_producto AS codigo
+FROM PRODUCTOS
+UNION
+SELECT id_atributoslente
+FROM ATRIBUTOS_LENTE;
+
+/* 2.1.2. UNION ALL : ................ SELECT _ FROM _ UNION ALL SELECT _ FROM _          */
+
+-- Muestra todas las direcciones de residencia de usuarios y las de entrega en pedidos (incluyendo repetidos)
+SELECT direccion AS ubicaciones
+FROM USUARIOS
+UNION ALL
+SELECT direccion_entrega
+FROM PEDIDOS;
+
+-- Muestra un listado consolidado de todos los nombres: tanto de usuarios como de monturas
+SELECT nombre_completo AS nombre
+FROM USUARIOS
+UNION ALL
+SELECT nombre
+FROM PRODUCTOS;
+
+
+-- Mostrar qué cliente compró qué montura y qué tipo de cristal seleccionó en el formulario
+SELECT U.nombre_completo, P.nombre AS montura, A.nombre_opcion AS cristal
+FROM USUARIOS U
+INNER JOIN PEDIDOS PE ON U.id_usuario = PE.id_usuario
+INNER JOIN PEDIDOS_PRODUCTOS PP ON PE.id_pedido = PP.id_pedido
+INNER JOIN ATRIBUTOS_LENTE A ON PP.id_atributolente = A.id_atributoslente;
+
+-- Mostrar el detalle de los pagos realizados junto con el estado del pedido correspondiente
+SELECT PA.id_pago, PA.monto, PE.id_pedido, PE.estado
+FROM PAGOS PA
+INNER JOIN PEDIDOS PE ON PA.id_pedido = PE.id_pedido;
+
+
+
+-- Obtener las marcas de monturas que han tenido al menos una venta registrada
+SELECT DISTINCT PR.marca
+FROM PRODUCTOS PR
+INNER JOIN PEDIDOS_PRODUCTOS PP ON PR.id_producto = PP.id_producto;
+
+-- Mostrar los tipos de atributos (filtros, materiales) que han sido seleccionados en pedidos
+SELECT DISTINCT A.tipo_atributo
+FROM ATRIBUTOS_LENTE A
+INNER JOIN PEDIDOS_PRODUCTOS PP ON A.id_atributoslente = PP.id_atributolente;
+
+
+
+-- Mostrar pedidos con un total superior a 500,000 que se encuentren en estado 'ENTREGADO'
+SELECT PE.id_pedido, U.nombre_completo, PE.total
+FROM PEDIDOS PE
+INNER JOIN USUARIOS U ON PE.id_usuario = U.id_usuario
+WHERE PE.total > 500000 AND PE.estado = 'ENTREGADO';
+
+-- Mostrar fórmulas médicas de pacientes con 'ASTIGMATISMO' junto a sus datos de contacto
+SELECT U.nombre_completo, F.condicion, U.telefono
+FROM FORMULAS F
+INNER JOIN USUARIOS U ON F.id_usuario = U.id_usuario
+WHERE F.condicion = 'ASTIGMATISMO';
+
+
+
+-- Mostrar todos los productos del inventario y el ID de pedido si han sido vendidos (incluye no vendidos)
+SELECT P.nombre, P.marca, PP.id_pedido
+FROM PRODUCTOS P
+LEFT JOIN PEDIDOS_PRODUCTOS PP ON P.id_producto = PP.id_producto;
+
+-- Mostrar todos los atributos de lente (catálogo de cristales) incluso si nadie los ha pedido aún
+SELECT A.nombre_opcion, PP.id_pedido
+FROM ATRIBUTOS_LENTE A
+LEFT JOIN PEDIDOS_PRODUCTOS PP ON A.id_atributoslente = PP.id_atributolente;
+
+
+
+-- Mostrar todos los pagos registrados junto con la fecha del pedido, asegurando incluir todos los pagos
+SELECT PA.id_pago, PE.fecha_pedido, PA.monto
+FROM PEDIDOS PE
+RIGHT JOIN PAGOS PA ON PE.id_pedido = PA.id_pedido;
+
+-- Mostrar todos los vehículos registrados junto con el nombre del usuario propietario
+SELECT V.id_vehiculo, V.tipo, U.nombre_completo
+FROM VEHICULOS V
+RIGHT JOIN USUARIOS U ON V.id_usuario = U.id_usuario;
+
+
+
+-- Identificar usuarios que han realizado pagos mayores a 400,000 pesos
+SELECT nombre_completo, email
+FROM USUARIOS
+WHERE id_usuario IN (
+  SELECT id_usuario FROM PEDIDOS WHERE id_pedido IN (
+    SELECT id_pedido FROM PAGOS WHERE monto > 400000
+  )
+);
+
+-- Identificar monturas que pertenecen a la categoría 'SOL'
+SELECT nombre, precio
+FROM PRODUCTOS
+WHERE id_categoria IN (
+  SELECT id_categoria FROM CATEGORIAS WHERE tipo_categoria = 'SOL'
+);
+
+
+
+-- Identificar los pedidos que incluyen cristales con 'FILTRO AZUL'
+SELECT id_pedido
+FROM PEDIDOS_PRODUCTOS
+WHERE id_atributolente IN (
+  SELECT id_atributoslente FROM ATRIBUTOS_LENTE WHERE nombre_opcion = 'FILTRO AZUL'
+);
+
+
+-- Mostrar productos que NUNCA han sido incluidos en un pedido (Productos sin salida)
+SELECT nombre, marca
+FROM PRODUCTOS
+WHERE id_producto NOT IN (
+  SELECT id_producto FROM PEDIDOS_PRODUCTOS
+);
+
+-- Mostrar usuarios que NO tienen ninguna fórmula médica registrada en el sistema
+SELECT nombre_completo, documento
+FROM USUARIOS
+WHERE id_usuario NOT IN (
+  SELECT id_usuario FROM FORMULAS
+);
