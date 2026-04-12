@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes</title>
+    <link rel="stylesheet" href="CSS/reportes.css">    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="left">
+            <a href="principaladmin.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="inventario.html" class="active">Inventario</a>
+            <a href="controlrepartidores.html">Repartidores</a>
+            <a href="reportes.html">Reportes</a>
+            <a href="adminPedidos.html">Pedidos</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfiladmin.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+    <main>
+        <h1 class="titulo">Biblioteca de Reportes</h1>
+        
+        <div class="generador">
+            <h2 class="subtitulo">Generar Nuevo Reporte</h2>
+            <form>
+                <label for="report-type">Tipo de Reporte:</label>
+                <select id="report-type" name="report-type">
+                    <option value="sales">Reporte de Ventas</option>
+                    <option value="inventory">Reporte de Inventario</option>
+                    <option value="repartidor">Reporte de Repartidores</option>
+                    <option value="clientes">Reporte de Clientes</option>
+                </select>
+                <label for="report-period">Período:</label>
+                <select id="report-period" name="report-period">
+                    <option value="daily">Diario</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensual</option>
+                    <option value="yearly">Anual</option>
+                </select>
+                <button type="submit">Generar</button>
+            </form>
+        </div>
+
+        <div class="library">
+            <h2 class="subtitulo">Reportes Guardados</h2>
+            <div class="categorias">
+                <div class="filtro-list">
+                    <a href="#" class="categoria-item" data-category="all">Todo</a>
+                    <a href="#" class="categoria-item" data-category="sales">Reporte de Ventas</a>
+                    <a href="#" class="categoria-item" data-category="inventory">Reporte de Inventario</a>
+                    <a href="#" class="categoria-item" data-category="repartidor">Reporte de Repartidores</a>
+                    <a href="#" class="categoria-item" data-category="clientes">Reporte de Clientes</a>
+                </div>
+
+                <table class="tabla-reportes">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Período</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr data-category="sales">
+                            <td>Reporte de Ventas - Enero 2024</td>
+                            <td>Reporte de ventas para el mes de enero de 2024</td>
+                            <td>Diario</td>
+                            <td>15/01/2024</td>
+                            <td>
+                                <i class="fa-solid fa-trash eliminar-btn"></i>
+                                <i class="fa-solid fa-folder-open ver-btn"></i>
+                                <i class="fa-solid fa-download descargar-btn"></i>
+                            </td>
+                        </tr>
+
+                        <tr data-category="inventory">
+                            <td>Reporte de Inventario - Enero 2024</td>
+                            <td>Reporte de inventario para el mes de enero de 2024</td>
+                            <td>Semanal</td>
+                            <td>20/01/2024</td>
+                            <td>
+                                <i class="fa-solid fa-trash eliminar-btn"></i>
+                                <i class="fa-solid fa-folder-open ver-btn"></i>
+                                <i class="fa-solid fa-download descargar-btn"></i>
+                            </td>
+                        </tr>
+
+                        <tr data-category="repartidor">
+                            <td>Reporte de Repartidores - Enero 2024</td>
+                            <td>Reporte de repartidores para el mes de enero de 2024</td>
+                            <td>Mensual</td>
+                            <td>25/01/2024</td>
+                            <td>
+                                <i class="fa-solid fa-trash eliminar-btn"></i>
+                                <i class="fa-solid fa-folder-open ver-btn"></i>
+                                <i class="fa-solid fa-download descargar-btn"></i>
+
+                            </td>
+                        </tr>
+
+                        <tr data-category="clientes">
+                            <td>Reporte de Clientes - Enero 2024</td>
+                            <td>Reporte de clientes para el mes de enero de 2024</td>
+                            <td>Anual</td>
+                            <td>30/01/2024</td>
+                            <td>
+                                <i class="fa-solid fa-trash eliminar-btn"></i>
+                                <i class="fa-solid fa-folder-open ver-btn"></i>
+                                <i class="fa-solid fa-download descargar-btn"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+    </main>
+    <div class="panel-mensajes" id="panel-mensajes">
+        <div class="panel-header">
+            <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+            <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+    </div>
+    <div class="menu-hamburguesa" id="menu"></div>
+    <footer class="footer">
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+        </div>
+    </footer>
+    <script src="js/reportes.js"></script>
+    <script src="../all/js/lupa.js"></script>
+    <script src="../all/js/hamburguesa.js"></script>
+
+    
+</body>
+</html>

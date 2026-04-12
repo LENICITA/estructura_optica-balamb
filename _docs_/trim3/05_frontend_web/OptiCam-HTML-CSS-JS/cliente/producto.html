@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb - Producto</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/cliente/CSS/producto.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="left">
+        <a href="principal.html" class="logo">
+            <img src="/img/logo 2.jpeg" alt="Óptica Balamb">
+        </a>
+        <div class="left-icons">
+            <button id="btn-menu" class="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <form id="search-form">
+                <button type="button" id="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <input type="text" id="search-input" placeholder="Buscar...">
+            </form>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="catalogo.html">Productos</a>
+        <a href="contactenos.html">Acerca de</a>
+    </nav>
+
+    <div class="icons">
+        <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+        </button>
+        <button id="btn-mensajes">
+            <i class="fa-regular fa-envelope"></i>
+        </button>
+        <button onclick="window.location.href='perfil.html'">
+            <i class="fa-solid fa-circle-user"></i>
+        </button>
+    </div>
+</header>
+
+<!-- SECCIÓN PRODUCTO (DATOS DINÁMICOS) -->
+<section class="producto">
+    <div class="imagen_producto">
+        <img id="producto-imagen" src="" alt="Producto">
+    </div>
+    <div class="descripcion_producto">
+        <h1 id="producto-nombre">Cargando...</h1>
+        <h3>Precio</h3>
+        <h1 class="precio-destacado" id="producto-precio">$0</h1>
+        <p id="producto-descripcion">Cargando información del producto...</p>
+        
+        <div class="dropdown-group">
+            <label for="color-select">Color:</label>
+            <select id="color-select" class="dropdown-select">
+                <option>Cargando colores...</option>
+            </select>
+        </div>
+
+        <div class="dropdown-group">
+            <label for="material-select">Material:</label>
+            <select id="material-select" class="dropdown-select">
+                <option>Cargando materiales...</option>
+            </select>
+        </div>
+
+        <div class="botones-container">
+            <button class="btn-comprar" id="btn-anadir-carrito"><i class="fa-solid fa-cart-plus"></i> Añadir al carrito</button>
+            <!-- BOTÓN CORREGIDO - CON onclick DIRECTAMENTE -->
+            <button class="btn-comprar btn-prueba" id="btn-prueba-montura" onclick="window.location.href='/cliente/pruebamonturas.html'">
+                <i class="fa-solid fa-camera"></i> Prueba tu montura
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- RESEÑAS -->
+<section class="reseñas">
+    <h2 class="reseñas-titulo">Opiniones de nuestros clientes</h2>
+    <div class="reseñas-container" id="reseñas-container">
+        <!-- Las reseñas se cargarán dinámicamente -->
+    </div>
+</section>
+
+<!-- FORMULARIO DE RESEÑA -->
+<section class="enviar-reseña">
+    <h2>Deja tu opinión</h2>
+    <p>¿Ya probaste este producto? Cuéntanos qué te pareció.</p>
+    <form class="form-reseña" id="formReseña">
+        <div class="grupo-estrellas">
+            <label>Tu calificación</label>
+            <div class="estrellas-input">
+                <span class="estrella" data-valor="1">☆</span>
+                <span class="estrella" data-valor="2">☆</span>
+                <span class="estrella" data-valor="3">☆</span>
+                <span class="estrella" data-valor="4">☆</span>
+                <span class="estrella" data-valor="5">☆</span>
+            </div>
+            <input type="hidden" id="calificacion" value="0">
+        </div>
+        <div class="grupo-opinion">
+            <label for="opinion">Tu opinión</label>
+            <textarea id="opinion" rows="3" placeholder="Escribe aquí tu experiencia..."></textarea>
+        </div>
+        <button type="submit" class="btn-enviar"><i class="fa-solid fa-paper-plane"></i> Enviar reseña</button>
+    </form>
+    <div class="mensaje-exito" id="mensajeExito" style="display: none;"><p>✓ ¡Gracias por tu opinión!</p></div>
+</section>
+
+<footer class="footer">
+    <div class="footer-section"><h3>Contacto</h3><p>opticavirtualbalamb@gmail.com</p><p>+57 300 237 4767</p></div>
+    <div class="footer-section"><h3>Tienda</h3><p>Acerca de</p><p>Catálogo</p></div>
+</footer>
+
+<!-- Chatbot -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <i class="fa-solid fa-robot"></i><span>OptiBot - Asistente Virtual</span>
+            </div>
+            <button id="chatbot-cerrar" class="chatbot-cerrar"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes">
+            <div class="mensaje bot">
+                <div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div>
+                <div class="mensaje-hora">Ahora</div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu mensaje...">
+            <button id="chatbot-enviar"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+        <div class="chatbot-opciones">
+            <button class="opcion-btn" data-respuesta="precios">💰 Precios</button>
+            <button class="opcion-btn" data-respuesta="envio">📦 Envíos</button>
+            <button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button>
+            <button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button>
+        </div>
+    </div>
+</div>
+
+<script src="/cliente/js/producto-dinamico.js"></script>
+<script src="/cliente/js/script.js"></script>
+<script src="/cliente/js/hamburguesa.js"></script>
+<script src="/cliente/js/producto.js"></script>
+
+<!-- SCRIPT PARA REDIRECCIÓN DEL BOTÓN (RESPALDO) -->
+<script>
+    // Script de respaldo para asegurar que el botón funcione
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnPrueba = document.getElementById('btn-prueba-montura');
+        if (btnPrueba) {
+            // Si el onclick no funciona por alguna razón, este es el respaldo
+            btnPrueba.addEventListener('click', function(e) {
+                // No prevenimos el default para que el onclick también se ejecute
+                console.log('🔍 Redirigiendo a prueba de montura (respaldo)');
+                // Si la página no existe, puedes cambiar esta ruta
+                // window.location.href = '/cliente/prueba-montura.html';
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

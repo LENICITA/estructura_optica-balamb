@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Pedidos</title>
+    <link rel="stylesheet" href="css/adminPedidos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="left">
+            <a href="principaladmin.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="inventario.html" class="active">Inventario</a>
+            <a href="controlrepartidores.html">Repartidores</a>
+            <a href="reportes.html">Reportes</a>
+            <a href="adminPedidos.html">Pedidos</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfiladmin.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+    <main>
+        <div class="contenedor">
+
+            <h1>Gestión de Pedidos</h1>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID pedido</th>
+                        <th>Cliente</th>
+                        <th>Dirección</th>
+                        <th>Estado</th>
+                        <th>Repartidor</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <!-- Pedido 1 -->
+                    <tr class="fila">
+                        <td class="id">#001</td>
+
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Valentina</span>
+                            </div>
+                        </td>
+
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-1" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-1" class="repartidor">No asignado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(1)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(1)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Pedido 2 -->
+                    <tr class="fila">
+                        <td class="id">#002</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Luisa</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-2" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-2">No asignado</td>
+
+                        <td>
+                            <button class="btn-ver" onclick="verDetalles(2)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(2)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#003</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Shariht</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-3" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-3">No asignado</td>
+
+                        <td>
+                            <button class="btn-ver" onclick="verDetalles(3)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(3)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#004</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Saida</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-4" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-4">No asignado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(4)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#005</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Laura</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-5" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-5">No asignado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(5)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(5)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#006</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg" alt="">
+                                <span>Juan</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-6" class="estado pendiente">Pendiente</span>
+                        </td>
+
+                        <td id="repartidor-6">No asignado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(6)">Ver</button>
+                            <button class="btn-asignar" onclick="abrirModal(6)">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+
+        <!-- MODAL -->
+        <div class="modal" id="modal">
+            <div class="modal-contenido">
+
+                <h2>Asignar Repartidor</h2>
+
+                <select id="repartidorSelect">
+                    <option value="">Seleccionar</option>
+                    <option value="1">Juan Pérez</option>
+                    <option value="2">María Gómez</option>
+                </select>
+
+                <button onclick="asignar()">Confirmar</button>
+                <button class="cerrar" onclick="cerrarModal()">Cancelar</button>
+
+            </div>
+        </div>
+
+        <div class="modal" id="modalDetalles">
+            <div class="modal-contenido grande">
+
+                <h2>Pedido <span id="detalle-id"></span></h2>
+
+                <p><strong>Cliente:</strong> <span id="detalle-cliente"></span></p>
+                <p><strong>Dirección:</strong> <span id="detalle-direccion"></span></p>
+
+                <h3>Productos</h3>
+
+                <div id="lista-productos"></div>
+
+                <h3>Total: $<span id="detalle-total"></span></h3>
+                <div class="botones">
+                    <button class="btn-listo" onclick="marcarListo()">Pedido listo</button>
+
+                    <button class="cerrar" onclick="cerrarDetalles()">Cerrar</button>
+                </div>
+                
+
+            </div>
+        </div>
+    </main>
+    <div class="panel-mensajes" id="panel-mensajes">
+        <div class="panel-header">
+            <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+            <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+    </div>
+    <div class="menu-hamburguesa" id="menu"></div>
+    <footer class="footer">
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+        </div>
+    </footer>
+    
+
+    <script src="JS/adminPedidos.js"></script>
+    <script src="../all/js/hamburguesa.js"></script>
+    <script src="../all/js/lupa.js"></script>
+
+</body>
+</html>

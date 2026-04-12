@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb - Mi Carrito</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/cliente/CSS/carrito.css">
+</head>
+<body>
+
+<!-- HEADER -->
+        <header class="header">
+            <div class="left">
+
+                <a href="principal.html" class="logo">
+                    <img src="/img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="catalogo.html" >Productos</a>
+                <a href="contactenos.html">Acerca de</a>
+            </nav>
+
+            <div class="icons">
+                <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+            </button>
+                
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+    <button onclick="window.location.href='perfil.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+</div>
+        </header>
+
+
+<!-- MAIN CARRITO -->
+<main class="carrito-main">
+    <div class="carrito-container">
+        <h1><i class="fa-solid fa-cart-shopping"></i> Mi Carrito</h1>
+        
+        <div class="carrito-header">
+            <label class="seleccion-todos">
+                <input type="checkbox" id="seleccionar-todos" onchange="toggleSeleccionarTodos()">
+                Seleccionar todos
+            </label>
+            <div>
+                <button class="btn-eliminar-seleccionados" onclick="eliminarSeleccionados()">
+                    <i class="fa-solid fa-trash-can"></i> Eliminar seleccionados
+                </button>
+                <button class="btn-vaciar" onclick="vaciarCarrito()">
+                    <i class="fa-solid fa-broom"></i> Vaciar carrito
+                </button>
+            </div>
+        </div>
+
+        <div id="carrito-lista" class="carrito-lista">
+            <!-- Los productos se cargarán con JavaScript -->
+        </div>
+
+        <div class="carrito-footer">
+            <div class="resumen">
+                <span id="productos-seleccionados">0 productos seleccionados</span>
+                <span class="total" id="total">$0</span>
+            </div>
+            <button class="btn-pagar" onclick="pagarSeleccionados()">
+                <i class="fa-solid fa-credit-card"></i> Proceder al pago
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+ <!-- Chatbot -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header"><div class="chatbot-header-info"><i class="fa-solid fa-robot"></i><span>OptiBot - Asistente Virtual</span></div><button id="chatbot-cerrar" class="chatbot-cerrar"><i class="fa-solid fa-times"></i></button></div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes"><div class="mensaje bot"><div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div><div class="mensaje-hora">Ahora</div></div></div>
+        <div class="chatbot-input-area"><input type="text" id="chatbot-input" placeholder="Escribe tu mensaje..."><button id="chatbot-enviar"><i class="fa-solid fa-paper-plane"></i></button></div>
+        <div class="chatbot-opciones"><button class="opcion-btn" data-respuesta="precios">💰 Precios</button><button class="opcion-btn" data-respuesta="envio">📦 Envíos</button><button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button><button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button></div>
+    </div>
+</div>
+
+</div>
+
+        <div class="menu-hamburguesa" id="menu"></div>
+        <script src="/cliente/js/script.js"></script>
+        <script src="/all/js/lupa.js"></script>
+        <script src="/all/js/hamburguesa.js"></script>
+<script src="/cliente/js/carrito.js"></script>
+</body>
+</html>

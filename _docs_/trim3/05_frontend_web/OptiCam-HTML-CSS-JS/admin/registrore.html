@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb</title>
+    <link rel="stylesheet" href="CSS/registrore.css">
+    <script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+            <div class="left">
+
+                <a href="principaladmin.html" class="logo">
+                    <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="inventario.html" class="active">Inventario</a>
+                <a href="controlrepartidores.html">Repartidores</a>
+                <a href="reportes.html">Reportes</a>
+                <a href="adminPedidos.html">Pedidos</a>
+            </nav>
+
+            <div class="icons">
+                 <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+                <button onclick="window.location.href='perfiladmin.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+            </div>
+        </header>
+
+    <section class="registro-container">
+
+    <h1 class="titulo">
+        Registro <br><span>Registra a tus Repartidores</span>
+    </h1>
+
+    <div class="registro-box">
+
+        <label>Nombres y Apellidos</label>
+        <input type="text" placeholder="Nombres y apellidos" required>
+
+        <label>Email</label>
+        <input type="email" placeholder="Email"required>
+        
+        <label>Documento</label>
+        <input type="number" placeholder="Número de documento" required>
+
+        <label>Fecha de nacimiento</label>
+        <input type="date" placeholder="Fecha de nacimiento" required>
+
+        <label>Ciudad</label>
+        <input type="text" placeholder="Ciudad" required>
+
+        <label>Dirección</label>
+        <input type="text" placeholder="Dirección" required>
+
+        <label>Teléfono</label>
+        <input type="number" placeholder="Número de teléfono" required>
+
+        <label>Contraseña</label>
+        <input type="password" placeholder="Crea una contraseña" required>
+
+        <label for="vehiculo">Tipo de vehículo</label>
+            <select id="vehiculo" name="vehiculo" required>
+                <option value="">Seleccione un tipo</option>
+                <option value="moto">Moto</option>
+                <option value="carro">Carro</option>
+            </select>
+        
+        <label>Modelo del vehiculo</label>
+        <input type="text" placeholder="Modelo" required>
+
+        <label>Placa</label>
+        <input type="text" placeholder="Placa" required>
+
+        <label>Color del vehiculo</label>
+        <input type="text" placeholder="Color" required>
+        
+        <button class="crear-cuenta"><a href="controlrepartidores.html" >Crear cuenta</a></button>
+
+    </div>
+
+    </section>
+    <footer class="footer">
+
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+        </div>
+
+    </footer>
+
+     <div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+
+    <div class="menu-hamburguesa" id="menu"></div>
+
+        <script src="js/app.js"></script>
+        <script src="js/registrorepa.js"></script>
+        <script src="js/hamburguesa.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb</title>
+    <link rel="stylesheet" href="CSS/reporte.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="JS/registro-enviado.alert.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="left">
+            <a href="inicio-repartidor.html" class="logo" >
+                <img src="img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+
+            <div class="left-icons">
+                <button><i class="fa-solid fa-bars"></i></button>  
+            </div>
+        </div>   
+    </header>
+        
+    <div class="reporte-box">
+     <h3>Registro manual</h3>
+
+     <form>
+        <label># pedido</label>
+        </label>
+        <input type="text" placeholder="Ej: 12345" required>
+
+        <label>Descripción</label>
+        <textarea rows="4" placeholder="Describe la entrega..." required></textarea>
+
+        <a type="button" class="btn-reportar viewAlerta" value="Ver Alerta">
+         Completar entrega
+        </a>
+     </form>
+    </div>
+
+    <footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+ </footer>
+
+ <div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+ </div>
+
+ <div class="menu-hamburguesa" id="menu"></div>
+
+ <script src="js/app.js"></script>
+ <script src="js/hamburguesa.js"></script>
+<script src="js/registro-enviado.alert.js"></script>
+</body>
+</html>

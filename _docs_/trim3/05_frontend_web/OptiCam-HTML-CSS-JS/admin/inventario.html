@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario</title>
+    <link rel="stylesheet" href="CSS/inventario.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="left">
+            <a href="principaladmin.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="inventario.html" class="active">Inventario</a>
+            <a href="controlrepartidores.html">Repartidores</a>
+            <a href="reportes.html">Reportes</a>
+            <a href="adminPedidos.html">Pedidos</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfiladmin.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+    <main>
+        <div class="titulo">
+            <h1>Inventario</h1>
+            <button class="add-product"><a href="agregarProducto.html"><i class="fa-solid fa-plus"></i>Agregar Producto</a></button>
+        </div>
+        <div class="cards">
+            <div class="card">
+                <div class="card-body">
+                    <div class="info">
+                        <h2>Inventario Total</h2>
+                        <p id="total-productos">0</p>
+                        <span>Items</span>
+                    </div>
+                <img class="caja" src="../img/caja.png" alt="Imagen de caja">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="info">
+                        <h2>Ventas totales</h2>
+                        <p id="total-ventas">$0</p>
+                        <span>COL</span>
+                    </div>
+                    <img class="ventas" src="../img/ventas.png" alt="Imagen de ventas">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="info">
+                        <h2>Valor Total del Inventario</h2>
+                        <p id="total-inventario">$0</p>
+                        <span>COL</span>
+                    </div>
+                    <img class="monedas" src="../img/monedas-de-un-dolar.png" alt="Imagen de monedas">
+                </div>
+            </div>
+        </div>
+        </div>
+        <input type="text" id="buscador-table" placeholder="Buscar en el inventario...">
+        <table id="tabla">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Descripcion</th>
+                    <th>Categoría</th>
+                    <th>Marca</th>
+                    <th>Material</th>
+                    <th>Color</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div id="modal-edit" class="modal">
+            <div class="modal-content">
+                <h2>Editar Producto</h2>
+
+                <label for="edi-name">Nombre:</label>
+                <input type="text" id="edit-nombre" placeholder="Nombre">
+                <label for="edit-description">Descripción:</label>
+                <input type="text" id="edit-descripcion" placeholder="Descripción">
+                <label for="edit-categoria">Categoria:</label>
+                <input type="text" id="edit-categoria" placeholder="Categoría">
+                <label for="edit-marca">Marca:</label>
+                <input type="text" id="edit-marca" placeholder="Marca">
+                <label for="edit-material">Material:</label>
+                <input type="text" id="edit-material" placeholder="Material">
+                <label for="edit-color">Color:</label>
+                <input type="text" id="edit-color" placeholder="Color">
+                <label for="edit-precio">Precio:</label>
+                <input type="number" id="edit-precio" placeholder="Precio">
+
+                <button id="guardar-cambios">Guardar</button>
+                <button id="cerrar-modal">Cancelar</button>
+            </div>
+        </div>
+    </main>
+    <div class="panel-mensajes" id="panel-mensajes">
+        <div class="panel-header">
+            <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+            <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+    </div>
+    <div class="menu-hamburguesa" id="menu"></div>
+    <footer class="footer">
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+            </div>
+        </footer>
+    <script src="../all/js/lupa.js"></script>
+    <script src="../all/js/hamburguesa.js"></script>
+    <script src="js/inventario.js"></script>
+</body>
+</html>

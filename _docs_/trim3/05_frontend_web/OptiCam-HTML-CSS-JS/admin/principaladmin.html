@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Óptica Balamb</title>
+        <link rel="stylesheet" href="CSS/prinadmin.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    </head>
+    <body>
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="left">
+
+                <a href="principaladmin.html" class="logo">
+                    <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form class="lupa">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="inventario.html" class="active">Inventario</a>
+                <a href="controlrepartidores.html">Repartidores</a>
+                <a href="reportes.html">Reportes</a>
+                <a href="adminPedidos.html">Pedidos</a>
+            </nav>
+            
+            <div class="icons">
+                <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+                <button onclick="window.location.href='perfiladmin.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+            </div>
+        </header>
+
+        <main class="admin-main">
+
+    <!-- BIENVENIDA -->
+    <section class="bienvenida">
+        <h1>Bienvenido, LENNY TABAREZ 👋</h1>
+        <p>Gestiona tu Óptica Balamb desde aquí</p>
+    </section>
+
+    <!-- CARDS -->
+    <section class="dashboard-cards">
+
+        <div class="card">
+            <i class="fa-solid fa-glasses"></i>
+            <h3>Productos</h3>
+            <p>120</p>
+        </div>
+
+        <div class="card">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <h3>Pedidos</h3>
+            <p>45</p>
+        </div>
+
+        <div class="card">
+            <i class="fa-solid fa-users"></i>
+            <h3>Clientes</h3>
+            <p>80</p>
+        </div>
+
+        <div class="card">
+            <i class="fa-solid fa-dollar-sign"></i>
+            <h3>Ventas</h3>
+            <p>$3.500.000</p>
+        </div>
+
+    </section>
+
+    <!-- ACCIONES -->
+    <section class="acciones">
+        <button><a href="adminPedidos.html">Ver pedidos</a></button>
+        <button><a href="reportes.html">Generar reporte</a></button>
+        <button><a href="formulas.html">Gestionar fórmulas</a></button>
+
+    </section>
+
+    <!-- TABLA -->
+    <section class="tabla-section">
+        <h2>Actividad reciente</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <td>Juan</td>
+                    <td>Realizo un pedido</td>
+                    <td>Hoy</td>
+                </tr>
+                <tr>
+                    <td>Maria</td>
+                    <td>Registro nuevo</td>
+                    <td>Hoy</td>
+                </tr>
+                <tr>
+                    <td>Laura</td>
+                    <td>Registro nuevo</td>
+                    <td>Hoy</td>
+                </tr>
+                <tr>
+                    <td>Pedro</td>
+                    <td>Realizo un pedido</td>
+                    <td>Hoy</td>
+                </tr>
+                <tr>
+                    <td>Lenny</td>
+                    <td>Subio formula</td>
+                    <td>Ayer</td>
+                </tr>
+                <tr>
+                    <td>Sara</td>
+                    <td>Registro nuevo</td>
+                    <td>Ayer</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+</main>
+
+<footer class="footer">
+
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                    <p>opticavirtualbalamb@gmail.com</p>
+                    <p>+57 300 237 4767</p>
+            </div>
+
+            <div class="footer-section">
+                <h3>Tienda</h3>
+                    <p>Acerca de</p>
+                    <p>Catálogo</p>
+            </div>
+
+        </footer>
+
+        <div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+
+        <div class="menu-hamburguesa" id="menu"></div>
+
+        <script src="../all/js/lupa.js"></script>
+        <script src="../all/js/hamburguesa.js"></script>
+
+    </body>
+</html>

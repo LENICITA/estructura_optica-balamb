@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Óptica Balamb</title>
+        <link rel="stylesheet" href="css/inicio-repartidor.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    </head>
+    <body>
+
+        <!-- HEADER -->
+        <header class="header">
+        <div class="left">
+            <a href="inicio-repartidor.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="historial.html" class="active">Historial</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfiladmin.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+
+<main class="main-content">
+    <h1>¡Bienvenido, Fernando García!</h1>
+    <h2>Estos son tus pedidos del día de hoy</h2>
+
+    <div class="categorias">
+        <div class="filtro_list">
+            <a href="#" class="category-item" category="all">Todo</a>
+            <a href="#" class="category-item" category="en-entrega">En entrega</a>
+            <a href="#" class="category-item" category="pendiente">Pendiente</a>
+        </div>
+
+        <section class="pedido-list">
+            <!-- PENDIENTES -->
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div> 
+            
+            <div class="card-pedido" category="en-entrega">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #0db707;"><i class="fa-solid fa-truck-moving"></i> En entrega</p></strong>
+                    <a href="detalles-pedido.html" class="btn-pedido-entrega">Ver</a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-pedido" category="en-entrega">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #0db707;"><i class="fa-solid fa-truck-moving"></i> En entrega</p></strong>
+                    <a href="detalles-pedido.html" class="btn-pedido-entrega">Ver</a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-pedido" category="en-entrega">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #0db707;"><i class="fa-solid fa-truck-moving"></i> En entrega</p></strong>
+                    <a href="detalles-pedido.html" class="btn-pedido-entrega">Ver</a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente">
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-pedido" category="pendiente" >
+                <img class="img-map" src="../img/maps.png">
+                <div class="pedido-content">
+                    <h3>Olga Lopéz</h3>
+                    <p><i class="fa-solid fa-location-dot"></i> Cl. 132 Bis # 156A-29</p>
+                    <p><i class="fa-solid fa-boxes-packing"></i> 3 artículos</p>
+                    <p><i class="fa-solid fa-clock"></i> +40 min</p>
+                    <strong><p style="color: #db0101;"><i class="fa-solid fa-circle-exclamation"></i> Pendiente</p></strong>
+                    <a type="button" class="btn-pedido viewAlerta" value="Ver Alerta">
+                      Iniciar Entrega
+                    </a>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</main>
+<div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+
+
+<div class="menu-hamburguesa" id="menu"></div>
+
+<script src="../all/js/lupa.js"></script>
+<script src="../all/js/hamburguesa.js"></script>
+<script src="js/iniciar-pedido-alert.js"></script>
+<script src="js/filtro.js"></script>        
+
+</body>
+</html>

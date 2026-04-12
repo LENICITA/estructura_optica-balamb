@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb</title>
+    <link rel="stylesheet" href="CSS/historial.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/JS/repartidor/filtro.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/JS/repartidor/iniciar-pedido-alert.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="left">
+            <a href="inicio-repartidor.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="historial.html" class="active">Historial</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfilrepa.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+    
+<main>
+        <div class="contenedor">
+
+            <h1>Historial de Pedidos</h1>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID pedido</th>
+                        <th>Cliente</th>
+                        <th>Dirección</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <!-- Pedido 1 -->
+                    <tr class="fila">
+                        <td class="id">#001</td>
+
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Valentina</span>
+                            </div>
+                        </td>
+
+                        <td>Calle 123</td>
+
+                        <td>
+                            <span id="estado-1" class="estado pendiente">En entrega</span>
+                        </td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                    <!-- Pedido 2 -->
+                    <tr class="fila">
+                        <td class="id">#002</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Luisa</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td id="repartidor-2">Entregado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#003</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Shariht</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td id="repartidor-3">Entregado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#004</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Saida</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td id="repartidor-4">Entregado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#005</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Laura</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td id="repartidor-5">Entregado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                    <tr class="fila">
+                        <td class="id">#006</td>
+                        <td class="cliente">
+                            <div class="info-cliente">
+                                <img src="../img/user.jpg">
+                                <span>Juan</span>
+                            </div>
+                        </td>
+                        <td>Calle 123</td>
+
+                        <td id="repartidor-6">Entregado</td>
+
+                        <td class="acciones">
+                            <button class="btn-ver" onclick="verDetalles(4)">Ver</button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+
+        <div class="modal" id="modalDetalles">
+            <div class="modal-contenido grande">
+
+                <h2>Pedido <span id="detalle-id"></span></h2>
+
+                <p><strong>Cliente:</strong> <span id="detalle-cliente"></span></p>
+                <p><strong>Dirección:</strong> <span id="detalle-direccion"></span></p>
+
+                <h3>Productos</h3>
+
+                <div id="lista-productos"></div>
+
+                <h3>Total: $<span id="detalle-total"></span></h3>
+                <div class="botones">
+                    <button class="btn-listo" onclick="marcarListo()">Pedido listo</button>
+
+                    <button class="cerrar" onclick="cerrarDetalles()">Cerrar</button>
+                </div>
+                
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+<div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+
+<div class="menu-hamburguesa" id="menu"></div>
+
+<script src="../all/js/lupa.js"></script>
+<script src="../all/js/hamburguesa.js"></script>
+</body>
+</html>

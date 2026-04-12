@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producto</title>
+    <link rel="stylesheet" href="CSS/agregarProducto.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="left">
+            <a href="principaladmin.html" class="logo">
+                <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+            </a>
+            <div class="left-icons">
+                <button id="btn-menu" class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+                <form class="lupa">
+                    <button type="button" id="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Buscar...">
+                </form>
+            </div>
+        </div>
+        <nav class="menu">
+            <a href="inventario.html" class="active">Inventario</a>
+            <a href="controlrepartidores.html">Repartidores</a>
+            <a href="reportes.html">Reportes</a>
+            <a href="adminPedidos.html">Pedidos</a>
+        </nav>
+        <div class="icons">
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope" ></i></button>
+            <button onclick="window.location.href=`perfiladmin.html`"><i class="fa-solid fa-circle-user"  ></i></button>
+        </div>
+    </header>
+    <main class="container">
+        <div class="header-main">
+    
+            <div class="title">
+                <h1>Añadir Nuevo Producto</h1>
+                <h2>Nuevo Producto</h2>
+            </div>
+
+            <button type="button" class="add-product"><i class="fa-solid fa-plus"></i>Añadir</button>
+
+        </div>
+        
+        <div class="left-column">
+
+            <div class="card product-info">
+                <h3>Información del Producto</h3>
+
+                <label>Nombre del Producto</label>
+                <input type="text" id="nombre" placeholder="Ej: Gafas de sol">
+
+                <label>Descripción</label>
+                <textarea id="descripcion" placeholder="Descripción del producto"></textarea>
+            </div>
+
+            <div class="card info-add">
+                <h3>Información adicional</h3>
+
+                <label>Categoría</label>
+                <input id="categoria" type="text">
+
+                <label>Marca</label>
+                <input id="marca" type="text">
+
+                <label>Material</label>
+                <input id="material" type="text">
+
+                <label>Color</label>
+                <input id="color" type="text">
+            </div>
+
+        </div>
+
+        <div class="right-column">
+
+            <div class="card multimedia">
+                <h3>Multimedia</h3>
+                <label for="imagen" class="upload-box">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Sube tus imágenes</p>
+                    <span>Haz clic o arrastra aquí</span>
+                    <input type="file" id="imagen" hidden>
+                </label>
+                <div id="preview"></div>
+                
+            </div>
+
+            <div class="card precio">
+
+                <label>Precio</label>
+                <input id="precio" type="number">
+
+            </div>
+        </div>
+    </main>
+    <div class="panel-mensajes" id="panel-mensajes">
+        <div class="panel-header">
+            <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+            <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+    </div>
+    <div class="menu-hamburguesa" id="menu"></div>
+    <footer class="footer">
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+            </div>
+        </footer>
+    <script src="../all/js/lupa.js"></script>
+    <script src="../all/js/hamburguesa.js"></script>
+    <script src="js/agregarProducto.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb</title>
+    <link rel="stylesheet" href="CSS/imagen.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="./JS/script.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<header class="header">
+    <div class="left">
+        <a href="inicio-repartidor.html" class="logo">
+            <img src="img/logo 2.jpeg" alt="Óptica Balamb">
+        </a>
+
+        <div class="left-icons">
+            <button><i class="fa-solid fa-bars"></i></button>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="historial-pedidos.html" class="active">Historial</a>
+        <a href="detalles-pedido.html">Pedido actual</a>
+        <a href="#">Acerca de</a>
+    </nav>
+
+    <div class="icons">
+        <button><i class="fa-regular fa-envelope"></i></button>
+        <button><i class="fa-solid fa-circle-user"></i></button>
+    </div>
+</header>
+
+<body>
+
+    <h2>Evidencia pedido</h2>
+
+    <form>
+        <input type="file" id="imagen" accept="image/*">
+
+        <br><br>
+
+        <img id="preview" width="200" style="display:none;">
+
+        <br><br>
+
+        <a class="btn" href="qr-aceptar.html" type="button"> 
+            Siguiente
+        </a>
+    </form>
+
+    <script>
+        const input = document.getElementById("imagen");
+        const preview = document.getElementById("preview");
+
+        input.addEventListener("change", function() {
+            const file = this.files[0];
+
+            if (file) {
+                preview.style.display = "block";
+                preview.src = URL.createObjectURL(file);
+            }
+        });
+    </script>
+
+    <footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb</title>
+    <link rel="stylesheet" href="CSS/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+            <div class="left">
+
+                <a href="../cliente/principal.html" class="logo">
+                    <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <a href="../cliente/principal.html" class="home-icon">
+                        <i class="fa-solid fa-house"></i>
+                    </a>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+        <nav class="menu">
+            <a href="#" class="active">Productos</a>
+            <a href="../cliente/contactenos.html">Acerca de</a>
+        </nav>
+
+        <div class="autenticacion">
+            <a href="iniciosesion.html" class="login">Iniciar sesion</a>
+            <a href="registrarse.html" class="registro">Registrarse</a>
+        </div>
+    </header>
+
+    <section class="login-container">
+
+    <h1 class="titulo">
+        Iniciar <br><span>Sesión</span>
+    </h1>
+
+    <div class="login-box">
+
+        <form id="loginForm">
+
+        <label>Email</label>
+        <input type="email" id="email" required>
+
+        <label>Contraseña</label>
+        <input type="password" id="password" required>
+
+        <a href="recuperarcontraseña.html" class="recuperar">Recuperar contraseña</a>
+
+        <div class="separador">
+            <hr><span>o</span><hr>
+        </div>
+
+        <button class="social google">
+            Continuar con Google 
+            <i class="fa-brands fa-google"></i>
+        </button>
+
+        <button class="social facebook">
+            Continuar con Facebook 
+            <i class="fa-brands fa-facebook"></i>
+        </button>
+
+        <button type="submit" class="ingresar">Ingresar</button>
+
+        <p class="registro-texto">
+            Si no tiene cuenta <a href="../cliente/registrarse.html">regístrese aquí</a>
+        </p>
+        </form>
+    </div>
+
+    </section>
+    <footer class="footer">
+
+        <div class="footer-section">
+            <h3>Contacto</h3>
+                <p>opticavirtualbalamb@gmail.com</p>
+                <p>+57 300 237 4767</p>
+        </div>
+
+        <div class="footer-section">
+            <h3>Tienda</h3>
+                <p>Acerca de</p>
+                <p>Catálogo</p>
+        </div>
+
+    </footer>
+        <script src="js/lupa.js"></script>
+        <script src="js/cuenta.js"></script>
+</body>
+</html>
