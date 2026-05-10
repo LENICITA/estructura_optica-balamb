@@ -78,14 +78,14 @@ VALUES
 (3,'Solar Premium','Gafas de sol premium','Oakley',520000,'https://opticam.com/img/solar4.jpg','Policarbonato','Negro');
 
 INSERT INTO FORMULAS
-(id_usuario,condicion,imagen_formula,observaciones,fecha_creacion,costo)
+(id_usuario,condicion,imagen_formula,observaciones,fecha_creacion,costo,estado)
 VALUES
-(2,'MIOPIA','https://opticam.com/formulas/f1.jpg','Uso permanente, blue block','2025-07-10',50000),
-(5,'ASTIGMATISMO','https://opticam.com/formulas/f2.jpg','Fotocromatico','2026-01-11',60000),
-(10,'DALTONISMO','https://opticam.com/formulas/f3.jpg','Uso diario, filtro optico','2026-01-12',40000),
-(11,'MIOPIA','https://opticam.com/formulas/f9.jpg','Filtro luz azul','2025-10-01',55000),
-(12,'ASTIGMATISMO','https://opticam.com/formulas/f10.jpg','Uso permanente','2025-12-24',60000),
-(15,'BAJA VISION','https://opticam.com/formulas/f11.jpg','Lentes progresivos','2026-01-03',70000);
+(2,'MIOPIA','https://opticam.com/formulas/f1.jpg','Uso permanente, blue block','2025-07-10',50000,'valoradas'),
+(5,'ASTIGMATISMO','https://opticam.com/formulas/f2.jpg','Fotocromatico','2026-01-11',60000,'valoradas'),
+(10,'DALTONISMO','https://opticam.com/formulas/f3.jpg','Uso diario, filtro optico','2026-01-12',40000,'valoradas'),
+(11,'MIOPIA','https://opticam.com/formulas/f9.jpg','Filtro luz azul','2025-10-01',55000,'valoradas'),
+(12,'ASTIGMATISMO','https://opticam.com/formulas/f10.jpg','Uso permanente','2025-12-24',60000,'valoradas'),
+(15,'BAJA VISION','https://opticam.com/formulas/f11.jpg','Lentes progresivos','2026-01-03',70000,'valoradas');
 
 INSERT INTO PEDIDOS
 (id_usuario,id_formula,fecha_pedido,fecha_entrega,direccion_entrega,estado,costo_envio,total)
