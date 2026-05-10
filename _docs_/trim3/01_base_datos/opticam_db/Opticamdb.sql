@@ -100,6 +100,7 @@ CREATE TABLE FORMULAS (
   observaciones VARCHAR(200) NULL,
   fecha_creacion DATE NOT NULL,
   costo FLOAT NOT NULL,
+  estado VARCHAR(45) NOT NULL,
   PRIMARY KEY (id_formula),
   INDEX ind_formulas_usuarios (id_usuario ASC) ,
   CONSTRAINT fk_formulas_usuario
