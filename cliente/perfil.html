@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb - Mi Perfil</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/cliente/CSS/catalogo.css">
+    <link rel="stylesheet" href="/cliente/CSS/perfil.css">
+    
+    <!-- Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<!-- HEADER (CONSISTENTE CON TODAS LAS PÁGINAS) -->
+<header class="header">
+    <div class="left">
+        <a href="principal.html" class="logo">
+            <img src="/img/logo 2.jpeg" alt="Óptica Balamb">
+        </a>
+        <div class="left-icons">
+            <button id="btn-menu" class="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <form id="search-form">
+                <button type="button" id="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <input type="text" id="search-input" placeholder="Buscar...">
+            </form>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="catalogo.html">Productos</a>
+        <a href="contactenos.html">Acerca de</a>
+    </nav>
+
+    <div class="icons">
+        <button onclick="window.location.href='carrito.html'" class="cart-btn">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="cart-count" id="cart-count">0</span>
+        </button>
+        <button id="btn-mensajes">
+            <i class="fa-regular fa-envelope"></i>
+        </button>
+        <button onclick="window.location.href='perfil.html'" class="active">
+            <i class="fa-solid fa-circle-user"></i>
+        </button>
+    </div>
+</header>
+
+<!-- PERFIL - SECCIÓN PRINCIPAL -->
+<main class="perfil-main">
+    <div class="perfil-container">
+        
+        <!-- Título -->
+        <div class="perfil-header">
+            <h1><i class="fa-solid fa-user-circle"></i> Mi Perfil</h1>
+            <p>Gestiona tu información personal y preferencias</p>
+        </div>
+
+        <div class="perfil-grid">
+            
+            <!-- COLUMNA IZQUIERDA - FOTO DE PERFIL -->
+            <div class="perfil-avatar-section">
+                <div class="avatar-card">
+                    <div class="avatar-container">
+                        <img id="preview" src="https://via.placeholder.com/150" alt="Foto de perfil">
+                        <div class="avatar-overlay">
+                            <button class="btn-cambiar-foto" onclick="document.getElementById('foto').click()">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Cambiar foto</span>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="foto" accept="image/*" hidden onchange="subirFoto()">
+                    <div class="avatar-info">
+                        <h3 id="nombre-display">Laura Cabrejo</h3>
+                        <p><i class="fa-regular fa-envelope"></i> <span id="email-display">laura@opticabalamb.com</span></p>
+                        <p><i class="fa-regular fa-calendar"></i> Miembro desde: <span id="miembro-desde">Enero 2024</span></p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de estadísticas -->
+                <div class="stats-card">
+                    <div class="stat-item">
+                        <i class="fa-solid fa-box"></i>
+                        <div>
+                            <span class="stat-number" id="total-pedidos">0</span>
+                            <span class="stat-label">Pedidos realizados</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fa-solid fa-star"></i>
+                        <div>
+                            <span class="stat-number" id="total-reseñas">0</span>
+                            <span class="stat-label">Reseñas escritas</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA - FORMULARIO -->
+            <div class="perfil-form-section">
+                <div class="form-card">
+                    <div class="form-header">
+                        <h3><i class="fa-solid fa-address-card"></i> Información personal</h3>
+                        <div class="form-actions">
+                            <button class="btn-editar" id="btn-editar" onclick="activarEdicion()">
+                                <i class="fa-solid fa-pencil"></i> Editar perfil
+                            </button>
+                            <button class="btn-guardar" id="btn-guardar" onclick="guardar()" style="display: none;">
+                                <i class="fa-solid fa-save"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="perfil-form" class="perfil-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-user"></i> Nombre completo</label>
+                                <input type="text" id="nombre" value="Laura Cabrejo" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-id-card"></i> Documento</label>
+                                <input type="text" id="documento" value="1234567890" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-envelope"></i> Correo electrónico</label>
+                                <input type="email" id="correo" value="laura@opticabalamb.com" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-phone"></i> Teléfono</label>
+                                <input type="tel" id="telefono" value="3001234567" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-location-dot"></i> Dirección</label>
+                            <input type="text" id="direccion" value="Calle 123 #45-67, Bogotá" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-lock"></i> Contraseña</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" value="12345678" disabled>
+                                <button type="button" class="btn-ver-password" onclick="togglePassword()">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-hint">* La contraseña está encriptada por seguridad</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-bell"></i> Preferencias de notificación</label>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="notificaciones-email" checked> Recibir ofertas por email
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="notificaciones-pedidos" checked> Estado de mis pedidos
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Botones de acción adicionales -->
+                    <div class="form-footer">
+                        <a href="mis-pedidos.html" class="btn-link">
+                            <i class="fa-solid fa-truck"></i> Ver mis pedidos
+                        </a>
+                        <a href="mis-resenas.html" class="btn-link">
+                            <i class="fa-solid fa-star"></i> Ver mis reseñas
+                        </a>
+                        <a href="formula.html" class="btn-link formula-link">
+                            <i class="fa-solid fa-prescription-bottle"></i> Ver mi fórmula
+                        </a>
+                        <button class="btn-link cerrar-sesion" onclick="cerrarSesion()">
+                            <i class="fa-solid fa-sign-out-alt"></i> Cerrar sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE PEDIDOS RECIENTES -->
+        <div class="pedidos-recientes">
+            <div class="section-header">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Pedidos recientes</h3>
+                <a href="mis-pedidos.html" class="ver-todos">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div id="pedidos-lista" class="pedidos-lista">
+                <!-- Los pedidos se cargarán con JavaScript -->
+                <div class="pedido-placeholder">
+                    <i class="fa-solid fa-box-open"></i>
+                    <p>Aún no tienes pedidos</p>
+                    <a href="catalogo.html" class="btn-comprar-ahora">Comprar ahora</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+<!-- PANEL DE MENSAJES -->
+<div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista"></div>
+</div>
+
+<!-- CHATBOT -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono">
+        <i class="fa-solid fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <i class="fa-solid fa-robot"></i>
+                <span>OptiBot - Asistente Virtual</span>
+            </div>
+            <button id="chatbot-cerrar" class="chatbot-cerrar">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes">
+            <div class="mensaje bot">
+                <div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div>
+                <div class="mensaje-hora">Ahora</div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu mensaje...">
+            <button id="chatbot-enviar">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="chatbot-opciones">
+            <button class="opcion-btn" data-respuesta="precios">💰 Precios</button>
+            <button class="opcion-btn" data-respuesta="envio">📦 Envíos</button>
+            <button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button>
+            <button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button>
+        </div>
+    </div>
+</div>
+
+<!-- MENÚ HAMBURGUESA -->
+<div class="menu-hamburguesa" id="menu"></div>
+
+<!-- SCRIPTS -->
+<script src="js/script.js"></script>
+<script src="js/app.js"></script>
+<script src="js/hamburguesa.js"></script>
+<script src="js/perfil.js"></script>
+</body>
+</html>

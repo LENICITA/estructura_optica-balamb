@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Óptica Balamb - Prueba de Montura Virtual</title>
+    <script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/cliente/CSS/prueba-montura.css">
+    <link rel="stylesheet" href="/Opticam-20260404T212155Z-1-001/pruebamonturas/prueba-montura.css">
+    <style>
+        /* Estilos adicionales para asegurar que funcione */
+        .prueba-montura {
+            min-height: calc(100vh - 200px);
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        }
+        .btn-comprar {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+        <header class="header">
+            <div class="left">
+
+                <a href="principal.html" class="logo">
+                    <img src="img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="catalogo.html" >Productos</a>
+                <a href="contactenos.html">Acerca de</a>
+            </nav>
+
+            <div class="icons">
+                <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+            </button>
+                
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+    <button onclick="window.location.href='perfil.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+</div>
+        </header>
+
+
+<!-- SECCIÓN PRINCIPAL PRUEBA DE MONTURA -->
+<main class="prueba-montura">
+    <div class="prueba-container">
+        
+        <!-- Título -->
+        <div class="prueba-header">
+            <h1>Prueba de Montura Virtual</h1>
+            <p>Activa tu cámara y prueba cómo te quedan nuestras gafas en tiempo real</p>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="prueba-contenido">
+            
+            <!-- Zona de la cámara -->
+            <div class="camara-container">
+                <video id="video-camara" autoplay playsinline muted></video>
+                <canvas id="canvas-overlay"></canvas>
+                <div class="camara-placeholder" id="camara-placeholder">
+                    <i class="fa-solid fa-camera"></i>
+                    <p>Activa tu cámara para comenzar</p>
+                    <button id="btn-activar-camara" class="btn-activar-camara">
+                        <i class="fa-solid fa-video"></i> Activar cámara
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de controles -->
+            <div class="controles-container">
+                <h3>Selecciona tu montura</h3>
+                
+                <div class="gafas-lista" id="gafas-lista">
+                    <!-- Las gafas se cargarán con JavaScript -->
+                </div>
+
+                <div class="controles-adicionales">
+                    <div class="control-grupo">
+                        <label>📏 Tamaño:</label>
+                        <div class="control-botones">
+                            <button id="btn-disminuir" class="control-btn">−</button>
+                            <span id="tamaño-valor">100%</span>
+                            <button id="btn-aumentar" class="control-btn">+</button>
+                        </div>
+                    </div>
+
+                    <div class="control-grupo">
+                        <label>⬆️ Posición:</label>
+                        <div class="control-botones">
+                            <button id="btn-subir" class="control-btn">↑</button>
+                            <span id="posicion-valor">0</span>
+                            <button id="btn-bajar" class="control-btn">↓</button>
+                        </div>
+                    </div>
+
+                    <button id="btn-capturar" class="btn-capturar">
+                        <i class="fa-solid fa-camera"></i> Capturar foto
+                    </button>
+                </div>
+
+                <div class="instrucciones">
+                    <p><i class="fa-solid fa-lightbulb"></i> Consejos:</p>
+                    <ul>
+                        <li>Ubícate en un lugar con buena iluminación</li>
+                        <li>Mantén tu rostro centrado</li>
+                        <li>Ajusta el tamaño y posición de las gafas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="resultados-container" id="resultados-container" style="display: none;">
+            <h3>Tus fotos</h3>
+            <div class="fotos-capturadas" id="fotos-capturadas"></div>
+        </div>
+
+        <!-- Botón volver -->
+        <div class="volver-container">
+            <a href="/catalogo.html" class="btn-volver">
+                <i class="fa-solid fa-arrow-left"></i> Volver a productos
+            </a>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER (SOLO UNO, NO DUPLICADO) -->
+<footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+<!-- Chatbot -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono">
+        <i class="fa-solid fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <i class="fa-solid fa-robot"></i>
+                <span>OptiBot - Asistente Virtual</span>
+            </div>
+            <button id="chatbot-cerrar" class="chatbot-cerrar">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes">
+            <div class="mensaje bot">
+                <div class="mensaje-contenido">
+                    ¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>
+                    ¿En qué puedo ayudarte hoy?
+                </div>
+                <div class="mensaje-hora">Ahora</div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button id="chatbot-enviar">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="chatbot-opciones">
+            <button class="opcion-btn" data-respuesta="precios">💰 Precios</button>
+            <button class="opcion-btn" data-respuesta="envio">📦 Envíos</button>
+            <button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button>
+            <button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button>
+        </div>
+    </div>
+</div>
+
+<!-- Panel de mensajes -->
+<div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+
+<!-- MODAL DE TÉRMINOS Y CONDICIONES PARA LA CÁMARA -->
+<div id="modalTerminos" class="modal-terminos" style="display: none;">
+    <div class="modal-contenido">
+        <div class="modal-header">
+            <i class="fa-solid fa-camera"></i>
+            <h2>Activación de cámara</h2>
+        </div>
+        
+        <div class="modal-body">
+            <p>Para usar la función de <strong>Prueba de Montura Virtual</strong>, necesitamos acceder a tu cámara.</p>
+            
+            <div class="terminos-texto">
+                <h3>📋 Términos y condiciones:</h3>
+                <ul>
+                    <li>✅ Solo usaremos tu cámara mientras estés en esta página.</li>
+                    <li>✅ No guardamos ni almacenamos ninguna imagen o video en nuestros servidores.</li>
+                    <li>✅ Las fotos que captures se guardan SOLO en tu dispositivo.</li>
+                    <li>✅ No compartimos ni transmitimos tu imagen a terceros.</li>
+                    <li>✅ Puedes detener la cámara en cualquier momento cerrando la página.</li>
+                    <li>✅ No realizamos reconocimiento facial ni almacenamos datos biométricos.</li>
+                </ul>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="aceptoTerminos">
+                <label for="aceptoTerminos">
+                    He leído y acepto los términos y condiciones
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="aceptoPrivacidad">
+                <label for="aceptoPrivacidad">
+                    Acepto la política de privacidad y el tratamiento de mis datos
+                </label>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button id="btnRechazar" class="btn-rechazar">
+                <i class="fa-solid fa-times"></i> Rechazar
+            </button>
+            <button id="btnAceptar" class="btn-aceptar" disabled>
+                <i class="fa-solid fa-check"></i> Aceptar y continuar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="menu-hamburguesa" id="menu"></div>
+
+<script src="js/app.js"></script>
+<script src="js/hamburguesa.js"></script>
+<script src="/cliente/js/prueba-montura.js"></script>
+</body>
+</html>
