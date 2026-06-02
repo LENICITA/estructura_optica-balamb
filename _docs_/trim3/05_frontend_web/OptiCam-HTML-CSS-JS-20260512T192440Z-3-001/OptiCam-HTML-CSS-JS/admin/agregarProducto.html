@@ -61,8 +61,13 @@
             <div class="card info-add">
                 <h3>Información adicional</h3>
 
-                <label>Categoría</label>
-                <input id="categoria" type="text">
+                <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria" required>
+                <option value="">Seleccione un tipo</option>
+                <option value="moto">Monturas</option>
+                <option value="carro">Accerorios</option>
+                <option value="carro">Gafas de sol</option>
+            </select>
 
                 <label>Marca</label>
                 <input id="marca" type="text">

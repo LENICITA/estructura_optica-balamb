@@ -1,21 +1,48 @@
 // ========== CONTROL DE REPARTIDORES ==========
+// Ahora lee los datos desde localStorage (donde se guardan al registrarlos)
 
-// Datos de ejemplo
-let repartidores = [
-    { id: 1, nombre: "Juan Pérez", estado: "Activo", pedidos: 15 },
-    { id: 2, nombre: "Ana López", estado: "Inactivo", pedidos: 8 },
-    { id: 3, nombre: "Carlos Mendoza", estado: "Activo", pedidos: 22 },
-    { id: 4, nombre: "María García", estado: "Suspendido", pedidos: 5 },
-    { id: 5, nombre: "Luis Rodríguez", estado: "Activo", pedidos: 18 }
-];
-
+let repartidores = [];
 let repartidorSeleccionado = null;
+
+// Función para cargar repartidores desde localStorage
+function cargarRepartidoresDesdeLocalStorage() {
+    const guardados = localStorage.getItem("repartidores");
+    if (guardados) {
+        repartidores = JSON.parse(guardados);
+        // Agregar campo 'pedidos' si no existe (para compatibilidad)
+        repartidores.forEach(r => {
+            if (r.pedidos === undefined) {
+                r.pedidos = 0;
+            }
+        });
+    } else {
+        // Si no hay datos, array vacío (sin datos de ejemplo)
+        repartidores = [];
+    }
+    console.log("Repartidores cargados:", repartidores.length);
+}
+
+// Función para guardar cambios en localStorage
+function guardarRepartidoresEnLocalStorage() {
+    localStorage.setItem("repartidores", JSON.stringify(repartidores));
+    console.log("Repartidores guardados en localStorage");
+}
 
 // Renderizar tabla
 function renderizarTabla() {
     const tbody = document.getElementById("tablaBody");
     if (!tbody) return;
     tbody.innerHTML = "";
+    
+    if (repartidores.length === 0) {
+        const row = tbody.insertRow();
+        const cell = row.insertCell(0);
+        cell.colSpan = 2;
+        cell.textContent = "No hay repartidores registrados";
+        cell.style.textAlign = "center";
+        cell.style.padding = "20px";
+        return;
+    }
     
     repartidores.forEach(repartidor => {
         const row = tbody.insertRow();
@@ -26,8 +53,11 @@ function renderizarTabla() {
         
         const cellEstado = row.insertCell(1);
         const spanEstado = document.createElement("span");
-        spanEstado.className = `estado ${repartidor.estado.toLowerCase()}`;
-        spanEstado.textContent = repartidor.estado;
+        const estadoLower = (repartidor.estado || "activo").toLowerCase();
+        spanEstado.className = `estado ${estadoLower}`;
+        // Mostrar estado con primera letra mayúscula
+        const estadoMostrar = repartidor.estado || "Activo";
+        spanEstado.textContent = estadoMostrar.charAt(0).toUpperCase() + estadoMostrar.slice(1).toLowerCase();
         cellEstado.appendChild(spanEstado);
         
         row.addEventListener("click", function() {
@@ -48,13 +78,16 @@ function seleccionarRepartidor(id) {
     repartidorSeleccionado = repartidor;
     
     document.getElementById("detalleNombre").textContent = repartidor.nombre;
-    document.getElementById("detallePedidos").textContent = repartidor.pedidos;
+    document.getElementById("detallePedidos").textContent = repartidor.pedidos || 0;
     
     const spanEstado = document.getElementById("detalleEstado");
-    spanEstado.textContent = repartidor.estado;
-    spanEstado.className = `estado ${repartidor.estado.toLowerCase()}`;
+    const estadoMostrar = repartidor.estado || "Activo";
+    spanEstado.textContent = estadoMostrar.charAt(0).toUpperCase() + estadoMostrar.slice(1).toLowerCase();
+    spanEstado.className = `estado ${(repartidor.estado || "activo").toLowerCase()}`;
     
-    document.getElementById("estadoSelect").value = repartidor.estado;
+    // Valor del select (asegurar que coincida)
+    const estadoSelectValue = (repartidor.estado || "Activo").charAt(0).toUpperCase() + (repartidor.estado || "Activo").slice(1).toLowerCase();
+    document.getElementById("estadoSelect").value = estadoSelectValue;
     
     const filas = document.querySelectorAll("#tablaBody tr");
     filas.forEach(fila => {
@@ -67,77 +100,79 @@ function seleccionarRepartidor(id) {
     }
 }
 
-// Cambiar estado - FUNCIÓN CORREGIDA
+// Cambiar estado
 function cambiarEstadoRepartidor() {
-    // Verificar que haya un repartidor seleccionado
     if (!repartidorSeleccionado) {
         alert("❌ Primero selecciona un repartidor de la lista");
         return;
     }
     
     const nuevoEstado = document.getElementById("estadoSelect").value;
-    const estadoAnterior = repartidorSeleccionado.estado;
+    const estadoAnterior = repartidorSeleccionado.estado || "Activo";
+    const estadoAnteriorNormalizado = estadoAnterior.charAt(0).toUpperCase() + estadoAnterior.slice(1).toLowerCase();
+    const nuevoEstadoNormalizado = nuevoEstado.charAt(0).toUpperCase() + nuevoEstado.slice(1).toLowerCase();
     
-    // Verificar si el estado es diferente
-    if (nuevoEstado === estadoAnterior) {
-        alert(`⚠️ El repartidor ya está en estado "${nuevoEstado}"`);
+    if (nuevoEstadoNormalizado === estadoAnteriorNormalizado) {
+        alert(`⚠️ El repartidor ya está en estado "${nuevoEstadoNormalizado}"`);
         return;
     }
     
-    // Confirmar el cambio
-    const confirmar = confirm(`¿Estás seguro de cambiar el estado de "${repartidorSeleccionado.nombre}" de ${estadoAnterior} a ${nuevoEstado}?`);
+    const confirmar = confirm(`¿Estás seguro de cambiar el estado de "${repartidorSeleccionado.nombre}" de ${estadoAnteriorNormalizado} a ${nuevoEstadoNormalizado}?`);
     
     if (confirmar) {
-        // Actualizar el estado del repartidor seleccionado
-        repartidorSeleccionado.estado = nuevoEstado;
+        // Actualizar el estado (guardar en minúsculas o como venga)
+        repartidorSeleccionado.estado = nuevoEstadoNormalizado;
         
-        // También actualizar en el array original
+        // Actualizar en el array original
         const index = repartidores.findIndex(r => r.id === repartidorSeleccionado.id);
         if (index !== -1) {
-            repartidores[index].estado = nuevoEstado;
+            repartidores[index].estado = nuevoEstadoNormalizado;
         }
+        
+        // Guardar en localStorage
+        guardarRepartidoresEnLocalStorage();
         
         // Actualizar el panel de detalles
         const spanEstado = document.getElementById("detalleEstado");
-        spanEstado.textContent = nuevoEstado;
-        spanEstado.className = `estado ${nuevoEstado.toLowerCase()}`;
+        spanEstado.textContent = nuevoEstadoNormalizado;
+        spanEstado.className = `estado ${nuevoEstadoNormalizado.toLowerCase()}`;
         
-        // Actualizar el select
-        document.getElementById("estadoSelect").value = nuevoEstado;
-        
-        // RECARGAR LA TABLA para mostrar el nuevo estado
+        // RECARGAR LA TABLA
         renderizarTabla();
         
-        // Volver a seleccionar el mismo repartidor para mantenerlo seleccionado
+        // Volver a seleccionar el mismo repartidor
         seleccionarRepartidor(repartidorSeleccionado.id);
         
-        // Mensaje de éxito
-        alert(`✅ Estado actualizado correctamente a "${nuevoEstado}" para ${repartidorSeleccionado.nombre}`);
+        alert(`✅ Estado actualizado correctamente a "${nuevoEstadoNormalizado}" para ${repartidorSeleccionado.nombre}`);
     }
 }
 
 // ========== INICIALIZACIÓN ==========
-// Esperar a que el DOM esté completamente cargado
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Página cargada - Inicializando control de repartidores");
+    
+    // Cargar repartidores desde localStorage
+    cargarRepartidoresDesdeLocalStorage();
     
     // Renderizar la tabla
     renderizarTabla();
     
-    // Seleccionar el primer repartidor por defecto
+    // Seleccionar el primer repartidor si hay alguno
     if (repartidores.length > 0) {
         seleccionarRepartidor(repartidores[0].id);
+    } else {
+        // Limpiar detalle si no hay repartidores
+        document.getElementById("detalleNombre").textContent = "---";
+        document.getElementById("detallePedidos").textContent = "0";
+        document.getElementById("detalleEstado").textContent = "---";
     }
     
-    // ASIGNAR EL EVENTO AL BOTÓN GUARDAR
+    // Asignar evento al botón guardar
     const btnGuardar = document.getElementById("btnGuardarEstado");
-    
     if (btnGuardar) {
-        console.log("Botón guardar encontrado");
-        // Remover eventos anteriores para evitar duplicados
         btnGuardar.removeEventListener("click", cambiarEstadoRepartidor);
-        // Agregar el evento
         btnGuardar.addEventListener("click", cambiarEstadoRepartidor);
+        console.log("Evento del botón guardar asignado");
     } else {
         console.error("No se encontró el botón con id 'btnGuardarEstado'");
     }
