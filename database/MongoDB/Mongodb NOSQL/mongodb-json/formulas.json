@@ -1,0 +1,12 @@
+[
+    {
+      "id": 1,
+      "id_usuario": 1,
+      "condiciones": "Miopía",
+      "imagen": "/img/formula1.jpg",
+      "observaciones": "Visión borrosa de lejos",
+      "fecha_creacion": "2024-01-15",
+      "costo": 150000,
+      "estado": "en-revision"
+    }
+]

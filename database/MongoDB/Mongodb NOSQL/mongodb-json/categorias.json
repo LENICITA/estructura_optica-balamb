@@ -1,0 +1,17 @@
+[
+     {
+      "id": 1,
+      "tipo": "Gafas de Sol",
+      "descripcion": "Protección UV y estilo"
+    },
+    {
+      "id": 2,
+      "tipo": "Gafas de Lectura",
+      "descripcion": "Para leer cómodamente"
+    },
+    {
+      "id": 3,
+      "tipo": "Lentes de Contacto",
+      "descripcion": "Comodidad y practicidad"
+    }
+]

@@ -1,0 +1,54 @@
+[
+    {
+      "id": 1,
+      "id_categoria": 1,
+      "nombre": "Ángel Gold",
+      "descripcion": "Gafas elegantes con montura clásica dorada",
+      "marca": "OptiCam",
+      "precio": 250000,
+      "imagen": "/img/producto1.jpg",
+      "material": "Plástico",
+      "color": "Dorado",
+      "stock": 50,
+      "vendidos": 150
+    },
+    {
+      "id": 2,
+      "id_categoria": 1,
+      "nombre": "Sky Blue",
+      "descripcion": "Gafas modernas color azul cielo",
+      "marca": "OptiCam",
+      "precio": 180000,
+      "imagen": "/img/producto2.jpg",
+      "material": "Metal",
+      "color": "Azul",
+      "stock": 35,
+      "vendidos": 89
+    },
+    {
+      "id": 3,
+      "id_categoria": 2,
+      "nombre": "Titanium Pro",
+      "descripcion": "Gafas ultraligeras de titanio para lectura",
+      "marca": "OptiCam",
+      "precio": 350000,
+      "imagen": "/img/producto3.jpg",
+      "material": "Titanio",
+      "color": "Plateado",
+      "stock": 20,
+      "vendidos": 45
+    },
+    {
+      "id": 4,
+      "id_categoria": 1,
+      "nombre": "Gafas Ámbar",
+      "descripcion": "Gafas con lentes ámbar que protegen de la luz azul",
+      "marca": "OptiCam",
+      "precio": 250000,
+      "imagen": "/img/producto4.jpg",
+      "material": "Acetato",
+      "color": "Ámbar",
+      "stock": 40,
+      "vendidos": 200
+    }
+]

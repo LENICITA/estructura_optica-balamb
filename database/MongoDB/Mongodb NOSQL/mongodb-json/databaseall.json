@@ -1,0 +1,333 @@
+{
+  "roles": [
+    {
+      "id": 1,
+      "name": "Admin"
+    },
+    {
+      "id": 2,
+      "name": "Cliente"
+    },
+    {
+      "id": 3,
+      "name": "Repartidor"
+    }
+  ],
+  "usuarios": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "telefono": "123456789",
+      "fecha_nacimiento": "1990-01-01",
+      "documento": "123456789",
+      "ciudad": "Ciudad 1",
+      "direccion": "Direccion 1",
+      "fecha_registro": "2020-01-01",
+      "email": "john.doe@example.com",
+      "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "estado": "activo"
+    },
+    {
+      "id": 2,
+      "name": "Administrador",
+      "telefono": "3001234567",
+      "fecha_nacimiento": "1990-01-01",
+      "documento": "987654321",
+      "ciudad": "Bogotá",
+      "direccion": "Calle Principal 123",
+      "fecha_registro": "2024-01-01",
+      "email": "admin@gmail.com",
+      "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "estado": "activo"
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "luisa@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2007-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3052449629",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:18:26.292Z",
+      "id": 3
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "repa1@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2008-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "12345677",
+      "password": "8bb0cf6eb9b17d0f7d22b456f121257dc1254e1f01665370476383ea776df414",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:34:48.797Z",
+      "id": 4
+    },
+    {
+      "name": "Shariht",
+      "email": "shariht@gmail.com",
+      "documento": "123456234",
+      "fecha_nacimiento": "2005-06-24",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "24356431",
+      "password": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:41:25.286Z",
+      "id": 5
+    },
+    {
+      "name": "Saida",
+      "email": "Saida@gmail.com",
+      "documento": "1234555467",
+      "fecha_nacimiento": "2007-03-07",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3245675431",
+      "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:49:07.402Z",
+      "id": 6
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "Juan@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2005-06-05",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "21345456",
+      "password": "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T15:26:02.280Z",
+      "id": 7
+    }
+  ],
+  "roles_usuarios": [
+    {
+      "id": 1,
+      "id_rol": 1,
+      "id_usuario": 2
+    },
+    {
+      "id": 2,
+      "id_rol": 2,
+      "id_usuario": 1
+    },
+    {
+      "id_rol": 3,
+      "id_usuario": 6,
+      "id": 3
+    },
+    {
+      "id_rol": 2,
+      "id_usuario": 7,
+      "id": 4
+    }
+  ],
+  "categorias": [
+    {
+      "id": 1,
+      "tipo": "Gafas de Sol",
+      "descripcion": "Protección UV y estilo"
+    },
+    {
+      "id": 2,
+      "tipo": "Gafas de Lectura",
+      "descripcion": "Para leer cómodamente"
+    },
+    {
+      "id": 3,
+      "tipo": "Lentes de Contacto",
+      "descripcion": "Comodidad y practicidad"
+    }
+  ],
+  "productos": [
+    {
+      "id": 1,
+      "id_categoria": 1,
+      "nombre": "Ángel Gold",
+      "descripcion": "Gafas elegantes con montura clásica dorada",
+      "marca": "OptiCam",
+      "precio": 250000,
+      "imagen": "/img/producto1.jpg",
+      "material": "Plástico",
+      "color": "Dorado",
+      "stock": 50,
+      "vendidos": 150
+    },
+    {
+      "id": 2,
+      "id_categoria": 1,
+      "nombre": "Sky Blue",
+      "descripcion": "Gafas modernas color azul cielo",
+      "marca": "OptiCam",
+      "precio": 180000,
+      "imagen": "/img/producto2.jpg",
+      "material": "Metal",
+      "color": "Azul",
+      "stock": 35,
+      "vendidos": 89
+    },
+    {
+      "id": 3,
+      "id_categoria": 2,
+      "nombre": "Titanium Pro",
+      "descripcion": "Gafas ultraligeras de titanio para lectura",
+      "marca": "OptiCam",
+      "precio": 350000,
+      "imagen": "/img/producto3.jpg",
+      "material": "Titanio",
+      "color": "Plateado",
+      "stock": 20,
+      "vendidos": 45
+    },
+    {
+      "id": 4,
+      "id_categoria": 1,
+      "nombre": "Gafas Ámbar",
+      "descripcion": "Gafas con lentes ámbar que protegen de la luz azul",
+      "marca": "OptiCam",
+      "precio": 250000,
+      "imagen": "/img/producto4.jpg",
+      "material": "Acetato",
+      "color": "Ámbar",
+      "stock": 40,
+      "vendidos": 200
+    }
+  ],
+  "formulas": [
+    {
+      "id": 1,
+      "id_usuario": 1,
+      "condiciones": "Miopía",
+      "imagen": "/img/formula1.jpg",
+      "observaciones": "Visión borrosa de lejos",
+      "fecha_creacion": "2024-01-15",
+      "costo": 150000,
+      "estado": "en-revision"
+    }
+  ],
+  "pedidos": [
+    {
+      "id": 1,
+      "id_usuario": 1,
+      "id_formula": null,
+      "fecha_pedido": "2024-01-20",
+      "fecha_entrega": "2024-01-22",
+      "direccion_entrega": "Calle 123, Bogotá",
+      "estado": "pendiente",
+      "costo_envio": 20000,
+      "total": 270000
+    }
+  ],
+  "pedidos_productos": [
+    {
+      "id_pedido": 1,
+      "id_producto": 1,
+      "cantidad": 1
+    }
+  ],
+  "vehiculos": [
+    {
+      "id": 1,
+      "id_usuario": 1,
+      "tipo": "Moto",
+      "placa": "ABC123",
+      "modelo": "2023",
+      "color": "Negro"
+    }
+  ],
+  "pagos": [
+    {
+      "id": 1,
+      "id_pedido": 1,
+      "fecha_pago": "2024-01-20",
+      "eleccion_pago": "Tarjeta",
+      "canal_pago": "Online",
+      "monto": 270000,
+      "estado": "completado"
+    }
+  ],
+  "repartidores": [
+    {
+      "nombre": "VALENTINA RAMIREZ BERNAL",
+      "email": "luisa@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2007-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3052449628",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "vehiculo": "moto",
+      "modelo": "kawasaki",
+      "placa": "sxx18h",
+      "color": "azul",
+      "estado": "activo",
+      "pedidos_entregados": 0,
+      "rol": "repartidor",
+      "fecha_registro": "2026-04-11T14:08:59.049Z",
+      "id": 1
+    },
+    {
+      "nombre": "VALENTINA RAMIREZ BERNAL",
+      "email": "repa@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2007-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3052449629",
+      "password": "8bb0cf6eb9b17d0f7d22b456f121257dc1254e1f01665370476383ea776df414",
+      "vehiculo": "moto",
+      "modelo": "kawasaki",
+      "placa": "sxx18h",
+      "color": "fds",
+      "estado": "activo",
+      "pedidos_entregados": 0,
+      "rol": "repartidor",
+      "fecha_registro": "2026-04-11T14:19:48.686Z",
+      "id": 2
+    },
+    {
+      "nombre": "Shariht",
+      "email": "shariht@gmail.com",
+      "documento": "123456234",
+      "fecha_nacimiento": "2005-06-24",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "24356431",
+      "password": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+      "vehiculo": "carro",
+      "modelo": "kawasaki",
+      "placa": "sxx18h",
+      "color": "asfdgn",
+      "estado": "activo",
+      "pedidos_entregados": 0,
+      "rol": "repartidor",
+      "fecha_registro": "2026-04-11T14:41:25.404Z",
+      "id": 3
+    },
+    {
+      "nombre": "Saida",
+      "email": "Saida@gmail.com",
+      "documento": "1234555467",
+      "fecha_nacimiento": "2007-03-07",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3245675431",
+      "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+      "vehiculo": "moto",
+      "modelo": "kawasaki",
+      "placa": "sxx18h",
+      "color": "azul",
+      "estado": "activo",
+      "pedidos_entregados": 0,
+      "rol": "repartidor",
+      "fecha_registro": "2026-04-11T14:49:07.530Z",
+      "id": 4
+    }
+  ]
+}
