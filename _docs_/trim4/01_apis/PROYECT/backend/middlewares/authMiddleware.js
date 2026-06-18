@@ -1,49 +1,44 @@
-const jwt = require("jsonwebtoken");
-const keys = require("../config/keys");
-     
-function verifyToken(req, res, next) {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader) {
-        return res.status(403).json({
-            success: false,
-            message: "No se proporcionó un token",
-        });
-    }
-    
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-        return res.status(403).json({
-            success: false,
-            message: "Formato de token inválido",
-        });
-    }
-    
-    jwt.verify(token, keys.secretOrKey, (err, decoded) => {
-        if (err) {
+import jwt from 'jsonwebtoken';
+import Usuario from '../models/User.js';
+
+export const authMiddleware = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
             return res.status(401).json({
                 success: false,
-                message: "Token inválido o expirado",
-                error: err,
+                message: 'Token no proporcionado'
             });
         }
-        req.user = decoded;
-        next();
-    });
-}
-     
-function authorizeRoles(roles) {
-    return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const usuario = await Usuario.findByPk(decoded.id, {
+            attributes: ['id_usuario', 'nombre_completo', 'email', 'estado']
+        });
+
+        if (!usuario) {
+            return res.status(401).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+        
+        if (usuario.estado !== 'ACTIVO') {
             return res.status(403).json({
                 success: false,
-                message: `Acceso denegado: se requiere rol ${roles.join(" o ")}`,
+                message: 'Usuario inactivo'
             });
         }
+        req.usuario = usuario;
         next();
-    };
-}
-   
-module.exports = {
-    verifyToken,
-    authorizeRoles,
+
+    } catch (error) {
+        console.error('Error en auth middleware: ', error);
+        return res.status(401).json({
+            success: false,
+            message: 'Token invalido o expirado'
+        });
+    }
 };

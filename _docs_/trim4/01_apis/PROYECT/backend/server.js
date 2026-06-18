@@ -1,60 +1,42 @@
-// server.js
-const express = require('express');
-const logger = require('morgan');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
-const usersRoutes = require('./routes/userRoutes');
+// server.js (versión ES Modules)
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import sequelize from './config/database.js';
+import { Usuario, Vehiculo, Role, RolUsuario } from './models/index.js';
+
+dotenv.config();
 
 const app = express();
-    
-// Middlewares globales
-app.use(logger('dev'));
+const PORT = process.env.PORT || 3000;
+
+// Middlewares
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-    
-// Documentación de swagger
-const swaggerOptions = {  
-    swaggerOptions: {
-        docExpansion: 'list',           
-        defaultModelsExpandDepth: -1,   
-        defaultModelExpandDepth: 1,     
-        displayRequestDuration: true,   
-        filter: false,                  
-        layout: 'BaseLayout',  
-        showExtensions: true,
-        showCommonExtensions: true,
-        deepLinking: true,         
-        persistAuthorization: true,
-        tagsSorter: 'alpha',       
-        operationsSorter: function(a, b) {
-        const methodOrder = { 'post': 1, 'get': 2, 'put': 3, 'delete': 4 };
-            return methodOrder[a.get('method')] - methodOrder[b.get('method')];
-        }  
-    }  
-};
-    
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
-    
+
 // Rutas
-app.use('/api/users', usersRoutes);
-    
-// Endpoints de prueba
-app.get('/', (req, res) => {
-    res.send('Ruta raíz del Backend');
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', userRoutes);
+
+// Ruta de prueba
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Servidor funcionando correctamente',
+        timestamp: new Date().toISOString()
+    });
 });
-    
-app.get('/test', (req, res) => {
-    res.send('Ruta TEST');
+
+// Iniciar servidor
+app.listen(PORT, async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('Conexión a la base de datos establecida');
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    } catch (error) {
+        console.error('Error al conectar a la base de datos:', error);
+    }
 });
-    
-// Manejo de errores
-app.use((err, req, res, next) => {
-    console.log(err);
-    res.status(err.status || 500).send(err.stack);
-});
-    
-console.log('📚 Swagger disponible en: http://localhost:3000/api-docs');
-    
-module.exports = app;
