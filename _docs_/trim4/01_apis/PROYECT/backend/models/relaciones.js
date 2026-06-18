@@ -19,7 +19,6 @@ Role.belongsToMany(Usuario, {
     as: 'usuarios'
 });
 
-// ✅ AGREGAR ESTAS RELACIONES FALTANTES:
 // Relación entre RolUsuario y Usuario
 RolUsuario.belongsTo(Usuario, {
     foreignKey: 'id_usuario',

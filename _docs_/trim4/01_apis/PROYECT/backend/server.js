@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import sequelize from './config/database.js';
-import { Usuario, Vehiculo, Role, RolUsuario } from './models/index.js';
+import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
 
 dotenv.config();
 
