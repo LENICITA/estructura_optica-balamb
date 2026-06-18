@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Óptica Balamb</title>
-        <link rel="stylesheet" href="CSS/perfiladmin.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    </head>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb - Perfil Administrador</title>
+    <link rel="stylesheet" href="../cliente/CSS/perfil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
 
-        <!-- HEADER -->
-        <header class="header">
+<!-- HEADER ADMIN -->
+ <header class="header">
         <div class="left">
             <a href="principaladmin.html" class="logo">
                 <img src="../img/logo 2.jpeg" alt="Óptica Balamb">
@@ -36,90 +36,184 @@
             <button onclick="window.location.href='perfiladmin.html'"><i class="fa-solid fa-circle-user"  ></i></button>
         </div>
     </header>
-
-        <!-- PERFIL -->
-<div class="container">
-
-    <h2>GESTIÓN DE PERFIL ADMINISTRADOR</h2>
-
-    <div class="profile-box">
-
-        <!-- FOTO -->
-        <div class="avatar-container">
-            <img id="preview" src="https://via.placeholder.com/100" alt="Foto">
-            <input type="file" id="foto" accept="image/*" hidden>
-            <button onclick="subirFoto()">📷</button>
+<!-- PERFIL ADMIN -->
+<main class="perfil-main">
+    <div class="perfil-container">
+        
+        <div class="perfil-header">
+            <h1><i class="fa-solid fa-user-shield"></i> Perfil Administrador</h1>
+            <p>Gestiona la información de tu cuenta de administrador</p>
         </div>
 
-        <!-- FORM -->
-        <form id="perfil-form">
+        <div class="perfil-grid">
+            
+            <!-- COLUMNA IZQUIERDA -->
+            <div class="perfil-avatar-section">
+                <div class="avatar-card">
+                    <div class="avatar-container">
+                        <img id="preview" src="https://via.placeholder.com/150" alt="Foto de perfil">
+                        <div class="avatar-overlay">
+                            <button class="btn-cambiar-foto" onclick="document.getElementById('foto').click()">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Cambiar foto</span>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="foto" accept="image/*" hidden>
+                    <div class="avatar-info">
+                        <h3 id="nombre-display">Administrador</h3>
+                        <p><i class="fa-regular fa-envelope"></i> <span id="email-display">admin@opticabalamb.com</span></p>
+                        <p><i class="fa-regular fa-calendar"></i> Miembro desde: <span id="miembro-desde">Enero 2024</span></p>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label>Nombre</label>
-                <input type="text" value="LENNY TABAREZ" disabled>
+                <div class="stats-card">
+                    <div class="stat-item">
+                        <i class="fa-solid fa-building"></i>
+                        <div>
+                            <span class="stat-number" id="total-sucursales">1</span>
+                            <span class="stat-label">Sucursales</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fa-solid fa-users"></i>
+                        <div>
+                            <span class="stat-number" id="total-empleados">0</span>
+                            <span class="stat-label">Empleados</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fa-solid fa-box"></i>
+                        <div>
+                            <span class="stat-number" id="total-productos">0</span>
+                            <span class="stat-label">Productos</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Dirección</label>
-                <input type="text" id="direccion" disabled>
+            <!-- COLUMNA DERECHA -->
+            <div class="perfil-form-section">
+                <div class="form-card">
+                    <div class="form-header">
+                        <h3><i class="fa-solid fa-address-card"></i> Información del Administrador</h3>
+                        <div class="form-actions">
+                            <button class="btn-editar" id="btn-editar">
+                                <i class="fa-solid fa-pencil"></i> Editar perfil
+                            </button>
+                            <button class="btn-guardar" id="btn-guardar" style="display: none;">
+                                <i class="fa-solid fa-save"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="perfil-form" class="perfil-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-user"></i> Nombre completo</label>
+                                <input type="text" id="nombre" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-id-card"></i> Documento</label>
+                                <input type="text" id="documento" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-envelope"></i> Correo electrónico</label>
+                                <input type="email" id="correo" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-phone"></i> Teléfono</label>
+                                <input type="tel" id="telefono" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-location-dot"></i> Dirección</label>
+                            <input type="text" id="direccion" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-lock"></i> Contraseña</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="password" disabled>
+                                <button type="button" class="btn-ver-password">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="form-footer">
+                        <a href="inventario.html" class="btn-link">
+                            <i class="fa-solid fa-box"></i> Gestionar Inventario
+                        </a>
+                        <a href="adminPedidos.html" class="btn-link">
+                            <i class="fa-solid fa-truck"></i> Ver Pedidos
+                        </a>
+                        <button class="btn-link cerrar-sesion">
+                            <i class="fa-solid fa-sign-out-alt"></i> Cerrar sesión
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" id="password" disabled>
-            </div>
-
-            <div class="form-group">
-                <label>Correo</label>
-                <input type="email" id="correo" disabled>
-            </div>
-
-            <div class="form-group">
-                <label>Teléfono</label>
-                <input type="text" id="telefono" disabled>
-            </div>
-
-            <button type="button" class="btn primary" onclick="activarEdicion()">EDITAR PERFIL</button>
-            <button type="button" class="btn guardar" onclick="guardar()">GUARDAR</button>
-
-        </form>
-
+        </div>
     </div>
-
-</div>
+</main>
 
 <!-- FOOTER -->
 <footer class="footer">
-
     <div class="footer-section">
         <h3>Contacto</h3>
         <p>opticavirtualbalamb@gmail.com</p>
         <p>+57 300 237 4767</p>
     </div>
-
     <div class="footer-section">
         <h3>Tienda</h3>
         <p>Acerca de</p>
         <p>Catálogo</p>
     </div>
-
 </footer>
 
+<!-- PANEL DE MENSAJES -->
 <div class="panel-mensajes" id="panel-mensajes">
     <div class="panel-header">
         <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
-        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        <button id="cerrar-mensajes" class="cerrar-panel"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div id="mensajes-lista" class="mensajes-lista">
-        <!-- Los mensajes se cargan con JavaScript -->
-    </div>
+    <div id="mensajes-lista" class="mensajes-lista"></div>
 </div>
 
+<!-- MENÚ HAMBURGUESA -->
 <div class="menu-hamburguesa" id="menu"></div>
 
-<script src="../all/js/lupa.js"></script>
-<script src="../all/js/hamburguesa.js"></script>
+<!-- SCRIPTS -->
 <script src="../cliente/js/perfil.js"></script>
-
+ <script src="../all/js/lupa.js"></script>
+    <script src="../all/js/hamburguesa.js"></script>
+<script>
+    // Inicializar funciones globales
+    document.addEventListener('DOMContentLoaded', function() {
+        // El perfil.js ya maneja la carga según el rol
+        // Solo aseguramos que los botones tengan eventos
+        const btnEditar = document.getElementById('btn-editar');
+        const btnGuardar = document.getElementById('btn-guardar');
+        const btnCerrarSesion = document.querySelector('.cerrar-sesion');
+        const btnVerPassword = document.querySelector('.btn-ver-password');
+        
+        if (btnEditar) btnEditar.onclick = () => activarEdicion();
+        if (btnGuardar) btnGuardar.onclick = () => guardar();
+        if (btnCerrarSesion) btnCerrarSesion.onclick = () => cerrarSesion();
+        if (btnVerPassword) btnVerPassword.onclick = () => togglePassword();
+        
+        // Subir foto
+        const fotoInput = document.getElementById('foto');
+        if (fotoInput) {
+            fotoInput.onchange = () => subirFoto();
+        }
+    });
+</script>
 </body>
 </html>

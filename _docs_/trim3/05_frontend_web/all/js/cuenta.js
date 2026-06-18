@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem("rol", "cliente");
             localStorage.setItem("email", cliente.email);
             localStorage.setItem("nombre", cliente.nombre);
-            window.location.href = "../cliente/principal.html";
+            window.location.href = "../cliente/principal-cliente.html";  // ← CORREGIDO
             return;
         }
         

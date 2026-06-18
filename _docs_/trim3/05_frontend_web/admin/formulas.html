@@ -87,6 +87,28 @@
             <form id="precioForm">
                 <input type="number" id="precio" placeholder="Ej: 120000" required>
                 <button type="submit" class="btn-enviar" id="btnEnviarPrecio">Enviar precio</button>
+                <!-- Radio buttons para aprobar/rechazar -->
+<div class="radio-group">
+    <label>
+        <input type="radio" name="accion" value="aprobar" id="aprobar" checked> 
+        ✅ Aprobar fórmula
+    </label>
+    <label>
+        <input type="radio" name="accion" value="rechazar" id="rechazar"> 
+        ❌ Rechazar fórmula
+    </label>
+</div>
+
+<!-- Motivo de rechazo (oculto por defecto) -->
+<div id="motivo-rechazo-div" style="display: none;">
+    <label>Motivo de rechazo:</label>
+    <textarea id="motivo-rechazo" rows="2" placeholder="Explica al cliente por qué fue rechazada..."></textarea>
+</div>
+
+<!-- Información del cliente -->
+<div id="cliente-info" style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+    <!-- Se llena con JS -->
+</div>
             </form>
 
         </div>

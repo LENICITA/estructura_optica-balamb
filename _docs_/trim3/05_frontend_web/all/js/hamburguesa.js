@@ -62,35 +62,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="../admin/adminPedidos.html">Pedidos</a>
                 <a href="../admin/controlrepartidores.html">Repartidores</a>
                 <a href="../admin/reportes.html">Reportes</a>
-                <a href="#" id="cerrar-sesion">Cerrar sesión</a>
+                <a href="../all/principal.html" id="cerrar-sesion">Cerrar sesión</a>
             `;
         } else if (rol === "cliente") {
             menu.innerHTML = `
-                <a href="../cliente/principal.html">Inicio</a>
-                <a href="#">Productos</a>
+                <a href="./principal.html">Inicio</a>
+                <a href="../cliente/catalogo.html">Productos</a>
                 <a href="#">Mis pedidos</a>
                 <a href="../cliente/perfil.html">Mi perfil</a>
                 <a href="../cliente/contactenos.html">Contacto</a>
-                <a href="#" id="cerrar-sesion">Cerrar sesión</a>
+                <a href="../all/principal.html" id="cerrar-sesion">Cerrar sesión</a>
             `;
         } else if (rol === "repartidor") {
             menu.innerHTML = `
                 <a href="../repartidor/inicio-repartidor.html">Inicio</a>
                 <a href="../repartidor/historial.html">Historial</a>
                 <a href="../repartidor/perfilrepa.html">Mi perfil</a>
-                <a href="#" id="cerrar-sesion">Cerrar sesión</a>
+                <a href="../all/principal.html" id="cerrar-sesion">Cerrar sesión</a>
             `;
         }
 
-        // Evento cerrar sesión
-        const cerrarSesion = document.getElementById("cerrar-sesion");
-        if (cerrarSesion) {
-            cerrarSesion.addEventListener("click", (e) => {
-                e.preventDefault();
-                localStorage.clear();
-                window.location.href = "../all/iniciosesion.html";
-            });
-        }
+        // Evento cerrar sesión - CORREGIDO
+const cerrarSesion = document.getElementById("cerrar-sesion");
+if (cerrarSesion) {
+    cerrarSesion.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.clear();
+        // Redirigir a principal.html en la carpeta all
+        window.location.href = "../all/principal.html";
+    });
+}
     }
 
     // ========== MENÚ HAMBURGUESA ==========
