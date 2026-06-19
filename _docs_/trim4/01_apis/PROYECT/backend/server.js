@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import inventarioRoutes from './routes/inventarioRoutes.js';
+import chatbotRoutes from './routes/chatbotRoutes.js';
 import sequelize from './config/database.js';
 import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
 
@@ -11,6 +13,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '192.168.0.5';
 
 // Middlewares
 app.use(cors());
@@ -20,6 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', userRoutes);
+app.use('/api/inventario', inventarioRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
@@ -36,6 +41,7 @@ app.listen(PORT, async () => {
         await sequelize.authenticate();
         console.log('Conexión a la base de datos establecida');
         console.log(`Servidor corriendo en http://localhost:${PORT}`);
+        console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     } catch (error) {
         console.error('Error al conectar a la base de datos:', error);
     }
