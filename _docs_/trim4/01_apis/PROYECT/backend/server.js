@@ -6,14 +6,19 @@ import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import inventarioRoutes from './routes/inventarioRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import distribucionRoutes from './routes/distribucionRoutes.js';
+import pagosRoutes from './routes/PagosRoutes.js';
 import sequelize from './config/database.js';
 import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
+
+import'./models/asociaciones.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '192.168.0.5';
+const HOST = process.env.HOST || '192.168.137.45';
 
 // Middlewares
 app.use(cors());
@@ -25,7 +30,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', userRoutes);
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/chatbot', chatbotRoutes);
-
+app.use('/api/reportes', reportRoutes);
+app.use('/api/distribucion', distribucionRoutes);
+app.use('/api/pagos', pagosRoutes);
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
     res.json({
