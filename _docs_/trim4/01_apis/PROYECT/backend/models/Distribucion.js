@@ -47,15 +47,6 @@ const Distribucion = sequelize.define('Distribucion', {
         }
     },
 
-    id_vehiculo: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'VEHICULOS',
-            key: 'id_vehiculo'
-        }
-    },
-
     estado: {
         type: DataTypes.STRING(30),
         allowNull: false,
