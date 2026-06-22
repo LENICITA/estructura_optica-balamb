@@ -2,7 +2,7 @@
 import express from 'express';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { adminMiddleware } from '../middlewares/adminMiddleware.js';
-import * as formulaController from '..//controllers/formulaController.js';
+import * as formulaController from '../controllers/formulaController.js';
 
 const router = express.Router();
 

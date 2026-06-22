@@ -12,9 +12,7 @@ import pagosRoutes from './routes/PagosRoutes.js';
 import formulaRoutes from './routes/formulaRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
 import sequelize from './config/database.js';
-import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
-
-import'./models/asociaciones.js';
+import { Usuario, Vehiculo, Role, RolUsuario, Distribucion } from './models/relaciones.js';
 
 dotenv.config();
 
