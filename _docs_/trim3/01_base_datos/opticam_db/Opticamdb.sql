@@ -41,8 +41,8 @@ ENGINE = InnoDB;
 CREATE TABLE ROL_USUARIO (
   id_rol INT NOT NULL,
   id_usuario INT NOT NULL,
-  INDEX ind_rol_usuario_roles (id_rol ASC) VISIBLE,
-  INDEX ind_rol_usuario_usuarios (id_usuario ASC) VISIBLE,
+  INDEX ind_rol_usuario_roles (id_rol ASC),
+  INDEX ind_rol_usuario_usuarios (id_usuario ASC),
   PRIMARY KEY (id_rol, id_usuario),
   CONSTRAINT fk_rol_usuario_roles
     FOREIGN KEY (id_rol)
@@ -81,7 +81,7 @@ CREATE TABLE FORMULAS (
   costo FLOAT NOT NULL DEFAULT 0,
   estado ENUM('Pendiente', 'Aprobado', 'Rechazado') NOT NULL DEFAULT 'Pendiente',
   PRIMARY KEY (id_formula),
-  INDEX ind_formulas_usuarios (id_usuario ASC) VISIBLE,
+  INDEX ind_formulas_usuarios (id_usuario ASC),
   CONSTRAINT fk_formulas_usuario
     FOREIGN KEY (id_usuario)
     REFERENCES USUARIOS (id_usuario)
@@ -104,8 +104,8 @@ CREATE TABLE PEDIDOS (
   costo_envio FLOAT NOT NULL DEFAULT 0,
   total FLOAT NOT NULL,
   PRIMARY KEY (id_pedido),
-  INDEX ind_pedidos_usuarios (id_usuario ASC) VISIBLE,
-  INDEX ind_pedidos_formulas (id_formula ASC) VISIBLE,
+  INDEX ind_pedidos_usuarios (id_usuario ASC),
+  INDEX ind_pedidos_formulas (id_formula ASC),
   CONSTRAINT fk_pedidos_usuarios
     FOREIGN KEY (id_usuario)
     REFERENCES USUARIOS (id_usuario)
@@ -133,7 +133,7 @@ CREATE TABLE PRODUCTOS (
   material VARCHAR(45) NOT NULL,
   color VARCHAR(45) NOT NULL,
   PRIMARY KEY (id_producto),
-  INDEX ind_productos_categorias (id_categoria ASC) VISIBLE,
+  INDEX ind_productos_categorias (id_categoria ASC),
   CONSTRAINT fk_productos_categorias
     FOREIGN KEY (id_categoria)
     REFERENCES CATEGORIAS (id_categoria)
@@ -150,8 +150,8 @@ CREATE TABLE IF NOT EXISTS PEDIDOS_PRODUCTOS (
   id_producto INT NOT NULL,
   cant_productos INT NOT NULL,
   PRIMARY KEY (id_pedido, id_producto),
-  INDEX ind_pedidos_productos_productos (id_producto ASC) VISIBLE,
-  INDEX ind_pedidos_productos_pedidos (id_pedido ASC) VISIBLE,
+  INDEX ind_pedidos_productos_productos (id_producto ASC),
+  INDEX ind_pedidos_productos_pedidos (id_pedido ASC),
   CONSTRAINT fk_pedidos_productos_pedidos
     FOREIGN KEY (id_pedido)
     REFERENCES PEDIDOS (id_pedido)
@@ -176,8 +176,8 @@ CREATE TABLE VEHICULOS (
   placa VARCHAR(10) NOT NULL,
   color VARCHAR(45) NOT NULL,
   PRIMARY KEY (id_vehiculo),
-  INDEX ind_vehiculos_usuarios (id_usuario ASC) VISIBLE,
-  UNIQUE INDEX placa_UNIQUE (placa ASC) VISIBLE,
+  INDEX ind_vehiculos_usuarios (id_usuario ASC),
+  UNIQUE INDEX placa_UNIQUE (placa ASC),
   CONSTRAINT fk_vehiculos_usuarios
     FOREIGN KEY (id_usuario)
     REFERENCES USUARIOS (id_usuario)
@@ -198,7 +198,7 @@ CREATE TABLE PAGOS (
   monto FLOAT NOT NULL,
   estado ENUM('Pendiente', 'Confirmado', 'Rechazado') NOT NULL DEFAULT 'Pendiente',
   PRIMARY KEY (id_pago),
-  INDEX ind_pagos_pedidos (id_pedido ASC) VISIBLE,
+  INDEX ind_pagos_pedidos (id_pedido ASC),
   CONSTRAINT fk_pagos_pedidos
     FOREIGN KEY (id_pedido)
     REFERENCES PEDIDOS (id_pedido)
@@ -219,8 +219,8 @@ CREATE TABLE DISTRIBUCIONES (
   estado ENUM('PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
   observaciones TEXT NULL,
   PRIMARY KEY (id_distribucion),
-  INDEX ind_distribuciones_usuarios (id_usuario ASC) VISIBLE,
-  INDEX ind_distribuciones_pedidos (id_pedido ASC) VISIBLE,
+  INDEX ind_distribuciones_usuarios (id_usuario ASC),
+  INDEX ind_distribuciones_pedidos (id_pedido ASC),
   CONSTRAINT fk_distribuciones_usuarios
     FOREIGN KEY (id_usuario)
     REFERENCES USUARIOS (id_usuario)
