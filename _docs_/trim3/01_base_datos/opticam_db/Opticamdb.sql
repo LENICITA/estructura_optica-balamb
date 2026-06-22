@@ -11,7 +11,7 @@ USE opticamdb;
 -- -----------------------------------------------------
 CREATE TABLE ROLES (
   id_rol INT NOT NULL AUTO_INCREMENT,
-  nombre ENUM('ADMIN', 'CLIENTE', 'REPARTIDOR') NOT NULL,
+  nombre VARCHAR(45) NOT NULL,
   PRIMARY KEY (id_rol))
 ENGINE = InnoDB;
 
