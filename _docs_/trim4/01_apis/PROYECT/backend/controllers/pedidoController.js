@@ -1,10 +1,10 @@
 // controllers/pedidoController.js
-import Pedido from '../models/pedidos.js';
-import PedidoProducto from '../models/pedidoprodutos.js';
+import PedidoModelo from '../models/pedidos.js';
+import PedidoProductoModelo from '../models/pedidoprodutos.js';
 import sequelize from '../config/database.js';
 
 // ============================================
-// UTILIDAD - CALCULAR COSTO DE ENVÍO SEGÚN CIUDAD
+// UTILIDAD - CALCULAR COSTO DE ENVÍO
 // ============================================
 const calcularCostoEnvio = (ciudad) => {
   if (!ciudad) return 10000;
@@ -16,14 +16,13 @@ const calcularCostoEnvio = (ciudad) => {
 };
 
 // ============================================
-// CLIENTE - CREAR PEDIDO
+// CLIENTE - CREAR PEDIDO (CON FÓRMULA)
 // ============================================
 export const crearPedido = async (req, res) => {
   try {
     const { id_formula, direccion_entrega, productos } = req.body;
     const usuario = req.usuario;
 
-    // Validar campos requeridos
     if (!direccion_entrega) {
       return res.status(400).json({
         success: false,
@@ -47,7 +46,7 @@ export const crearPedido = async (req, res) => {
     const ciudad = usuarioData?.ciudad || '';
     const costo_envio = calcularCostoEnvio(ciudad);
 
-    // Calcular subtotal
+    // Calcular subtotal de productos
     let subtotal = 0;
     for (const item of productos) {
       const [producto] = await sequelize.query(
@@ -63,7 +62,40 @@ export const crearPedido = async (req, res) => {
       subtotal += producto.precio * item.cantidad;
     }
 
-    const total = subtotal + costo_envio;
+    // ===== OBTENER COSTO DE LA FÓRMULA SI SE SELECCIONÓ =====
+    let costo_formula = 0;
+    let formulaData = null;
+
+    if (id_formula) {
+      const [formula] = await sequelize.query(
+        `SELECT f.*, u.nombre_completo, u.email, u.telefono
+         FROM FORMULAS f
+         JOIN USUARIOS u ON f.id_usuario = u.id_usuario
+         WHERE f.id_formula = ? AND f.estado = 'Aprobado'`,
+        { replacements: [id_formula], type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (!formula) {
+        return res.status(404).json({
+          success: false,
+          message: 'Fórmula no encontrada o no está aprobada'
+        });
+      }
+
+      // Verificar que la fórmula pertenece al usuario
+      if (formula.id_usuario !== usuario.id_usuario) {
+        return res.status(403).json({
+          success: false,
+          message: 'Esta fórmula no te pertenece'
+        });
+      }
+
+      costo_formula = formula.costo || 0;
+      formulaData = formula;
+    }
+
+    // Calcular total
+    const total = subtotal + costo_formula + costo_envio;
 
     // Crear el pedido
     const id_pedido = await PedidoModelo.crear({
@@ -85,12 +117,20 @@ export const crearPedido = async (req, res) => {
       data: {
         id_pedido: pedido.id_pedido,
         fecha_pedido: pedido.fecha_pedido,
-        fecha_entrega: pedido.fecha_entrega,
+        fecha_estimada: pedido.fecha_estimada,
         subtotal: subtotal,
+        costo_formula: costo_formula,
         costo_envio: costo_envio,
         total: total,
         estado: pedido.estado,
-        direccion_entrega: pedido.direccion_entrega
+        direccion_entrega: pedido.direccion_entrega,
+        formula: formulaData ? {
+          id_formula: formulaData.id_formula,
+          condicion: formulaData.condicion,
+          imagen_formula: formulaData.imagen_formula,
+          observaciones: formulaData.observaciones,
+          costo: formulaData.costo
+        } : null
       }
     });
 
@@ -129,7 +169,7 @@ export const obtenerMisPedidos = async (req, res) => {
 };
 
 // ============================================
-// CLIENTE - VER DETALLE DE PEDIDO
+// CLIENTE - VER DETALLE DE PEDIDO (CON FÓRMULA)
 // ============================================
 export const obtenerPedidoPorId = async (req, res) => {
   try {
@@ -145,7 +185,7 @@ export const obtenerPedidoPorId = async (req, res) => {
       });
     }
 
-    // Verificar permisos: solo dueño o admin
+    // Verificar permisos
     const esAdmin = usuario.rol === 'ADMIN';
     if (!esAdmin && pedido.id_usuario !== usuario.id_usuario) {
       return res.status(403).json({
@@ -162,7 +202,7 @@ export const obtenerPedidoPorId = async (req, res) => {
         pedido: {
           id_pedido: pedido.id_pedido,
           fecha_pedido: pedido.fecha_pedido,
-          fecha_entrega: pedido.fecha_entrega,
+          fecha_estimada: pedido.fecha_estimada,
           estado: pedido.estado,
           direccion_entrega: pedido.direccion_entrega,
           costo_envio: pedido.costo_envio,
@@ -171,8 +211,17 @@ export const obtenerPedidoPorId = async (req, res) => {
             id: pedido.id_usuario,
             nombre: pedido.nombre_completo,
             email: pedido.email,
-            telefono: pedido.telefono
-          }
+            telefono: pedido.telefono,
+            direccion: pedido.direccion,
+            ciudad: pedido.ciudad
+          },
+          formula: pedido.id_formula ? {
+            id_formula: pedido.id_formula,
+            condicion: pedido.condicion,
+            imagen_formula: pedido.imagen_formula,
+            observaciones: pedido.observaciones,
+            costo: pedido.costo_formula
+          } : null
         },
         productos
       }
@@ -204,7 +253,7 @@ export const cancelarPedido = async (req, res) => {
       });
     }
 
-    // Verificar que el pedido pertenece al usuario
+    // Verificar si el pedido pertenece al usuario
     if (pedido.id_usuario !== usuario.id_usuario) {
       return res.status(403).json({
         success: false,
@@ -212,7 +261,6 @@ export const cancelarPedido = async (req, res) => {
       });
     }
 
-    // Verificar que el pedido esté en estado cancelable
     const estadosNoCancelables = ['Entregado', 'En Proceso', 'Enviado'];
     if (estadosNoCancelables.includes(pedido.estado)) {
       return res.status(400).json({
@@ -242,7 +290,74 @@ export const cancelarPedido = async (req, res) => {
 };
 
 // ============================================
-// ADMIN - OBTENER TODOS LOS PEDIDOS
+// ADMIN - MARCAR PEDIDO COMO LISTO (50% + 50%)
+// ============================================
+export const marcarPedidoComoListo = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pedido = await PedidoModelo.obtenerPorId(id);
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    // Solo se puede marcar como listo si está en estado ABONADO
+    if (pedido.estado !== 'Abonado') {
+      return res.status(400).json({
+        success: false,
+        message: `El pedido debe estar en estado "Abonado". Estado actual: ${pedido.estado}`
+      });
+    }
+
+    // Verificar que tenga un abono del 50%
+    const [pagos] = await sequelize.query(
+      `SELECT eleccion_pago FROM PAGOS 
+       WHERE id_pedido = ? AND estado = 'Confirmado'`,
+      { replacements: [id], type: sequelize.QueryTypes.SELECT }
+    );
+
+    const tieneAbono50 = pagos.some(p => p.eleccion_pago === '50%');
+    if (!tieneAbono50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este pedido no tiene un abono del 50%. No se puede marcar como LISTO.'
+      });
+    }
+
+    // Verificar que no tenga pago completo ya
+    const tienePago100 = pagos.some(p => p.eleccion_pago === '100%');
+    if (tienePago100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este pedido ya fue pagado completamente (100%). No necesita marcar como LISTO.'
+      });
+    }
+
+    await PedidoModelo.actualizarEstado(id, 'Listo');
+
+    const pedidoActualizado = await PedidoModelo.obtenerPorId(id);
+
+    res.json({
+      success: true,
+      message: '✅ Pedido marcado como LISTO. El cliente puede pagar el 50% restante.',
+      data: pedidoActualizado
+    });
+
+  } catch (error) {
+    console.error('Error al marcar pedido como listo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al marcar pedido como listo',
+      error: error.message
+    });
+  }
+};
+
+// ============================================
+// ADMIN - OBTENER TODOS LOS PEDIDOS (CON FÓRMULA)
 // ============================================
 export const obtenerTodosLosPedidos = async (req, res) => {
   try {
@@ -271,7 +386,7 @@ export const obtenerPedidosPorEstado = async (req, res) => {
   try {
     const { estado } = req.params;
 
-    const estadosValidos = ['Pendiente', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado', 'Abonado', 'Pagado'];
+    const estadosValidos = ['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
@@ -305,11 +420,11 @@ export const actualizarEstadoPedido = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    const estadosValidos = ['Pendiente', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado', 'Abonado', 'Pagado'];
+    const estadosValidos = ['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado inválido. Debe ser: Pendiente, En Proceso, Enviado, Entregado, Cancelado, Abonado, Pagado'
+        message: 'Estado inválido. Debe ser: Pendiente, Abonado, Listo, Pagado, En Proceso, Enviado, Entregado, Cancelado'
       });
     }
 
@@ -342,17 +457,17 @@ export const actualizarEstadoPedido = async (req, res) => {
 };
 
 // ============================================
-// ADMIN - ACTUALIZAR FECHA DE ENTREGA
+// ADMIN - ACTUALIZAR FECHA ESTIMADA
 // ============================================
-export const actualizarFechaEntrega = async (req, res) => {
+export const actualizarFechaEstimada = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fecha_entrega } = req.body;
+    const { fecha_estimada } = req.body;
 
-    if (!fecha_entrega) {
+    if (!fecha_estimada) {
       return res.status(400).json({
         success: false,
-        message: 'La fecha de entrega es requerida'
+        message: 'La fecha estimada es requerida'
       });
     }
 
@@ -364,13 +479,13 @@ export const actualizarFechaEntrega = async (req, res) => {
       });
     }
 
-    await PedidoModelo.actualizarFechaEntrega(id, fecha_entrega);
+    await PedidoModelo.actualizarFechaEstimada(id, fecha_estimada);
 
     const pedidoActualizado = await PedidoModelo.obtenerPorId(id);
 
     res.json({
       success: true,
-      message: 'Fecha de entrega actualizada',
+      message: 'Fecha estimada de entrega actualizada',
       data: pedidoActualizado
     });
 
@@ -378,7 +493,7 @@ export const actualizarFechaEntrega = async (req, res) => {
     console.error('Error al actualizar fecha:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar la fecha de entrega',
+      message: 'Error al actualizar la fecha estimada de entrega',
       error: error.message
     });
   }

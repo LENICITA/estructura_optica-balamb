@@ -1,70 +1,69 @@
-
+// models/pagoModel.js
 import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
+// ============================================
+// MODELO PAGOS
+// ============================================
 const Pago = sequelize.define('Pago', {
-
-  id_pago: {                                   // ← AGREGAR ESTO
+  id_pago: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-id_pedido: {
-  type: DataTypes.INTEGER,
-  allowNull: false        // ← REQUERIDO
-},
-fecha_pago: {
-  type: DataTypes.DATEONLY,
-  allowNull: false,       // ← REQUERIDO (con defaultValue ya tiene valor)
-  defaultValue: DataTypes.NOW
-},
-eleccion_pago: {
-  type: DataTypes.STRING(45),
-  allowNull: false,       // ← REQUERIDO
-  validate: {
-    isIn: {
-      args: [['50%', '100%']],
-      msg: 'Elección de pago debe ser 50% o 100%'
+  id_pedido: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'PEDIDOS',
+      key: 'id_pedido'
     }
-  }
-},
-canal_pago: {
-  type: DataTypes.STRING(45),
-  allowNull: false,       // ← REQUERIDO (con defaultValue ya tiene valor)
-  defaultValue: 'Bold'
-},
-monto: {
-  type: DataTypes.FLOAT,
-  allowNull: false,       // ← REQUERIDO
-  validate: {
-    min: {
-      args: [0.01],
-      msg: 'El monto debe ser mayor a 0'
+  },
+  fecha_pago: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  eleccion_pago: {
+    type: DataTypes.ENUM('50%', '100%'),
+    allowNull: false
+  },
+  canal_pago: {
+    type: DataTypes.ENUM('Bold'),
+    allowNull: false,
+    defaultValue: 'Bold'
+  },
+  monto: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    validate: {
+      min: {
+        args: [0.01],
+        msg: 'El monto debe ser mayor a 0'
+      }
     }
+  },
+  estado: {
+    type: DataTypes.ENUM('Pendiente', 'Confirmado', 'Rechazado'),
+    allowNull: false,
+    defaultValue: 'Pendiente'
   }
-},
-estado: {
-  type: DataTypes.STRING(45),
-  allowNull: false,       // ← REQUERIDO (con defaultValue ya tiene valor)
-  defaultValue: 'Pendiente',
-  validate: {
-    isIn: {
-      args: [['Pendiente', 'Confirmado', 'Rechazado']],
-      msg: 'Estado inválido'
-    }
-  }
-}
 }, {
   tableName: 'PAGOS',
   timestamps: false
 });
 
+// ============================================
+// MÉTODOS DEL MODELO
+// ============================================
 const PagoModel = {
 
-  // ============================================
+  // ==========================================
   // CLIENTE
-  // ============================================
+  // ==========================================
 
+  // Crear un nuevo pago
+  
   crear: async (data) => {
     const pago = await Pago.create({
       id_pedido: data.id_pedido,
@@ -76,6 +75,8 @@ const PagoModel = {
     return pago.id_pago;
   },
 
+  //  Obtener pagos de un pedido
+  
   obtenerPorPedido: async (id_pedido) => {
     const pagos = await Pago.findAll({
       where: { id_pedido },
@@ -84,29 +85,56 @@ const PagoModel = {
     return pagos;
   },
 
+  //  Obtener pago por ID
+  
   obtenerPorId: async (id_pago) => {
     const pago = await Pago.findByPk(id_pago);
     return pago;
   },
 
-  // ============================================
+  // ==========================================
   // BOLD (webhook)
-  // ============================================
+  // ==========================================
 
+  /**
+   * Bold confirma el pago
+   * - Si es 100% → pedido a Pagado
+   * - Si es 50% y es el primer pago → pedido a Abonado
+   * - Si es 50% y ya tiene abono previo → pedido a Pagado (saldo restante)
+   */
   confirmarPago: async (id_pago) => {
     const pago = await Pago.findByPk(id_pago);
     if (!pago) return false;
-    await pago.update({ estado: 'Confirmado' });
     
-    // ===== LÓGICA PARA 50% y 100% =====
+    await pago.update({ estado: 'Confirmado' });
+
+    // Verificar si ya tiene un abono del 50% previo (excluyendo el pago actual)
+    const [abonosPrevios] = await sequelize.query(
+      `SELECT * FROM PAGOS 
+       WHERE id_pedido = ? 
+       AND estado = 'Confirmado' 
+       AND eleccion_pago = '50%'
+       AND id_pago != ?`,
+      { replacements: [pago.id_pedido, pago.id_pago] }
+    );
+    
+    const tieneAbonoPrevio = abonosPrevios && abonosPrevios.length > 0;
+
+    // Lógica para actualizar estado del pedido
     if (pago.eleccion_pago === '100%') {
-      // Pago completo → pedido Pagado
+      // Pago completo de una vez → Pagado
       await sequelize.query(
         'UPDATE PEDIDOS SET estado = "Pagado" WHERE id_pedido = ?',
         { replacements: [pago.id_pedido] }
       );
-    } else if (pago.eleccion_pago === '50%') {
-      // Abono del 50% → pedido Abonado
+    } else if (pago.eleccion_pago === '50%' && tieneAbonoPrevio) {
+      // Segundo pago del 50% (saldo restante) → Pagado
+      await sequelize.query(
+        'UPDATE PEDIDOS SET estado = "Pagado" WHERE id_pedido = ?',
+        { replacements: [pago.id_pedido] }
+      );
+    } else if (pago.eleccion_pago === '50%' && !tieneAbonoPrevio) {
+      // Primer pago del 50% (abono inicial) → Abonado
       await sequelize.query(
         'UPDATE PEDIDOS SET estado = "Abonado" WHERE id_pedido = ?',
         { replacements: [pago.id_pedido] }
@@ -115,6 +143,8 @@ const PagoModel = {
     return true;
   },
 
+  // Bold rechaza el pago
+   
   rechazarPago: async (id_pago) => {
     const pago = await Pago.findByPk(id_pago);
     if (!pago) return false;
@@ -122,10 +152,12 @@ const PagoModel = {
     return true;
   },
 
-  // ============================================
+  // ==========================================
   // ADMIN (solo consultas)
-  // ============================================
+  // ==========================================
 
+  // Obtener todos los pagos
+   
   obtenerTodos: async () => {
     const pagos = await sequelize.query(
       `SELECT p.*, pe.total as total_pedido
@@ -137,6 +169,8 @@ const PagoModel = {
     return pagos;
   },
 
+  // Obtener estadísticas de pagos
+   
   obtenerEstadisticas: async () => {
     const [stats] = await sequelize.query(
       `SELECT 
@@ -153,6 +187,7 @@ const PagoModel = {
     return stats;
   },
 
+  // Obtener pagos por rango de fechas
   obtenerPorRangoFechas: async (fechaInicio, fechaFin) => {
     const pagos = await Pago.findAll({
       where: {
@@ -165,10 +200,12 @@ const PagoModel = {
     return pagos;
   },
 
-  // ============================================
+  // ==========================================
   // UTILIDADES
-  // ============================================
+  // ==========================================
 
+  // Obtener total pagado de un pedido (suma de todos los pagos confirmados)
+   
   obtenerTotalPagado: async (id_pedido) => {
     const [result] = await sequelize.query(
       `SELECT SUM(monto) as total_pagado 
@@ -179,6 +216,8 @@ const PagoModel = {
     return parseFloat(result?.total_pagado) || 0;
   },
 
+  //Verificar si el pedido tiene un pago completo (100%)
+  
   tienePagoCompleto: async (id_pedido) => {
     const [pago] = await sequelize.query(
       `SELECT * FROM PAGOS 
@@ -188,6 +227,8 @@ const PagoModel = {
     return !!pago;
   },
 
+  // Verificar si el pedido tiene un abono del 50%
+  
   tieneAbono50: async (id_pedido) => {
     const [pago] = await sequelize.query(
       `SELECT * FROM PAGOS 
@@ -197,7 +238,10 @@ const PagoModel = {
     return !!pago;
   },
 
-  // ✅ NUEVO: Verificar si el pedido tiene pago completo (suma de abonos)
+  /**
+   * Verificar si el pedido tiene pago completo por suma de abonos
+   * (suma de todos los pagos confirmados >= total del pedido)
+   */
   tienePagoCompletoPorSuma: async (id_pedido) => {
     const [pedido] = await sequelize.query(
       'SELECT total FROM PEDIDOS WHERE id_pedido = ?',
@@ -207,6 +251,20 @@ const PagoModel = {
 
     const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
     return totalPagado >= pedido.total;
+  },
+
+  // Verificar si el pedido tiene un abono del 50% previo (excluyendo un pago específico)
+   
+  tieneAbono50Previo: async (id_pedido, id_pagoExcluir) => {
+    const [abonos] = await sequelize.query(
+      `SELECT * FROM PAGOS 
+       WHERE id_pedido = ? 
+       AND estado = 'Confirmado' 
+       AND eleccion_pago = '50%'
+       AND id_pago != ?`,
+      { replacements: [id_pedido, id_pagoExcluir] }
+    );
+    return abonos && abonos.length > 0;
   }
 };
 

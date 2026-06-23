@@ -2,7 +2,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-const Formula = sequelize.define('Formula', {
+const Formulas = sequelize.define('Formulas', {
   id_formula: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -29,31 +29,19 @@ const Formula = sequelize.define('Formula', {
     allowNull: true
   },
   fecha_creacion: {
-    type: DataTypes.DATEONLY,
+    type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
   },
   costo: {
     type: DataTypes.FLOAT,
-    allowNull: true,
-    defaultValue: null,
-    validate: {
-      min: {
-        args: [0],
-        msg: 'El costo no puede ser negativo'
-      }
-    }
+    allowNull: false,
+    defaultValue: 0
   },
   estado: {
-    type: DataTypes.STRING(45),
+    type: DataTypes.ENUM('Pendiente', 'Aprobado', 'Rechazado'),
     allowNull: false,
-    defaultValue: 'Pendiente',
-    validate: {
-      isIn: {
-        args: [['Pendiente', 'Aprobado', 'Rechazado']],
-        msg: 'Estado inválido. Debe ser: Pendiente, Aprobado o Rechazado'
-      }
-    }
+    defaultValue: 'Pendiente'
   }
 }, {
   tableName: 'FORMULAS',
@@ -61,7 +49,7 @@ const Formula = sequelize.define('Formula', {
 });
 
 // ========== MÉTODOS DEL MODELO ==========
-const FormulaModelo = {
+const Formula = {
 
   // ============================================
   // CLIENTE
@@ -69,7 +57,7 @@ const FormulaModelo = {
 
   // Crear una nueva fórmula (cliente sube)
   crear: async (data) => {
-    const formula = await Formula.create({
+    const formula = await Formulas.create({
       id_usuario: data.id_usuario,
       condicion: data.condicion,
       imagen_formula: data.imagen_formula,
@@ -81,7 +69,7 @@ const FormulaModelo = {
 
   // Obtener fórmulas de un cliente específico
   obtenerPorCliente: async (id_usuario) => {
-    const formulas = await Formula.findAll({
+    const formulas = await Formulas.findAll({
       where: { id_usuario },
       order: [['fecha_creacion', 'DESC']]
     });
@@ -90,7 +78,7 @@ const FormulaModelo = {
 
   // Obtener fórmula por ID (cliente ve su fórmula)
   obtenerPorId: async (id_formula) => {
-    const formula = await Formula.findByPk(id_formula);
+    const formula = await Formulas.findByPk(id_formula);
     return formula;
   },
 
@@ -125,7 +113,7 @@ const FormulaModelo = {
 
   // Asignar precio a una fórmula (admin)
   asignarPrecio: async (id_formula, costo, estado) => {
-    const formula = await Formula.findByPk(id_formula);
+    const formula = await Formulas.findByPk(id_formula);
     if (!formula) return false;
 
     await formula.update({
@@ -137,7 +125,7 @@ const FormulaModelo = {
 
   // Cambiar estado de una fórmula (admin)
   cambiarEstado: async (id_formula, estado) => {
-    const formula = await Formula.findByPk(id_formula);
+    const formula = await Formulas.findByPk(id_formula);
     if (!formula) return false;
 
     await formula.update({ estado });
@@ -150,7 +138,7 @@ const FormulaModelo = {
 
   // Verificar si una fórmula pertenece a un usuario
   perteneceAUsuario: async (id_formula, id_usuario) => {
-    const formula = await Formula.findOne({
+    const formula = await Formulas.findOne({
       where: {
         id_formula,
         id_usuario
@@ -161,14 +149,14 @@ const FormulaModelo = {
 
   // Verificar si una fórmula está aprobada
   estaAprobada: async (id_formula) => {
-    const formula = await Formula.findByPk(id_formula);
+    const formula = await Formulas.findByPk(id_formula);
     if (!formula) return false;
     return formula.estado === 'Aprobado';
   },
 
   // Obtener fórmulas por estado
   obtenerPorEstado: async (estado) => {
-    const formulas = await Formula.findAll({
+    const formulas = await Formulas.findAll({
       where: { estado },
       order: [['fecha_creacion', 'DESC']]
     });

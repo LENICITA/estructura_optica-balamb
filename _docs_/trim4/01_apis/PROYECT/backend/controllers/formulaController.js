@@ -1,6 +1,6 @@
 // controllers/formulaController.js
-import Formula from '../models/Formula.js';
-import sequelize from '../config/database.js';
+import FormulaModelo from '../models/formula.js';
+import { obtenerUrlImagen } from '../utils/imageUtils.js';
 
 // ============================================
 // CLIENTE - SUBIR FÓRMULA
@@ -8,9 +8,8 @@ import sequelize from '../config/database.js';
 export const subirFormula = async (req, res) => {
   try {
     const { condicion, imagen_formula, observaciones } = req.body;
-    const usuario = req.usuario; // Viene del authMiddleware
+    const usuario = req.usuario;
 
-    // Validar campos requeridos
     if (!condicion || !imagen_formula) {
       return res.status(400).json({
         success: false,
@@ -18,35 +17,32 @@ export const subirFormula = async (req, res) => {
       });
     }
 
-    // Validar condición
     const condicionesValidas = ['DALTONISMO', 'ASTIGMATISMO', 'MIOPIA', 'BAJA VISION'];
     if (!condicionesValidas.includes(condicion)) {
       return res.status(400).json({
         success: false,
-        message: 'Condición inválida. Debe ser: DALTONISMO, ASTIGMATISMO, MIOPIA o BAJA VISION'
+        message: 'Condición inválida'
       });
     }
 
-    // Crear la fórmula
-    const nuevoId = await FormulaModelo.crear ({
+    const nuevoId = await FormulaModelo.crear({
       id_usuario: usuario.id_usuario,
       condicion,
-      imagen_formula,
+      imagen_formula: imagen_formula,
       observaciones: observaciones || null
     });
 
     const nuevaFormula = await FormulaModelo.obtenerPorId(nuevoId);
 
+    const formulaConImagen = {
+      ...nuevaFormula,
+      imagen_url: obtenerUrlImagen(nuevaFormula.imagen_formula, 400, 400)
+    };
+
     res.status(201).json({
       success: true,
       message: 'Fórmula subida exitosamente. Esperando revisión del administrador',
-      data: {
-        id_formula: nuevaFormula.id_formula,
-        condicion: nuevaFormula.condicion,
-        estado: nuevaFormula.estado,
-        costo: nuevaFormula.costo,
-        fecha_creacion: nuevaFormula.fecha_creacion
-      }
+      data: formulaConImagen
     });
 
   } catch (error) {
@@ -68,10 +64,15 @@ export const obtenerMisFormulas = async (req, res) => {
 
     const formulas = await FormulaModelo.obtenerPorCliente(usuario.id_usuario);
 
+    const formulasConImagen = formulas.map(f => ({
+      ...f,
+      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400)
+    }));
+
     res.json({
       success: true,
-      count: formulas.length,
-      data: formulas
+      count: formulasConImagen.length,
+      data: formulasConImagen
     });
 
   } catch (error) {
@@ -101,10 +102,6 @@ export const obtenerFormulaPorId = async (req, res) => {
       });
     }
 
-    // ❌ ELIMINADO: Verificación manual de roles
-    // ✅ Ahora solo verifica que sea el dueño o admin (adminMiddleware se encarga)
-
-    // Verificar que el usuario sea el dueño de la fórmula
     if (formula.id_usuario !== usuario.id_usuario) {
       return res.status(403).json({
         success: false,
@@ -112,9 +109,14 @@ export const obtenerFormulaPorId = async (req, res) => {
       });
     }
 
+    const formulaConImagen = {
+      ...formula,
+      imagen_url: obtenerUrlImagen(formula.imagen_formula, 400, 400)
+    };
+
     res.json({
       success: true,
-      data: formula
+      data: formulaConImagen
     });
 
   } catch (error) {
@@ -134,10 +136,15 @@ export const obtenerTodasLasFormulas = async (req, res) => {
   try {
     const formulas = await FormulaModelo.obtenerTodas();
 
+    const formulasConImagen = formulas.map(f => ({
+      ...f,
+      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400)
+    }));
+
     res.json({
       success: true,
-      count: formulas.length,
-      data: formulas
+      count: formulasConImagen.length,
+      data: formulasConImagen
     });
 
   } catch (error) {
@@ -157,10 +164,15 @@ export const obtenerFormulasPendientes = async (req, res) => {
   try {
     const formulas = await FormulaModelo.obtenerPendientes();
 
+    const formulasConImagen = formulas.map(f => ({
+      ...f,
+      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400)
+    }));
+
     res.json({
       success: true,
-      count: formulas.length,
-      data: formulas
+      count: formulasConImagen.length,
+      data: formulasConImagen
     });
 
   } catch (error) {
@@ -181,7 +193,6 @@ export const asignarPrecioFormula = async (req, res) => {
     const { id } = req.params;
     const { costo, estado } = req.body;
 
-    // Validar campos requeridos
     if (costo === undefined || costo === null) {
       return res.status(400).json({
         success: false,
@@ -196,7 +207,6 @@ export const asignarPrecioFormula = async (req, res) => {
       });
     }
 
-    // Verificar si la fórmula existe
     const formula = await FormulaModelo.obtenerPorId(id);
     if (!formula) {
       return res.status(404).json({
@@ -205,16 +215,20 @@ export const asignarPrecioFormula = async (req, res) => {
       });
     }
 
-    // Asignar precio
     const estadoFinal = estado || 'Aprobado';
     await FormulaModelo.asignarPrecio(id, costo, estadoFinal);
 
     const formulaActualizada = await FormulaModelo.obtenerPorId(id);
 
+    const formulaConImagen = {
+      ...formulaActualizada,
+      imagen_url: obtenerUrlImagen(formulaActualizada.imagen_formula, 400, 400)
+    };
+
     res.json({
       success: true,
       message: `Precio asignado exitosamente. Estado: ${estadoFinal}`,
-      data: formulaActualizada
+      data: formulaConImagen
     });
 
   } catch (error) {
@@ -235,7 +249,6 @@ export const cambiarEstadoFormula = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    // Validar estado
     const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
@@ -244,7 +257,6 @@ export const cambiarEstadoFormula = async (req, res) => {
       });
     }
 
-    // Verificar si la fórmula existe
     const formula = await FormulaModelo.obtenerPorId(id);
     if (!formula) {
       return res.status(404).json({
@@ -253,15 +265,19 @@ export const cambiarEstadoFormula = async (req, res) => {
       });
     }
 
-    // Cambiar estado
     await FormulaModelo.cambiarEstado(id, estado);
 
     const formulaActualizada = await FormulaModelo.obtenerPorId(id);
 
+    const formulaConImagen = {
+      ...formulaActualizada,
+      imagen_url: obtenerUrlImagen(formulaActualizada.imagen_formula, 400, 400)
+    };
+
     res.json({
       success: true,
       message: `Estado actualizado a: ${estado}`,
-      data: formulaActualizada
+      data: formulaConImagen
     });
 
   } catch (error) {
@@ -291,7 +307,6 @@ export const verificarFormulaAprobada = async (req, res) => {
       });
     }
 
-    // Verificar que la fórmula pertenece al usuario
     if (formula.id_usuario !== usuario.id_usuario) {
       return res.status(403).json({
         success: false,
@@ -307,7 +322,8 @@ export const verificarFormulaAprobada = async (req, res) => {
         id_formula: formula.id_formula,
         aprobada: aprobada,
         estado: formula.estado,
-        costo: formula.costo
+        costo: formula.costo,
+        imagen_url: obtenerUrlImagen(formula.imagen_formula, 400, 400)
       }
     });
 

@@ -1,193 +1,283 @@
-//El repartidor ve:
-//Pedidos pendientes
-//Pedidos en entrega
-//Cliente
-//Dirección
-//Tiempo estimado
-//Cantidad de artículos
-//Detalles pedido
-//El repartidor puede:
-//Ver datos completos de entrega
-//Ver artículos
-//Ver dirección
-//Ver teléfono
-//Marcar que llegó
-//Historial
-//El repartidor ve:
-//Pedidos entregados
-//Pedidos en entrega
-//Fecha de entrega
-
-import { DataTypes } from 'sequelize';
+// models/Distribucion.js
+import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
-
-import User from './user.js';
-import Vehiculo from './Vehiculo.js';
-
+import Pedido from './pedidos.js';
+import Usuario from './User.js';
+// ============================================
+// MODELO DISTRIBUCIONES
+// ============================================
 const Distribucion = sequelize.define('Distribucion', {
-
-    id_distribucion: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-
-    id_pedido: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-
-    id_usuario: {
-        // repartidor
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'USUARIOS',
-            key: 'id_usuario'
-        }
-    },
-
-    estado: {
-        type: DataTypes.STRING(30),
-        allowNull: false,
-        defaultValue: 'PENDIENTE',
-        validate: {
-            isIn: {
-                args: [[
-                    'PENDIENTE',
-                    'EN_ENTREGA',
-                    'ENTREGADO',
-                    'CANCELADO'
-                ]],
-                msg: 'Estado inválido'
-            }
-        }
-    },
-
-    fecha_asignacion: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    },
-
-    fecha_entrega: {
-        type: DataTypes.DATE,
-        allowNull: true
-    },
-
-    observaciones: {
-        type: DataTypes.TEXT,
-        allowNull: true
+  id_distribucion: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  id_pedido: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'PEDIDOS',
+      key: 'id_pedido'
     }
-
+  },
+  id_usuario: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'USUARIOS',
+      key: 'id_usuario'
+    }
+  },
+  estado: {
+    type: DataTypes.ENUM('PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'),
+    allowNull: false,
+    defaultValue: 'PENDIENTE'
+  },
+  fecha_asignacion: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  fecha_entrega: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  observaciones: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  }
 }, {
-
-    tableName: 'DISTRIBUCIONES',
-    timestamps: false,
-
-    hooks: {
-
-        beforeCreate: async (distribucion) => {
-
-            distribucion.estado =
-                distribucion.estado.toUpperCase();
-        },
-
-        beforeUpdate: async (distribucion) => {
-
-            if(distribucion.changed('estado')){
-
-                distribucion.estado =
-                    distribucion.estado.toUpperCase();
-            }
-
-            if(
-                distribucion.estado === 'ENTREGADO'
-                && !distribucion.fecha_entrega
-            ){
-                distribucion.fecha_entrega = new Date();
-            }
-        }
-
+  tableName: 'DISTRIBUCIONES',
+  timestamps: false,
+  hooks: {
+    beforeCreate: (distribucion) => {
+      distribucion.estado = distribucion.estado.toUpperCase();
+    },
+    beforeUpdate: (distribucion) => {
+      if (distribucion.changed('estado')) {
+        distribucion.estado = distribucion.estado.toUpperCase();
+      }
+      if (distribucion.estado === 'ENTREGADO' && !distribucion.fecha_entrega) {
+        distribucion.fecha_entrega = new Date();
+      }
     }
-
+  }
 });
 
-Distribucion.prototype.iniciarEntrega =
-async function(){
+// ============================================
+// RELACIONES (se definen aquí)
+// ============================================
+// Relación con PEDIDOS
+Distribucion.belongsTo(sequelize.models.Pedido, {
+  foreignKey: 'id_pedido',
+  as: 'pedido'
+});
 
-    this.estado = 'EN_ENTREGA';
+// Relación con USUARIOS (repartidor)
+Distribucion.belongsTo(sequelize.models.Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'repartidor'
+});
 
-    await this.save();
+// ============================================
+// MÉTODOS DEL MODELO
+// ============================================
+const DistribucionModelo = {
 
-    return this;
-};
-
-Distribucion.prototype.marcarEntregado =
-async function(){
-
-    this.estado = 'ENTREGADO';
-
-    this.fecha_entrega = new Date();
-
-    await this.save();
-
-    return this;
-};
-
-Distribucion.prototype.cancelarEntrega =
-async function(observacion){
-
-    this.estado = 'CANCELADO';
-
-    this.observaciones = observacion;
-
-    await this.save();
-
-    return this;
-};
-
-Distribucion.obtenerPendientes =
-async function(){
-
-    return await this.findAll({
-
-        where:{
-            estado:'PENDIENTE'
-        }
-
+  /**
+   * Crear una nueva distribución (admin asigna pedido a repartidor)
+   */
+  crear: async (data) => {
+    const distribucion = await Distribucion.create({
+      id_pedido: data.id_pedido,
+      id_usuario: data.id_usuario,
+      estado: 'PENDIENTE',
+      observaciones: data.observaciones || null
     });
-};
+    return distribucion;
+  },
 
-Distribucion.obtenerEnEntrega =
-async function(id_usuario){
-
-    return await this.findAll({
-
-        where:{
-            id_usuario,
-            estado:'EN_ENTREGA'
-        }
-
-    });
-
-};
-
-Distribucion.obtenerHistorial =
-async function(id_usuario){
-
-    return await this.findAll({
-
-        where:{
-            id_usuario,
-            estado:'ENTREGADO'
+  /**
+   * Obtener distribución por ID (con datos del pedido)
+   */
+  obtenerPorId: async (id_distribucion) => {
+    const distribucion = await Distribucion.findByPk(id_distribucion, {
+      include: [
+        {
+          model: Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         },
-
-        order:[
-            ['fecha_entrega','DESC']
-        ]
-
+        {
+          model: Usuario,
+          as: 'repartidor',
+          attributes: ['id_usuario', 'nombre_completo', 'email', 'telefono']
+        }
+      ]
     });
+    return distribucion;
+  },
 
+  /**
+   * Obtener todas las distribuciones (admin)
+   */
+  obtenerTodas: async () => {
+    const distribuciones = await Distribucion.findAll({
+      include: [
+        {
+          model: Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+        },
+        {
+          model: Usuario,
+          as: 'repartidor',
+          attributes: ['id_usuario', 'nombre_completo']
+        }
+      ],
+      order: [['fecha_asignacion', 'DESC']]
+    });
+    return distribuciones;
+  },
+
+  /**
+   * Obtener distribuciones pendientes de un repartidor (con dirección del pedido)
+   */
+  obtenerPendientes: async (id_usuario) => {
+    const distribuciones = await Distribucion.findAll({
+      where: {
+        id_usuario,
+        estado: 'PENDIENTE'
+      },
+      include: [
+        {
+          model: Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+        }
+      ],
+      order: [['fecha_asignacion', 'ASC']]
+    });
+    return distribuciones;
+  },
+
+  /**
+   * Obtener distribuciones en entrega de un repartidor (con dirección del pedido)
+   */
+  obtenerEnEntrega: async (id_usuario) => {
+    const distribuciones = await Distribucion.findAll({
+      where: {
+        id_usuario,
+        estado: 'EN_ENTREGA'
+      },
+      include: [
+        {
+          model: Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+        }
+      ],
+      order: [['fecha_asignacion', 'DESC']]
+    });
+    return distribuciones;
+  },
+
+  /**
+   * Obtener historial de entregas de un repartidor (con dirección del pedido)
+   */
+  obtenerHistorial: async (id_usuario) => {
+    const distribuciones = await Distribucion.findAll({
+      where: {
+        id_usuario,
+        estado: 'ENTREGADO'
+      },
+      include: [
+        {
+          model: Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+        }
+      ],
+      order: [['fecha_entrega', 'DESC']]
+    });
+    return distribuciones;
+  },
+
+  /**
+   * Iniciar entrega (repartidor)
+   */
+  iniciarEntrega: async (id_distribucion) => {
+    const distribucion = await Distribucion.findByPk(id_distribucion);
+    if (!distribucion) return null;
+    
+    if (distribucion.estado !== 'PENDIENTE') {
+      throw new Error(`No se puede iniciar una entrega en estado ${distribucion.estado}`);
+    }
+    
+    await distribucion.update({ estado: 'EN_ENTREGA' });
+    return distribucion;
+  },
+
+  /**
+   * Marcar como entregado (repartidor) y actualizar estado del pedido
+   */
+  marcarEntregado: async (id_distribucion) => {
+    const distribucion = await Distribucion.findByPk(id_distribucion);
+    if (!distribucion) return null;
+    
+    if (distribucion.estado !== 'EN_ENTREGA') {
+      throw new Error(`No se puede marcar como entregado en estado ${distribucion.estado}`);
+    }
+    
+    await distribucion.update({
+      estado: 'ENTREGADO',
+      fecha_entrega: new Date()
+    });
+    
+    // Actualizar estado del pedido a 'Entregado'
+    await sequelize.query(
+      'UPDATE PEDIDOS SET estado = "Entregado" WHERE id_pedido = ?',
+      { replacements: [distribucion.id_pedido] }
+    );
+    
+    return distribucion;
+  },
+
+  /**
+   * Cancelar entrega (admin)
+   */
+  cancelarEntrega: async (id_distribucion, observacion) => {
+    const distribucion = await Distribucion.findByPk(id_distribucion);
+    if (!distribucion) return null;
+    
+    await distribucion.update({
+      estado: 'CANCELADO',
+      observaciones: observacion || 'Cancelado por administrador'
+    });
+    
+    // Actualizar estado del pedido a 'Pendiente'
+    await sequelize.query(
+      'UPDATE PEDIDOS SET estado = "Pendiente" WHERE id_pedido = ?',
+      { replacements: [distribucion.id_pedido] }
+    );
+    
+    return distribucion;
+  },
+
+  /**
+   * Verificar si un pedido ya tiene distribución activa
+   */
+  pedidoTieneDistribucionActiva: async (id_pedido) => {
+    const distribucion = await Distribucion.findOne({
+      where: {
+        id_pedido,
+        estado: {
+          [Op.in]: ['PENDIENTE', 'EN_ENTREGA']
+        }
+      }
+    });
+    return !!distribucion;
+  }
 };
 
-export default Distribucion;
+export default DistribucionModelo;

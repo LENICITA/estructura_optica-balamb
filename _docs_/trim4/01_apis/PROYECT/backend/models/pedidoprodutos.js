@@ -140,4 +140,4 @@ const PedidoProductoModelo  = {
   }
 };
 
-export default PedidoProducto;
+export default PedidoProductoModelo;
