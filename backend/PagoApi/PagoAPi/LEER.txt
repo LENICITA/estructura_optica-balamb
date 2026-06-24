@@ -1,0 +1,398 @@
+Endpoints disponibles:
+
+Método	Endpoint	Descripción
+GET	/api/pagos	Obtener todos los pagos (Admin)
+GET	/api/pagos/:id	Obtener un pago por ID
+GET	/api/pagos/pedido/:pedidoId	Pagos de un pedido
+GET	/api/pagos/estadisticas	Estadísticas de pagos
+GET	/api/pagos/rango-fechas?fechaInicio=2026-01-01&fechaFin=2026-12-31	Pagos por rango
+POST	/api/pagos	Crear un pago
+PUT	/api/pagos/:id	Actualizar un pago
+PUT	/api/pagos/:id/confirmar	Confirmar pago
+PUT	/api/pagos/:id/rechazar	Rechazar pago
+PUT	/api/pagos/:id/reembolsar	Reembolsar pago
+DELETE	/api/pagos/:id	Eliminar un pago
+
+
+
+Ejemplo de petición:
+
+# Crear un pago
+POST http://localhost:3000/api/pagos
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "id_pedido": 1,
+  "eleccion_pago": "Tarjeta Crédito",
+  "canal_pago": "Web",
+  "monto": 150000
+}
+
+
+
+
+
+==================================================================================
+
+PARA ADAPTAR AL PROYECTO POR SI ALGO 
+
+===================================================================================
+
+
+¿Qué archivos necesitas crear o modificar?
+Crear (si no existen):
+models/pedidoModel.js
+
+models/productoModel.js
+
+models/distribucionModel.js
+
+Ya tienes (de lo que hicimos):
+models/pagoModel.js ✅
+
+controllers/pagosController.js ✅
+
+routes/pagosRoutes.js ✅
+
+Modificar (agregar funcionalidades):
+controllers/pagosController.js (agregar conexión con distribución)
+
+controllers/reportesController.js (agregar reportes financieros)
+
+routes/reportesRoutes.js (agregar nuevo endpoint)
+
+
+
+Modelo Pedido (debes tenerlo o crearlo)
+javascript
+// models/pedidoModel.js
+const db = require('../config/db');
+
+const PedidoModel = {
+  // Obtener pedido por ID
+  obtenerPorId: async (id_pedido) => {
+    const query = `
+      SELECT p.*, u.nombre_completo as cliente_nombre
+      FROM PEDIDOS p
+      JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+      WHERE p.id_pedido = ?
+    `;
+    const [rows] = await db.promise().query(query, [id_pedido]);
+    return rows[0];
+  },
+
+  // Actualizar estado del pedido
+  actualizarEstado: async (id_pedido, estado) => {
+    const query = 'UPDATE PEDIDOS SET estado = ? WHERE id_pedido = ?';
+    const [result] = await db.promise().query(query, [estado, id_pedido]);
+    return result.affectedRows > 0;
+  },
+
+  // Obtener total del pedido
+  obtenerTotal: async (id_pedido) => {
+    const query = 'SELECT total FROM PEDIDOS WHERE id_pedido = ?';
+    const [rows] = await db.promise().query(query, [id_pedido]);
+    return rows[0] ? rows[0].total : 0;
+  }
+};
+
+module.exports = PedidoModel;
+🔗 Paso 3: Conectar el controlador de pagos con el modelo de pedidos
+En tu pagosController.js, ya usamos PedidoModel (o consultas directas). Asegúrate de importarlo:
+
+javascript
+// controllers/pagosController.js
+const PagoModel = require('../models/pagoModel');
+const PedidoModel = require('../models/pedidoModel');  // 👈 Importar modelo de pedidos
+const db = require('../config/db');
+
+const confirmarPago = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pago = await PagoModel.obtenerPorId(id);
+    
+    if (!pago) {
+      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    }
+    
+    if (pago.estado === 'Confirmado') {
+      return res.status(400).json({ success: false, message: 'El pago ya está confirmado' });
+    }
+    
+    // 1. Confirmar el pago
+    await PagoModel.actualizarEstado(id, 'Confirmado');
+    
+    // 2. Actualizar el estado del pedido a 'Pagado' (usando el modelo)
+    await PedidoModel.actualizarEstado(pago.id_pedido, 'Pagado');
+    
+    // 3. (Opcional) Reducir stock de productos
+    await reducirStockPedido(pago.id_pedido);
+    
+    const pagoActualizado = await PagoModel.obtenerPorId(id);
+    
+    res.json({
+      success: true,
+      message: 'Pago confirmado exitosamente',
+      data: pagoActualizado
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al confirmar el pago',
+      error: error.message
+    });
+  }
+};
+
+// Función auxiliar para reducir stock
+const reducirStockPedido = async (id_pedido) => {
+  // Obtener productos del pedido
+  const [productos] = await db.promise().query(`
+    SELECT pp.id_producto, pp.cant_productos, p.stock
+    FROM PEDIDOS_PRODUCTOS pp
+    JOIN PRODUCTOS p ON pp.id_producto = p.id_producto
+    WHERE pp.id_pedido = ?
+  `, [id_pedido]);
+  
+  // Reducir stock de cada producto
+  for (const item of productos) {
+    await db.promise().query(
+      'UPDATE PRODUCTOS SET stock = stock - ? WHERE id_producto = ? AND stock >= ?',
+      [item.cant_productos, item.id_producto, item.cant_productos]
+    );
+  }
+};
+
+module.exports = {
+  // ... todos los demás exports
+  confirmarPago  // ya lo tienes
+};
+📦 Paso 4: Adaptar el inventario (productos) para que se actualice con pagos
+Modelo Producto (models/productoModel.js)
+javascript
+// models/productoModel.js
+const db = require('../config/db');
+
+const ProductoModel = {
+  // Reducir stock de un producto
+  reducirStock: async (id_producto, cantidad) => {
+    const query = `
+      UPDATE PRODUCTOS 
+      SET stock = stock - ? 
+      WHERE id_producto = ? AND stock >= ?
+    `;
+    const [result] = await db.promise().query(query, [cantidad, id_producto, cantidad]);
+    return result.affectedRows > 0;
+  },
+
+  // Aumentar stock (para reembolsos o cancelaciones)
+  aumentarStock: async (id_producto, cantidad) => {
+    const query = 'UPDATE PRODUCTOS SET stock = stock + ? WHERE id_producto = ?';
+    const [result] = await db.promise().query(query, [cantidad, id_producto]);
+    return result.affectedRows > 0;
+  },
+
+  // Verificar si hay stock suficiente
+  verificarStock: async (id_producto, cantidad) => {
+    const query = 'SELECT stock FROM PRODUCTOS WHERE id_producto = ?';
+    const [rows] = await db.promise().query(query, [id_producto]);
+    return rows[0] && rows[0].stock >= cantidad;
+  }
+};
+
+module.exports = ProductoModel;
+🔄 Paso 5: Adaptar el reembolso para que devuelva el stock
+En pagosController.js, mejora la función de reembolso:
+
+javascript
+const ProductoModel = require('../models/productoModel');
+
+const reembolsarPago = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pago = await PagoModel.obtenerPorId(id);
+    
+    if (!pago) {
+      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    }
+    
+    if (pago.estado !== 'Confirmado') {
+      return res.status(400).json({ success: false, message: 'Solo se pueden reembolsar pagos confirmados' });
+    }
+    
+    // 1. Reembolsar el pago
+    await PagoModel.actualizarEstado(id, 'Reembolsado');
+    
+    // 2. Actualizar estado del pedido
+    await PedidoModel.actualizarEstado(pago.id_pedido, 'Reembolsado');
+    
+    // 3. Devolver el stock (opcional, depende de tu negocio)
+    await devolverStockPedido(pago.id_pedido);
+    
+    const pagoActualizado = await PagoModel.obtenerPorId(id);
+    
+    res.json({
+      success: true,
+      message: 'Pago reembolsado exitosamente',
+      data: pagoActualizado
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al reembolsar el pago',
+      error: error.message
+    });
+  }
+};
+
+// Función auxiliar para devolver stock
+const devolverStockPedido = async (id_pedido) => {
+  const [productos] = await db.promise().query(`
+    SELECT pp.id_producto, pp.cant_productos
+    FROM PEDIDOS_PRODUCTOS pp
+    WHERE pp.id_pedido = ?
+  `, [id_pedido]);
+  
+  for (const item of productos) {
+    await db.promise().query(
+      'UPDATE PRODUCTOS SET stock = stock + ? WHERE id_producto = ?',
+      [item.cant_productos, item.id_producto]
+    );
+  }
+};
+📊 Paso 6: Adaptar reportes para que incluyan pagos
+Nuevo endpoint en reportesRoutes.js
+javascript
+// routes/reportesRoutes.js (agregar esto)
+router.get('/financieros', verifyToken, authorizeRoles(['admin']), reportesController.obtenerReporteFinanciero);
+Controlador de reportes (controllers/reportesController.js)
+javascript
+// controllers/reportesController.js
+const db = require('../config/db');
+
+const obtenerReporteFinanciero = async (req, res) => {
+  try {
+    const { fechaInicio, fechaFin } = req.query;
+    
+    let whereClause = '';
+    let params = [];
+    
+    if (fechaInicio && fechaFin) {
+      whereClause = 'WHERE p.fecha_pago BETWEEN ? AND ?';
+      params = [fechaInicio, fechaFin];
+    }
+    
+    // 1. Total recaudado por método de pago
+    const [porMetodo] = await db.promise().query(`
+      SELECT 
+        p.eleccion_pago,
+        COUNT(*) as cantidad,
+        SUM(p.monto) as total
+      FROM PAGOS p
+      ${whereClause}
+      AND p.estado = 'Confirmado'
+      GROUP BY p.eleccion_pago
+    `, params);
+    
+    // 2. Pagos por día
+    const [porDia] = await db.promise().query(`
+      SELECT 
+        p.fecha_pago,
+        COUNT(*) as cantidad,
+        SUM(p.monto) as total
+      FROM PAGOS p
+      ${whereClause}
+      AND p.estado = 'Confirmado'
+      GROUP BY p.fecha_pago
+      ORDER BY p.fecha_pago DESC
+      LIMIT 30
+    `, params);
+    
+    // 3. Resumen general
+    const [resumen] = await db.promise().query(`
+      SELECT 
+        SUM(CASE WHEN estado = 'Confirmado' THEN monto ELSE 0 END) as total_confirmado,
+        SUM(CASE WHEN estado = 'Pendiente' THEN monto ELSE 0 END) as total_pendiente,
+        SUM(CASE WHEN estado = 'Reembolsado' THEN monto ELSE 0 END) as total_reembolsado,
+        COUNT(CASE WHEN estado = 'Confirmado' THEN 1 END) as pagos_exitosos,
+        COUNT(CASE WHEN estado = 'Rechazado' THEN 1 END) as pagos_fallidos
+      FROM PAGOS p
+      ${whereClause}
+    `, params);
+    
+    res.json({
+      success: true,
+      data: {
+        resumen: resumen[0],
+        por_metodo_pago: porMetodo,
+        evolucion_diaria: porDia
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener reporte financiero',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { obtenerReporteFinanciero };
+🚚 Paso 7: Conectar pagos con distribución
+Cuando un pago se confirma, automáticamente debería crear una orden de distribución:
+
+javascript
+// controllers/pagosController.js (agregar en confirmarPago)
+const DistribucionModel = require('../models/distribucionModel');
+
+const confirmarPago = async (req, res) => {
+  try {
+    // ... validaciones existentes ...
+    
+    await PagoModel.actualizarEstado(id, 'Confirmado');
+    await PedidoModel.actualizarEstado(pago.id_pedido, 'Pagado');
+    await reducirStockPedido(pago.id_pedido);
+    
+    // 👈 NUEVO: Crear orden de distribución
+    await DistribucionModel.crearDesdePedido(pago.id_pedido);
+    
+    // ... respuesta ...
+  }
+};
+Modelo de distribución (models/distribucionModel.js)
+javascript
+// models/distribucionModel.js
+const db = require('../config/db');
+
+const DistribucionModel = {
+  crearDesdePedido: async (id_pedido) => {
+    // Obtener datos del pedido
+    const [pedido] = await db.promise().query(`
+      SELECT p.*, u.direccion, u.ciudad, u.telefono
+      FROM PEDIDOS p
+      JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+      WHERE p.id_pedido = ?
+    `, [id_pedido]);
+    
+    if (pedido.length === 0) return null;
+    
+    // Crear registro de distribución
+    const query = `
+      INSERT INTO DISTRIBUCION (id_pedido, direccion_entrega, ciudad, estado, fecha_asignacion)
+      VALUES (?, ?, ?, 'Pendiente', CURDATE())
+    `;
+    const [result] = await db.promise().query(query, [
+      id_pedido,
+      pedido[0].direccion_entrega,
+      pedido[0].ciudad
+    ]);
+    
+    return result.insertId;
+  }
+};
+
+module.exports = DistribucionModel;
