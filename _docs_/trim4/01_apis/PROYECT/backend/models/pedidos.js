@@ -235,4 +235,5 @@ const PedidoModelo = {
   }
 };
 
+export { Pedido };
 export default PedidoModelo;

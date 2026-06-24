@@ -140,4 +140,5 @@ const PedidoProductoModelo  = {
   }
 };
 
+export { PedidoProducto }; // Exportación nombrada del modelo
 export default PedidoProductoModelo;

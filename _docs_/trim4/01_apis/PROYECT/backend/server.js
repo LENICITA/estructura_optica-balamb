@@ -13,7 +13,7 @@ import formulaRoutes from './routes/formulaRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import sequelize from './config/database.js';
-import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
+import { Usuario, Vehiculo, Role, RolUsuario, Pedido, Distribucion } from './models/relaciones.js';
 
 dotenv.config();
 

@@ -1,8 +1,6 @@
 // models/Distribucion.js
 import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
-import Pedido from './pedidos.js';
-import Usuario from './User.js';
 // ============================================
 // MODELO DISTRIBUCIONES
 // ============================================
@@ -65,21 +63,6 @@ const Distribucion = sequelize.define('Distribucion', {
 });
 
 // ============================================
-// RELACIONES (se definen aquí)
-// ============================================
-// Relación con PEDIDOS
-Distribucion.belongsTo(sequelize.models.Pedido, {
-  foreignKey: 'id_pedido',
-  as: 'pedido'
-});
-
-// Relación con USUARIOS (repartidor)
-Distribucion.belongsTo(sequelize.models.Usuario, {
-  foreignKey: 'id_usuario',
-  as: 'repartidor'
-});
-
-// ============================================
 // MÉTODOS DEL MODELO
 // ============================================
 const DistribucionModelo = {
@@ -104,12 +87,12 @@ const DistribucionModelo = {
     const distribucion = await Distribucion.findByPk(id_distribucion, {
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
           attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         },
         {
-          model: Usuario,
+          model: sequelize.models.Usuario,
           as: 'repartidor',
           attributes: ['id_usuario', 'nombre_completo', 'email', 'telefono']
         }
@@ -125,12 +108,12 @@ const DistribucionModelo = {
     const distribuciones = await Distribucion.findAll({
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
           attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         },
         {
-          model: Usuario,
+          model: sequelize.models.Usuario,
           as: 'repartidor',
           attributes: ['id_usuario', 'nombre_completo']
         }
@@ -151,7 +134,7 @@ const DistribucionModelo = {
       },
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
           attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         }
@@ -172,7 +155,7 @@ const DistribucionModelo = {
       },
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
           attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         }
@@ -193,7 +176,7 @@ const DistribucionModelo = {
       },
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
           attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
         }
@@ -280,4 +263,5 @@ const DistribucionModelo = {
   }
 };
 
-export default DistribucionModelo;
+export { Distribucion }; // Exportación nombrada del modelo
+export default DistribucionModelo; // Exportación por defecto de los métodos

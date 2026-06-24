@@ -268,4 +268,5 @@ const PagoModel = {
   }
 };
 
+export { Pago }; // Exportación nombrada del modelo
 export default PagoModel;

@@ -1,9 +1,10 @@
 // models/relaciones.js
-import Usuario from './User.js';
+import Usuario from './user.js';
 import Vehiculo from './Vehiculo.js';
 import Role from './Role.js';
 import RolUsuario from './RolUsuario.js';
-import Distribucion from './Distribucion.js'
+import { Pedido } from './pedidos.js';
+import { Distribucion } from './Distribucion.js'; 
 
 // Relación entre Usuario y Role (Many-to-Many)
 Usuario.belongsToMany(Role, {
@@ -66,10 +67,25 @@ Distribucion.belongsTo(Usuario, {
     as: 'repartidor'
 });
 
+// Distribucion -> Pedido
+
+Distribucion.belongsTo(Pedido, {
+  foreignKey: 'id_pedido',
+  as: 'pedido'
+});
+
+// Pedido -> Distribucion 
+Pedido.hasOne(Distribucion, {
+    foreignKey: 'id_pedido',
+    as: 'distribuciones'
+});
+
+
 export {
     Usuario,
     Vehiculo,
     Role,
     RolUsuario,
+    Pedido,
     Distribucion
 };

@@ -164,4 +164,6 @@ const Formula = {
   }
 };
 
+export { Formulas }; // Exportación nombrada del modelo
+
 export default Formula;
