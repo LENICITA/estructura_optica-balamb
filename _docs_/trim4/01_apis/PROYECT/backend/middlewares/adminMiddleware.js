@@ -1,5 +1,4 @@
-import Usuario from '../models/User.js';
-import Role from '../models/Role.js';
+import { Usuario, Role } from '../models/relaciones.js'
 
 export const adminMiddleware = async (req, res, next) => {
     try {
