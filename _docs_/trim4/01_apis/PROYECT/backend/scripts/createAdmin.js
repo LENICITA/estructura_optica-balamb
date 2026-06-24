@@ -1,8 +1,6 @@
 // scripts/createAdmin.js
 import sequelize from '../config/database.js';
-import Usuario from '../models/User.js';
-import Role from '../models/Role.js';
-import RolUsuario from '../models/RolUsuario.js';
+import { Usuario, Role, RolUsuario } from '../models/relaciones.js';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
@@ -12,7 +10,6 @@ const createAdmin = async () => {
   const transaction = await sequelize.transaction();
   
   try {
-    // Verificar conexión a la base de datos
     await sequelize.authenticate();
     console.log('Conectado a la base de datos');
 
@@ -37,13 +34,9 @@ const createAdmin = async () => {
     if (adminExistente) {
       console.log('El administrador ya existe, actualizando contraseña...');
       
-      // Hashear la nueva contraseña
-      const salt = await bcrypt.genSalt(10);
-      const contrasenaHash = await bcrypt.hash(adminData.contrasena, salt);
-      
-      // Actualizar el admin existente
+   
       await adminExistente.update({
-        contrasena: contrasenaHash,
+        contrasena: adminData.contrasena, 
         estado: 'ACTIVO',
         nombre_completo: adminData.nombre_completo,
         telefono: adminData.telefono,
@@ -53,15 +46,11 @@ const createAdmin = async () => {
         direccion: adminData.direccion
       }, { transaction });
       
-      console.log('Contraseña actualizada correctamente');
-      
-      // Verificar que funciona
-      const isMatch = await bcrypt.compare(adminData.contrasena, contrasenaHash);
-      console.log('¿Contraseña coincide?', isMatch ? 'Sí' : 'No');
+      console.log('Contraseña actualizada correctamente (el hook la hasheará)');
       
       await transaction.commit();
       
-      console.log('\n ¡Admin actualizado! Prueba el login:');
+      console.log('\n¡Admin actualizado! Prueba el login:');
       console.log('Email:', adminData.email);
       console.log('Contraseña:', adminData.contrasena);
       
@@ -71,11 +60,6 @@ const createAdmin = async () => {
     // Si no existe, crear nuevo admin
     console.log('Creando nuevo administrador...');
     
-    // Hashear contraseña
-    const salt = await bcrypt.genSalt(10);
-    const contrasenaHash = await bcrypt.hash(adminData.contrasena, salt);
-
-    // Crear usuario admin
     const admin = await Usuario.create({
       nombre_completo: adminData.nombre_completo,
       telefono: adminData.telefono,
@@ -84,7 +68,7 @@ const createAdmin = async () => {
       ciudad: adminData.ciudad,
       direccion: adminData.direccion,
       email: adminData.email,
-      contrasena: contrasenaHash,
+      contrasena: adminData.contrasena,
       estado: adminData.estado
     }, { 
       transaction,
@@ -97,7 +81,6 @@ const createAdmin = async () => {
       transaction
     });
 
-    // Si no existe el rol, crearlo
     if (!rolAdmin) {
       rolAdmin = await Role.create({
         nombre: 'ADMIN'
@@ -116,7 +99,6 @@ const createAdmin = async () => {
     console.log('Administrador creado exitosamente');
     console.log('Email:', adminData.email);
     console.log('Contraseña:', adminData.contrasena);
-    console.log('Por favor, cambia la contraseña en el primer inicio de sesión');
 
     process.exit(0);
 

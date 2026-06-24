@@ -1,4 +1,4 @@
-// models/index.js
+// models/relaciones.js
 import Usuario from './User.js';
 import Vehiculo from './Vehiculo.js';
 import Role from './Role.js';
@@ -64,12 +64,6 @@ Usuario.hasMany(Distribucion, {
 Distribucion.belongsTo(Usuario, {
     foreignKey: 'id_usuario',
     as: 'repartidor'
-});
-
-// Vehiculo -> Distribucion
-Vehiculo.hasMany(Distribucion, {
-    foreignKey: 'id_vehiculo',
-    as: 'entregas'
 });
 
 export {

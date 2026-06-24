@@ -1,5 +1,6 @@
-import Usuario from "../models/User.js";
+import { Usuario } from "../models/relaciones.js";
 import { generateToken } from "../utils/generadorToken.js";
+import bcrypt from 'bcryptjs';
 
 export const login = async (req, res) => {
     try {
@@ -12,6 +13,7 @@ export const login = async (req, res) => {
             });
         }
 
+        // Buscar usuario con roles
         const usuario = await Usuario.findOne({
             where: { email },
             include: ['roles']
@@ -24,7 +26,9 @@ export const login = async (req, res) => {
             });
         }
 
-        const isMatch = await usuario.comparePassword(contrasena);
+        // Verificar contraseña
+        const isMatch = await bcrypt.compare(contrasena, usuario.contrasena);
+        console.log('Contraseña correcta:', isMatch);
 
         if (!isMatch) {
             return res.status(403).json({
@@ -33,6 +37,7 @@ export const login = async (req, res) => {
             });
         }
 
+        // Verificar estado
         if (usuario.estado !== 'ACTIVO') {
             return res.status(403).json({
                 success: false,
@@ -40,7 +45,14 @@ export const login = async (req, res) => {
             });
         }
 
+        // Generar token
         const token = generateToken(usuario.id_usuario);
+
+        // Preparar respuesta con roles
+        let roles = [];
+        if (usuario.roles && Array.isArray(usuario.roles)) {
+            roles = usuario.roles.map(rol => rol.nombre);
+        }
 
         res.json({
             success: true,
@@ -50,7 +62,7 @@ export const login = async (req, res) => {
                     id: usuario.id_usuario,
                     nombre_completo: usuario.nombre_completo,
                     email: usuario.email,
-                    roles: usuario.roles.map(rol => rol.nombre)
+                    roles: roles
                 },
                 token
             }
@@ -58,6 +70,9 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.error('Error en login: ', error);
+        console.error('Detalles:', error.message);
+        console.error('Stack:', error.stack);
+        
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'

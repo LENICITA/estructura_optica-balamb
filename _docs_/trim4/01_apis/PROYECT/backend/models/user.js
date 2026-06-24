@@ -135,4 +135,19 @@ Usuario.prototype.getRoles = async function() {
   return roles.map(role => role.nombre);
 };
 
+// Agregar este método de instancia
+Usuario.prototype.comparePassword = async function(candidatePassword) {
+    if (!this.contrasena) return false;
+    return await bcrypt.compare(candidatePassword, this.contrasena);
+};
+
+// Método estático para autenticar
+Usuario.authenticate = async function(email, contrasena) {
+    const user = await this.findOne({ where: { email }});
+    if (!user) throw new Error("Usuario no encontrado");
+    const isMatch = await user.comparePassword(contrasena);
+    if (!isMatch) throw new Error("Contraseña incorrecta");
+    return user;
+};
+
 export default Usuario;

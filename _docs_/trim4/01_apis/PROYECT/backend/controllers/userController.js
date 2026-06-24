@@ -3,8 +3,7 @@ import Vehiculo from "../models/Vehiculo.js";
 import Role from "../models/Role.js";
 import RolUsuario from "../models/RolUsuario.js";
 import sequelize from "../config/database.js";
-import { generateToken } from "../utils/generadorToken.js"; // ← Solo generateToken, no generateRefreshToken
-import { Op } from 'sequelize'; // ← IMPORTANTE: Importar Op
+import { generateToken } from "../utils/generadorToken.js";
 
 // Registrar cliente
 export const registrarCliente = async (req, res) => {
