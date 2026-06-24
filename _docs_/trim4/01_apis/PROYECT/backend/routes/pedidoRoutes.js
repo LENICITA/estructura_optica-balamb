@@ -26,6 +26,9 @@ router.put('/:id/cancelar', authMiddleware, pedidoController.cancelarPedido);
 // RUTAS PARA ADMIN (requieren token + admin)
 // ============================================
 
+// Admin marca pedido como LISTO (gafas listas para pago restante)
+router.put('/:id/listo', authMiddleware, adminMiddleware, pedidoController.marcarPedidoComoListo);
+
 // Obtener todos los pedidos (admin)
 router.get('/admin/todos', authMiddleware, adminMiddleware, pedidoController.obtenerTodosLosPedidos);
 
@@ -35,8 +38,8 @@ router.get('/admin/estado/:estado', authMiddleware, adminMiddleware, pedidoContr
 // Actualizar estado del pedido (admin)
 router.put('/:id/estado', authMiddleware, adminMiddleware, pedidoController.actualizarEstadoPedido);
 
-// Actualizar fecha de entrega (admin)
-router.put('/:id/fecha-entrega', authMiddleware, adminMiddleware, pedidoController.actualizarFechaEntrega);
+// Actualizar fecha estimada de entrega (admin)
+router.put('/:id/fecha-estimada', authMiddleware, adminMiddleware, pedidoController.actualizarFechaEstimada);
 
 // Obtener estadísticas de pedidos (admin)
 router.get('/admin/estadisticas', authMiddleware, adminMiddleware, pedidoController.obtenerEstadisticasPedidos);

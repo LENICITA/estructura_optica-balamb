@@ -1,7 +1,10 @@
-// models/Pedido.js
+// models/pedidos.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
+// ============================================
+// MODELO PEDIDOS
+// ============================================
 const Pedido = sequelize.define('Pedido', {
   id_pedido: {
     type: DataTypes.INTEGER,
@@ -25,11 +28,11 @@ const Pedido = sequelize.define('Pedido', {
     }
   },
   fecha_pedido: {
-    type: DataTypes.DATEONLY,
+    type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
   },
-  fecha_entrega: {
+  fecha_estimada: {
     type: DataTypes.DATEONLY,
     allowNull: false
   },
@@ -38,15 +41,9 @@ const Pedido = sequelize.define('Pedido', {
     allowNull: false
   },
   estado: {
-    type: DataTypes.STRING(45),
+    type: DataTypes.ENUM('Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'),
     allowNull: false,
-    defaultValue: 'Pendiente',
-    validate: {
-      isIn: {
-        args: [['Pendiente', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado', 'Abonado', 'Pagado']],
-        msg: 'Estado inválido'
-      }
-    }
+    defaultValue: 'Pendiente'
   },
   costo_envio: {
     type: DataTypes.FLOAT,
@@ -62,24 +59,27 @@ const Pedido = sequelize.define('Pedido', {
   timestamps: false,
   hooks: {
     beforeCreate: (pedido) => {
-      // Calcular fecha de entrega: 8-10 días después
       const fechaPedido = new Date();
-      const dias = 8 + Math.floor(Math.random() * 3); // 8, 9 o 10 días
-      const fechaEntrega = new Date(fechaPedido);
-      fechaEntrega.setDate(fechaPedido.getDate() + dias);
-      pedido.fecha_entrega = fechaEntrega.toISOString().split('T')[0];
+      const dias = 8 + Math.floor(Math.random() * 3);
+      const fechaEstimada = new Date(fechaPedido);
+      fechaEstimada.setDate(fechaPedido.getDate() + dias);
+      pedido.fecha_estimada = fechaEstimada.toISOString().split('T')[0];
     }
   }
 });
 
-// ========== MÉTODOS DEL MODELO ==========
+// ============================================
+// MÉTODOS DEL MODELO
+// ============================================
 const PedidoModelo = {
 
-  // ============================================
+  // ==========================================
   // CLIENTE
-  // ============================================
+  // ==========================================
 
-  // Crear pedido (cliente)
+  /**
+   * Crear un nuevo pedido
+   */
   crear: async (data) => {
     const pedido = await Pedido.create({
       id_usuario: data.id_usuario,
@@ -92,7 +92,9 @@ const PedidoModelo = {
     return pedido.id_pedido;
   },
 
-  // Obtener pedidos de un cliente
+  /**
+   * Obtener pedidos de un cliente específico
+   */
   obtenerPorCliente: async (id_usuario) => {
     const pedidos = await sequelize.query(
       `SELECT p.*, 
@@ -105,35 +107,45 @@ const PedidoModelo = {
     return pedidos;
   },
 
-  // Obtener pedido por ID
+  /**
+   * Obtener pedido por ID (incluye datos del usuario y fórmula)
+   */
   obtenerPorId: async (id_pedido) => {
     const [pedido] = await sequelize.query(
-      `SELECT p.*, u.nombre_completo, u.email, u.telefono, u.direccion, u.ciudad
+      `SELECT p.*, u.nombre_completo, u.email, u.telefono, u.direccion, u.ciudad,
+              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula
        FROM PEDIDOS p
        JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+       LEFT JOIN FORMULAS f ON p.id_formula = f.id_formula
        WHERE p.id_pedido = ?`,
       { replacements: [id_pedido], type: sequelize.QueryTypes.SELECT }
     );
     return pedido;
   },
 
-  // ============================================
+  // ==========================================
   // ADMIN
-  // ============================================
+  // ==========================================
 
-  // Obtener todos los pedidos
+  /**
+   * Obtener todos los pedidos con datos del cliente y fórmula
+   */
   obtenerTodos: async () => {
     const pedidos = await sequelize.query(
-      `SELECT p.*, u.nombre_completo as cliente, u.email, u.telefono, u.ciudad
+      `SELECT p.*, u.nombre_completo as cliente, u.email, u.telefono, u.ciudad,
+              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula
        FROM PEDIDOS p
        JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+       LEFT JOIN FORMULAS f ON p.id_formula = f.id_formula
        ORDER BY p.fecha_pedido DESC`,
       { type: sequelize.QueryTypes.SELECT }
     );
     return pedidos;
   },
 
-  // Obtener pedidos por estado
+  /**
+   * Obtener pedidos por estado
+   */
   obtenerPorEstado: async (estado) => {
     const pedidos = await Pedido.findAll({
       where: { estado },
@@ -142,7 +154,9 @@ const PedidoModelo = {
     return pedidos;
   },
 
-  // Actualizar estado del pedido
+  /**
+   * Actualizar estado del pedido
+   */
   actualizarEstado: async (id_pedido, estado) => {
     const pedido = await Pedido.findByPk(id_pedido);
     if (!pedido) return false;
@@ -150,19 +164,23 @@ const PedidoModelo = {
     return true;
   },
 
-  // Actualizar fecha de entrega (admin puede modificarla)
-  actualizarFechaEntrega: async (id_pedido, fecha_entrega) => {
+  /**
+   * Actualizar fecha estimada de entrega
+   */
+  actualizarFechaEstimada: async (id_pedido, fecha_estimada) => {
     const pedido = await Pedido.findByPk(id_pedido);
     if (!pedido) return false;
-    await pedido.update({ fecha_entrega });
+    await pedido.update({ fecha_estimada });
     return true;
   },
 
-  // ============================================
+  // ==========================================
   // UTILIDADES
-  // ============================================
+  // ==========================================
 
-  // Verificar si el pedido pertenece al usuario
+  /**
+   * Verificar si el pedido pertenece al usuario
+   */
   perteneceAUsuario: async (id_pedido, id_usuario) => {
     const pedido = await Pedido.findOne({
       where: {
@@ -173,34 +191,39 @@ const PedidoModelo = {
     return !!pedido;
   },
 
-  // Recalcular fecha de entrega (útil si cambia algo)
-  recalcularFechaEntrega: async (id_pedido) => {
+  /**
+   * Recalcular fecha estimada de entrega (8-10 días)
+   */
+  recalcularFechaEstimada: async (id_pedido) => {
     const pedido = await Pedido.findByPk(id_pedido);
     if (!pedido) return false;
     
     const fechaPedido = new Date(pedido.fecha_pedido);
     const dias = 8 + Math.floor(Math.random() * 3);
-    const fechaEntrega = new Date(fechaPedido);
-    fechaEntrega.setDate(fechaPedido.getDate() + dias);
+    const fechaEstimada = new Date(fechaPedido);
+    fechaEstimada.setDate(fechaPedido.getDate() + dias);
     
     await pedido.update({
-      fecha_entrega: fechaEntrega.toISOString().split('T')[0]
+      fecha_estimada: fechaEstimada.toISOString().split('T')[0]
     });
     return true;
   },
 
-  // Obtener estadísticas de pedidos para admin
+  /**
+   * Obtener estadísticas de pedidos para admin
+   */
   obtenerEstadisticas: async () => {
     const [stats] = await sequelize.query(
       `SELECT 
         COUNT(*) as total_pedidos,
         SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
+        SUM(CASE WHEN estado = 'Abonado' THEN 1 ELSE 0 END) as abonados,
+        SUM(CASE WHEN estado = 'Listo' THEN 1 ELSE 0 END) as listos,
+        SUM(CASE WHEN estado = 'Pagado' THEN 1 ELSE 0 END) as pagados,
         SUM(CASE WHEN estado = 'En Proceso' THEN 1 ELSE 0 END) as en_proceso,
         SUM(CASE WHEN estado = 'Enviado' THEN 1 ELSE 0 END) as enviados,
         SUM(CASE WHEN estado = 'Entregado' THEN 1 ELSE 0 END) as entregados,
         SUM(CASE WHEN estado = 'Cancelado' THEN 1 ELSE 0 END) as cancelados,
-        SUM(CASE WHEN estado = 'Abonado' THEN 1 ELSE 0 END) as abonados,
-        SUM(CASE WHEN estado = 'Pagado' THEN 1 ELSE 0 END) as pagados,
         SUM(total) as ingresos_totales,
         AVG(total) as promedio_venta,
         SUM(CASE WHEN ciudad = 'Bogotá' OR ciudad = 'Bogota' THEN 0 ELSE costo_envio END) as total_envios_cobrados
@@ -212,4 +235,4 @@ const PedidoModelo = {
   }
 };
 
-export default Pedido;
+export default PedidoModelo;

@@ -3,7 +3,7 @@ import Usuario from './User.js';
 import Vehiculo from './Vehiculo.js';
 import Role from './Role.js';
 import RolUsuario from './RolUsuario.js';
-import Distribucion from './Distribucion.js';
+import Distribucion from './Distribucion.js'
 
 // Relación entre Usuario y Role (Many-to-Many)
 Usuario.belongsToMany(Role, {

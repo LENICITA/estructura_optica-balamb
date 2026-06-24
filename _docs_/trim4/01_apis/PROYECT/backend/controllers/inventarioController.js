@@ -1,5 +1,6 @@
 // controllers/inventarioController.js
 import Inventario from '../models/inventario.js';
+import { obtenerUrlImagen, obtenerThumbnail } from '../utils/imageUtils.js';
 
 // ========== PRODUCTOS ==========
 
@@ -7,10 +8,17 @@ import Inventario from '../models/inventario.js';
 export const getProductos = async (req, res) => {
   try {
     const results = await Inventario.getAll();
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
-      count: results.length,
-      productos: results
+      count: productosConImagen.length,
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al obtener productos:", error);
@@ -25,10 +33,17 @@ export const getProductos = async (req, res) => {
 export const getProductosDestacados = async (req, res) => {
   try {
     const results = await Inventario.getDestacados();
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
-      count: results.length,
-      productos: results
+      count: productosConImagen.length,
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al obtener productos destacados:", error);
@@ -52,9 +67,15 @@ export const getProductoById = async (req, res) => {
       });
     }
 
+    const productoConImagen = {
+      ...result,
+      imagen_url: obtenerUrlImagen(result.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(result.imagen)
+    };
+
     res.json({
       success: true,
-      producto: result
+      producto: productoConImagen
     });
   } catch (error) {
     console.error("Error al obtener producto:", error);
@@ -79,11 +100,18 @@ export const filtrarProductos = async (req, res) => {
     };
 
     const results = await Inventario.filtrar(filtros);
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
-      count: results.length,
+      count: productosConImagen.length,
       filtros: filtros,
-      productos: results
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al filtrar productos:", error);
@@ -107,11 +135,18 @@ export const buscarProductos = async (req, res) => {
     }
 
     const results = await Inventario.buscar(q);
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
       query: q,
-      count: results.length,
-      productos: results
+      count: productosConImagen.length,
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al buscar productos:", error);
@@ -127,11 +162,18 @@ export const getProductosByCategoria = async (req, res) => {
   try {
     const { id_categoria } = req.params;
     const results = await Inventario.getByCategoria(id_categoria);
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
       id_categoria: id_categoria,
-      count: results.length,
-      productos: results
+      count: productosConImagen.length,
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al obtener productos por categoría:", error);
@@ -147,11 +189,18 @@ export const getProductosByMarca = async (req, res) => {
   try {
     const { marca } = req.params;
     const results = await Inventario.getByMarca(marca);
+
+    const productosConImagen = results.map(p => ({
+      ...p,
+      imagen_url: obtenerUrlImagen(p.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(p.imagen)
+    }));
+
     res.json({
       success: true,
       marca: marca,
-      count: results.length,
-      productos: results
+      count: productosConImagen.length,
+      productos: productosConImagen
     });
   } catch (error) {
     console.error("Error al obtener productos por marca:", error);
@@ -205,7 +254,6 @@ export const createProducto = async (req, res) => {
   try {
     const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
 
-    // Validar campos obligatorios
     if (!id_categoria) {
       return res.status(400).json({
         success: false,
@@ -256,7 +304,6 @@ export const updateProducto = async (req, res) => {
     const { id } = req.params;
     const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
 
-    // Verificar si el producto existe
     const productoActual = await Inventario.findById(id);
 
     if (!productoActual) {
@@ -266,7 +313,6 @@ export const updateProducto = async (req, res) => {
       });
     }
 
-    // Actualizar solo los campos enviados
     await Inventario.update(id, {
       id_categoria: id_categoria || productoActual.id_categoria,
       nombre: nombre || productoActual.nombre,
@@ -278,13 +324,17 @@ export const updateProducto = async (req, res) => {
       color: color !== undefined ? color : productoActual.color
     });
 
-    // Obtener el producto actualizado
     const updatedProduct = await Inventario.findById(id);
+    const productoConImagen = {
+      ...updatedProduct,
+      imagen_url: obtenerUrlImagen(updatedProduct.imagen, 400, 400),
+      imagen_thumbnail: obtenerThumbnail(updatedProduct.imagen)
+    };
 
     res.json({
       success: true,
       message: "Producto actualizado exitosamente",
-      producto: updatedProduct
+      producto: productoConImagen
     });
   } catch (error) {
     console.error("Error al actualizar producto:", error);
@@ -300,7 +350,6 @@ export const deleteProducto = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verificar si el producto existe
     const producto = await Inventario.findById(id);
 
     if (!producto) {
@@ -408,7 +457,6 @@ export const updateCategoria = async (req, res) => {
     const { id } = req.params;
     const { tipo_categoria, descripcion } = req.body;
 
-    // Verificar si la categoría existe
     const categoriaActual = await Inventario.getCategoriaById(id);
 
     if (!categoriaActual) {
@@ -423,7 +471,6 @@ export const updateCategoria = async (req, res) => {
       descripcion: descripcion !== undefined ? descripcion : categoriaActual.descripcion
     });
 
-    // Obtener la categoría actualizada
     const updatedCategoria = await Inventario.getCategoriaById(id);
 
     res.json({
@@ -445,7 +492,6 @@ export const deleteCategoria = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verificar si la categoría existe
     const categoria = await Inventario.getCategoriaById(id);
 
     if (!categoria) {

@@ -11,8 +11,9 @@ import distribucionRoutes from './routes/distribucionRoutes.js';
 import pagosRoutes from './routes/PagosRoutes.js';
 import formulaRoutes from './routes/formulaRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 import sequelize from './config/database.js';
-import { Usuario, Vehiculo, Role, RolUsuario, Distribucion } from './models/relaciones.js';
+import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/distribucion', distribucionRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/formulas', formulaRoutes);
 app.use('/api/pedidos', pedidoRoutes);
+app.use('/api/upload', uploadRoutes);
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
     res.json({

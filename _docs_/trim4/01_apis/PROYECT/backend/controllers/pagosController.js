@@ -88,19 +88,36 @@ export const crearPago = async (req, res) => {
       });
     }
 
-    // Si elige 50%, verificar que no tenga otro abono
+    // ===== LÓGICA PARA 50% (PRIMER Y SEGUNDO PAGO) =====
     if (eleccion_pago === '50%') {
+      // Verificar si ya tiene un abono del 50%
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
+      
       if (tieneAbono) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Este pedido ya tiene un abono del 50%' 
-        });
+        // Si ya tiene abono, debe estar en estado 'Listo' para pagar el saldo
+        if (pedido.estado !== 'Listo') {
+          return res.status(400).json({
+            success: false,
+            message: 'El pedido debe estar en estado LISTO para pagar el saldo restante'
+          });
+        }
+        //  Permitir el segundo pago del 50% (saldo restante)
+      } else {
+        // Primer pago del 50% - verificar que no tenga pago completo previo
+        const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
+        if (tieneCompleto) {
+          return res.status(400).json({
+            success: false,
+            message: 'Este pedido ya fue pagado completamente'
+          });
+        }
+        // Permitir el primer pago del 50%
       }
     }
 
-    // Si elige 100%, verificar que no tenga pago completo previo
+    // ===== LÓGICA PARA 100% =====
     if (eleccion_pago === '100%') {
+      // Verificar que no tenga pago completo previo
       const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
       if (tieneCompleto) {
         return res.status(400).json({ 
@@ -109,7 +126,7 @@ export const crearPago = async (req, res) => {
         });
       }
 
-      // Verificar si ya tiene abono del 50% (para pago de saldo)
+      // Verificar si ya tiene abono del 50% (para pago de saldo completo)
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
       if (tieneAbono) {
         const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
@@ -121,6 +138,7 @@ export const crearPago = async (req, res) => {
             message: `El saldo restante es ${saldoRestante}. Debes pagar esa cantidad para completar`
           });
         }
+        // Permitir pago del saldo restante en un solo pago
       }
     }
 
@@ -163,11 +181,22 @@ export const confirmarPago = async (req, res) => {
     await PagoModel.confirmarPago(id);
 
     const pagoActualizado = await PagoModel.obtenerPorId(id);
+    
+    // Determinar mensaje según el caso
+    let mensaje = '';
+    if (pago.eleccion_pago === '100%') {
+      mensaje = 'Pago completo confirmado. El pedido está en estado PAGADO';
+    } else if (pago.eleccion_pago === '50%') {
+      // Verificar si es el primer o segundo pago del 50%
+      const tieneAbonoPrevio = await PagoModel.tieneAbono50Previo(pago.id_pedido, pago.id_pago);
+      mensaje = tieneAbonoPrevio 
+        ? 'Saldo del 50% confirmado. El pedido está en estado PAGADO'
+        : 'Abono del 50% confirmado. El pedido está en estado ABONADO';
+    }
+
     res.json({ 
       success: true, 
-      message: pago.eleccion_pago === '50%' 
-        ? 'Abono del 50% confirmado. El pedido está en estado ABONADO' 
-        : 'Pago completo confirmado. El pedido está en estado PAGADO',
+      message: mensaje,
       data: pagoActualizado 
     });
 
