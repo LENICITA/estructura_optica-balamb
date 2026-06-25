@@ -123,6 +123,24 @@ const DistribucionModelo = {
     return distribuciones;
   },
 
+    /**
+   * Obtener distribuciones de un usuario específico (admin o repartidor)
+   */
+  obtenerPorUsuario: async (id_usuario) => {
+    const distribuciones = await Distribucion.findAll({
+      where: { id_usuario },
+      include: [
+        {
+          model: sequelize.models.Pedido,
+          as: 'pedido',
+          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada', 'id_usuario']
+        }
+      ],
+      order: [['fecha_asignacion', 'DESC']]
+    });
+    return distribuciones;
+  },
+
   /**
    * Obtener distribuciones pendientes de un repartidor (con dirección del pedido)
    */

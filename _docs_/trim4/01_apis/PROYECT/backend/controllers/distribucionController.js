@@ -37,6 +37,24 @@ export const asignarPedido = async (req, res) => {
       });
     }
 
+    // OBTENER CIUDAD DEL USUARIO DEL PEDIDO
+
+    const [usuarioPedido] = await sequelize.query(
+      'SELECT ciudad FROM USUARIOS WHERE id_usuario = ?',
+      { replacements: [pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
+    );
+
+    const ciudad = usuarioPedido?.ciudad?.toLowerCase().trim() || '';
+    const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
+
+    //DETERMINAR A QUIEN ASIGNAR SEGÚN CIUDAD
+
+    let usuarioAsignado = id_usuario;
+    let tipoAsignacion = '';
+    let usuarioInfo = null;
+
+    if (esBogota) {
+
     // Verificar que el repartidor existe y tiene rol REPARTIDOR
     const [repartidor] = await sequelize.query(
       `SELECT u.id_usuario, u.nombre_completo, u.email, u.telefono
@@ -53,7 +71,46 @@ export const asignarPedido = async (req, res) => {
         message: 'Repartidor no encontrado o no tiene rol REPARTIDOR'
       });
     }
+        usuarioAsignado = id_usuario;
+        tipoAsignacion = 'REPARTIDOR';
+        usuarioInfo = repartidor;
 
+    } else {
+      //FUERA DE BOGOTÁ → ADMIN (distribuidora externa)
+      const [admin] = await sequelize.query(
+        `SELECT u.id_usuario 
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE r.nombre = 'ADMIN' AND u.estado = 'ACTIVO'
+         LIMIT 1`,
+        { type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (!admin) {
+        return res.status(404).json({
+          success: false,
+          message: 'No se encontró un administrador para asignar la distribución externa'
+        });
+      }
+
+      // Verificar que el admin existe
+      const [adminExistente] = await sequelize.query(
+        'SELECT id_usuario FROM USUARIOS WHERE id_usuario = ? AND estado = "ACTIVO"',
+        { replacements: [admin.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (!adminExistente) {
+        return res.status(404).json({
+          success: false,
+          message: 'El administrador asignado no existe o está inactivo'
+        });
+      }
+
+      usuarioAsignado = admin.id_usuario;
+      tipoAsignacion = 'DISTRIBUIDORA_EXTERNA';
+      usuarioInfo =admin;
+    }
     // Verificar que el pedido no tenga una distribución activa
     const [distribucionExistente] = await sequelize.query(
       `SELECT * FROM DISTRIBUCIONES 
@@ -68,11 +125,24 @@ export const asignarPedido = async (req, res) => {
       });
     }
 
+    // CREAR OBSERVACIONES PERSONALIZADAS
+
+    let observacionesFinal = observaciones || null;
+    
+    if (!esBogota) {
+      observacionesFinal = `ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA
+Ciudad del cliente: ${ciudad}
+${observaciones ? 'Observaciones adicionales: ' + observaciones : ''}`;
+    } else {
+      observacionesFinal = `ENTREGA EN BOGOTÁ - REPARTIDOR
+${observaciones ? 'Observaciones: ' + observaciones : ''}`;
+    }
+
     // Crear la distribución
     const distribucion = await DistribucionModelo.crear({
       id_pedido,
       id_usuario,
-      observaciones: observaciones || null
+      observaciones: observacionesFinal || null
     });
 
     // Actualizar estado del pedido a 'En Proceso'
@@ -84,16 +154,26 @@ export const asignarPedido = async (req, res) => {
     // Obtener la distribución con detalles del pedido
     const distribucionCreada = await DistribucionModelo.obtenerPorId(distribucion.id_distribucion);
 
+    let mensaje = '';
+    if (esBogota) {
+      mensaje = `Pedido asignado exitosamente al repartidor ${usuarioInfo.nombre_completo}`;
+    } else {
+      mensaje = `Pedido asignado a distribuidora externa (Ciudad: ${ciudad})`;
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Pedido asignado exitosamente al repartidor',
+      message: 'mensaje',
       data: {
         distribucion: distribucionCreada,
-        repartidor: {
-          id: repartidor.id_usuario,
-          nombre: repartidor.nombre_completo,
-          email: repartidor.email,
-          telefono: repartidor.telefono
+        tipo_asignacion: tipoAsignacion,
+        ciudad_cliente: ciudad,
+        es_bogota: esBogota,
+        usuario_asignado: {
+          id: usuarioAsignado,
+          nombre_completo: usuarioInfo.nombre_completo, 
+          email: usuarioInfo.email,                   
+          telefono: usuarioInfo.telefono  
         },
         pedido: {
           id_pedido: pedido.id_pedido,
@@ -450,6 +530,96 @@ export const cancelarEntrega = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al cancelar la entrega',
+      error: error.message
+    });
+  }
+};
+
+// controllers/distribucionController.js
+// AGREGAR AL FINAL DEL ARCHIVO
+
+// ============================================
+// ADMIN - OBTENER DISTRIBUCIONES EXTERNAS (FUERA DE BOGOTÁ)
+// ============================================
+export const obtenerDistribucionesExternas = async (req, res) => {
+  try {
+    // Buscar el ADMIN (distribuidora externa)
+    const [admin] = await sequelize.query(
+      `SELECT u.id_usuario, u.nombre_completo, u.email, u.telefono
+       FROM USUARIOS u
+       JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+       JOIN ROLES r ON ru.id_rol = r.id_rol
+       WHERE r.nombre = 'ADMIN' AND u.estado = 'ACTIVO'
+       LIMIT 1`,
+      { type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontró un administrador'
+      });
+    }
+
+    // Obtener todas las distribuciones del admin
+    const distribuciones = await DistribucionModelo.obtenerPorUsuario(admin.id_usuario);
+
+    // Enriquecer con ciudad del cliente
+    const distribucionesExternas = [];
+    for (const dist of distribuciones) {
+      if (dist.pedido) {
+        // Obtener ciudad del usuario del pedido
+        const [usuario] = await sequelize.query(
+          'SELECT id_usuario, nombre_completo, ciudad, email, telefono FROM USUARIOS WHERE id_usuario = ?',
+          { replacements: [dist.pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        
+        const ciudad = usuario?.ciudad || 'Desconocida';
+        const esBogota = ciudad.toLowerCase().trim() === 'bogotá' || ciudad.toLowerCase().trim() === 'bogota';
+        
+        if (!esBogota) {
+          distribucionesExternas.push({
+            id_distribucion: dist.id_distribucion,
+            estado: dist.estado,
+            fecha_asignacion: dist.fecha_asignacion,
+            fecha_entrega: dist.fecha_entrega,
+            observaciones: dist.observaciones,
+            admin_asignado: {
+              id: admin.id_usuario,
+              nombre_completo: admin.nombre_completo,
+              email: admin.email,
+              telefono: admin.telefono
+            },
+            // Datos del cliente
+            cliente: {
+              id: usuario?.id_usuario || null,
+              nombre_completo: usuario?.nombre_completo || 'Desconocido',
+              email: usuario?.email || 'Desconocido',
+              telefono: usuario?.telefono || 'Desconocido',
+              ciudad: ciudad
+            },
+            pedido: {
+              id_pedido: dist.pedido.id_pedido,
+              direccion_entrega: dist.pedido.direccion_entrega,
+              total: dist.pedido.total,
+              fecha_estimada: dist.pedido.fecha_estimada
+            }
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      count: distribucionesExternas.length,
+      data: distribucionesExternas
+    });
+
+  } catch (error) {
+    console.error('Error al obtener distribuciones externas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener distribuciones externas',
       error: error.message
     });
   }
