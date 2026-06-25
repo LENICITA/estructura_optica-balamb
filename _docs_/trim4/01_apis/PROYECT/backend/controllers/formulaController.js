@@ -1,6 +1,7 @@
 // controllers/formulaController.js
 import FormulaModelo from '../models/formula.js';
-import { obtenerUrlImagen } from '../utils/imageUtils.js';
+import { obtenerUrlImagen, subirImagenDesdeUrl } from '../utils/imageUtils.js';
+import cloudinary from '../config/cloudinary.js';
 
 // ============================================
 // CLIENTE - SUBIR FÓRMULA
@@ -25,10 +26,24 @@ export const subirFormula = async (req, res) => {
       });
     }
 
+    // SUBIR IMAGEN AUTOMÁTICAMENTE A CLOUDINARY
+  
+    const resultado = await subirImagenDesdeUrl(imagen_formula, 'opticam/formulas');
+    //                                  ↑
+    //                     Recibe la URL de la imagen desde el frontend
+    
+    if (!resultado.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error al subir la imagen a Cloudinary',
+        error: resultado.error
+      });
+    }
+
     const nuevoId = await FormulaModelo.crear({
       id_usuario: usuario.id_usuario,
       condicion,
-      imagen_formula: imagen_formula,
+      imagen_formula: resultado.url,
       observaciones: observaciones || null
     });
 
@@ -50,6 +65,69 @@ export const subirFormula = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al subir la fórmula',
+      error: error.message
+    });
+  }
+};
+
+// NUEVO: CLIENTE - ELIMINAR SU FÓRMULA
+
+export const eliminarFormula = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const usuario = req.usuario;
+
+    const formula = await FormulaModelo.obtenerPorId(id);
+    
+    if (!formula) {
+      return res.status(404).json({
+        success: false,
+        message: 'Fórmula no encontrada'
+      });
+    }
+
+    // Verificar que sea de este usuario
+    if (formula.id_usuario !== usuario.id_usuario) {
+      return res.status(403).json({
+        success: false,
+        message: 'No puedes eliminar una fórmula que no te pertenece'
+      });
+    }
+
+    // Solo puede eliminar si está Pendiente
+    if (formula.estado !== 'Pendiente') {
+      return res.status(400).json({
+        success: false,
+        message: 'Solo puedes eliminar fórmulas en estado Pendiente'
+      });
+    }
+
+    // ELIMINAR IMAGEN DE CLOUDINARY
+  
+    if (formula.imagen_formula) {
+      try {
+        const urlParts = formula.imagen_formula.split('/');
+        const publicIdWithExt = urlParts[urlParts.length - 1];
+        const publicId = publicIdWithExt.split('.')[0];
+        await cloudinary.uploader.destroy(`opticam/formulas/${publicId}`);
+      } catch (error) {
+        console.log('Error al eliminar imagen:', error);
+      }
+    }
+    // ============================================================
+
+    await FormulaModelo.eliminar(id);
+
+    res.json({
+      success: true,
+      message: 'Fórmula eliminada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar fórmula:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar la fórmula',
       error: error.message
     });
   }

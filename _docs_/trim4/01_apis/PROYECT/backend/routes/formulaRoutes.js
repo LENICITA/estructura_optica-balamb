@@ -13,6 +13,10 @@ const router = express.Router();
 // Subir fórmula (cliente)
 router.post('/', authMiddleware, formulaController.subirFormula);
 
+//Eliminar fórmula (cliente dueño)
+
+router.delete('/:id', authMiddleware, formulaController.eliminarFormula);
+
 // Ver mis fórmulas (cliente)
 router.get('/mis-formulas', authMiddleware, formulaController.obtenerMisFormulas);
 

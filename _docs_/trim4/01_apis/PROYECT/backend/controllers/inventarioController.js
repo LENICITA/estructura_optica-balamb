@@ -1,6 +1,7 @@
 // controllers/inventarioController.js
 import Inventario from '../models/inventario.js';
-import { obtenerUrlImagen, obtenerThumbnail } from '../utils/imageUtils.js';
+import { obtenerUrlImagen, obtenerThumbnail, subirImagenDesdeUrl } from '../utils/imageUtils.js';
+import cloudinary from '../config/cloudinary.js';
 
 // ========== PRODUCTOS ==========
 
@@ -273,13 +274,32 @@ export const createProducto = async (req, res) => {
       });
     }
 
+    // SUBIR IMAGEN AUTOMÁTICAMENTE A CLOUDINARY
+    
+    let imagenFinal = "";
+
+    if (imagen) {
+      const resultado = await subirImagenDesdeUrl(imagen, 'opticam/productos');
+      
+      if (!resultado.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al subir la imagen a Cloudinary',
+          error: resultado.error
+        });
+      }
+      
+      imagenFinal = resultado.url;  // ← URL de Cloudinary
+    }
+    // ============================================================
+
     const result = await Inventario.create({
       id_categoria,
       nombre,
       descripcion: descripcion || "",
       marca: marca || "",
       precio,
-      imagen: imagen || "",
+      imagen: imagenFinal || "",
       material: material || "",
       color: color || ""
     });
@@ -287,7 +307,8 @@ export const createProducto = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Producto creado exitosamente",
-      id_producto: result.insertId
+      id_producto: result.insertId,
+      imagen_cloudinary: imagenFinal
     });
   } catch (error) {
     console.error("Error al crear producto:", error);
@@ -313,13 +334,44 @@ export const updateProducto = async (req, res) => {
       });
     }
 
+    // SI HAY NUEVA IMAGEN, SUBIR AUTOMÁTICAMENTE
+
+    let imagenFinal = productoActual.imagen;
+
+    if (imagen) {
+      // 1. Subir nueva imagen
+      const resultado = await subirImagenDesdeUrl(imagen, 'opticam/productos');
+      
+      if (!resultado.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al subir la imagen a Cloudinary',
+          error: resultado.error
+        });
+      }
+      
+      imagenFinal = resultado.url;
+
+      // 2. Eliminar imagen anterior de Cloudinary
+      if (productoActual.imagen) {
+        try {
+          const urlParts = productoActual.imagen.split('/');
+          const publicIdWithExt = urlParts[urlParts.length - 1];
+          const publicId = publicIdWithExt.split('.')[0];
+          await cloudinary.uploader.destroy(`opticam/productos/${publicId}`);
+        } catch (error) {
+          console.log('Error al eliminar imagen anterior:', error);
+        }
+      }
+    }
+
     await Inventario.update(id, {
       id_categoria: id_categoria || productoActual.id_categoria,
       nombre: nombre || productoActual.nombre,
       descripcion: descripcion !== undefined ? descripcion : productoActual.descripcion,
       marca: marca !== undefined ? marca : productoActual.marca,
       precio: precio !== undefined ? precio : productoActual.precio,
-      imagen: imagen !== undefined ? imagen : productoActual.imagen,
+      imagen: imagenFinal,
       material: material !== undefined ? material : productoActual.material,
       color: color !== undefined ? color : productoActual.color
     });
@@ -357,6 +409,19 @@ export const deleteProducto = async (req, res) => {
         success: false,
         message: "Producto no encontrado"
       });
+    }
+
+    // ELIMINAR IMAGEN DE CLOUDINARY
+  
+    if (producto.imagen) {
+      try {
+        const urlParts = producto.imagen.split('/');
+        const publicIdWithExt = urlParts[urlParts.length - 1];
+        const publicId = publicIdWithExt.split('.')[0];
+        await cloudinary.uploader.destroy(`opticam/productos/${publicId}`);
+      } catch (error) {
+        console.log('Error al eliminar imagen de Cloudinary:', error);
+      }
     }
 
     await Inventario.delete(id);

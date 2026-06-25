@@ -66,6 +66,15 @@ const Formula = {
     });
     return formula.id_formula;
   },
+  
+
+  eliminar: async (id_formula) => {
+    const formula = await Formulas.findByPk(id_formula);
+    if (!formula) return false;
+    
+    await formula.destroy();
+    return true;
+  },
 
   // Obtener fórmulas de un cliente específico
   obtenerPorCliente: async (id_usuario) => {
