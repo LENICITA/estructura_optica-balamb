@@ -2,6 +2,7 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+import upload from "../middlewares/upload.js";
 import * as inventarioController from "../controllers/inventarioController.js";
 
 const router = express.Router();
@@ -429,7 +430,7 @@ router.get("/categorias/:id", inventarioController.getCategoriaById);
  *       403:
  *         description: Acceso denegado (requiere admin)
  */
-router.post("/productos", authMiddleware, adminMiddleware, inventarioController.createProducto);
+router.post("/productos", authMiddleware, adminMiddleware,upload.single("imagen"), inventarioController.createProducto);
 
 /**
  * @swagger
@@ -490,7 +491,7 @@ router.post("/productos", authMiddleware, adminMiddleware, inventarioController.
  *       403:
  *         description: Acceso denegado (requiere admin)
  */
-router.put("/productos/:id", authMiddleware, adminMiddleware, inventarioController.updateProducto);
+router.put("/productos/:id", authMiddleware, adminMiddleware,upload.single("imagen"), inventarioController.updateProducto);
 
 /**
  * @swagger

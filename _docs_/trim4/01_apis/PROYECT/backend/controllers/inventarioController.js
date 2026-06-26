@@ -1,6 +1,6 @@
 // controllers/inventarioController.js
 import Inventario from '../models/inventario.js';
-import { obtenerUrlImagen, obtenerThumbnail, subirImagenDesdeUrl } from '../utils/imageUtils.js';
+import { obtenerUrlImagen, obtenerThumbnail } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';
 
 // ========== PRODUCTOS ==========
@@ -253,7 +253,7 @@ export const getColores = async (req, res) => {
 // Crear producto (solo admin)
 export const createProducto = async (req, res) => {
   try {
-    const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
+    const { id_categoria, nombre, descripcion, marca, precio, material, color } = req.body;
 
     if (!id_categoria) {
       return res.status(400).json({
@@ -274,24 +274,12 @@ export const createProducto = async (req, res) => {
       });
     }
 
-    // SUBIR IMAGEN AUTOMÁTICAMENTE A CLOUDINARY
-    
-    let imagenFinal = "";
-
-    if (imagen) {
-      const resultado = await subirImagenDesdeUrl(imagen, 'opticam/productos');
-      
-      if (!resultado.success) {
-        return res.status(500).json({
-          success: false,
-          message: 'Error al subir la imagen a Cloudinary',
-          error: resultado.error
-        });
-      }
-      
-      imagenFinal = resultado.url;  // ← URL de Cloudinary
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "La imagen es requerida"
+      });
     }
-    // ============================================================
 
     const result = await Inventario.create({
       id_categoria,
@@ -299,7 +287,7 @@ export const createProducto = async (req, res) => {
       descripcion: descripcion || "",
       marca: marca || "",
       precio,
-      imagen: imagenFinal || "",
+      imagen: req.file.path,
       material: material || "",
       color: color || ""
     });
@@ -308,7 +296,7 @@ export const createProducto = async (req, res) => {
       success: true,
       message: "Producto creado exitosamente",
       id_producto: result.insertId,
-      imagen_cloudinary: imagenFinal
+      imagen_cloudinary: req.file.path
     });
   } catch (error) {
     console.error("Error al crear producto:", error);
@@ -323,7 +311,7 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
+    const { id_categoria, nombre, descripcion, marca, precio, material, color } = req.body;
 
     const productoActual = await Inventario.findById(id);
 
@@ -338,19 +326,8 @@ export const updateProducto = async (req, res) => {
 
     let imagenFinal = productoActual.imagen;
 
-    if (imagen) {
-      // 1. Subir nueva imagen
-      const resultado = await subirImagenDesdeUrl(imagen, 'opticam/productos');
-      
-      if (!resultado.success) {
-        return res.status(500).json({
-          success: false,
-          message: 'Error al subir la imagen a Cloudinary',
-          error: resultado.error
-        });
-      }
-      
-      imagenFinal = resultado.url;
+    if (req.file) {
+      imagenFinal = req.file.path;
 
       // 2. Eliminar imagen anterior de Cloudinary
       if (productoActual.imagen) {

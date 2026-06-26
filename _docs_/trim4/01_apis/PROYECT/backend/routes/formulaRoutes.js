@@ -2,6 +2,7 @@
 import express from 'express';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { adminMiddleware } from '../middlewares/adminMiddleware.js';
+import upload from '../middlewares/upload.js';
 import * as formulaController from '../controllers/formulaController.js';
 
 const router = express.Router();
@@ -11,7 +12,7 @@ const router = express.Router();
 // ============================================
 
 // Subir fórmula (cliente)
-router.post('/', authMiddleware, formulaController.subirFormula);
+router.post('/', authMiddleware,upload.single('imagen'), formulaController.subirFormula);
 
 //Eliminar fórmula (cliente dueño)
 

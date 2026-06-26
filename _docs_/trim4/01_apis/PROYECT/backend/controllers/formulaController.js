@@ -1,6 +1,6 @@
 // controllers/formulaController.js
 import FormulaModelo from '../models/formula.js';
-import { obtenerUrlImagen, subirImagenDesdeUrl } from '../utils/imageUtils.js';
+import { obtenerUrlImagen } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';
 
 // ============================================
@@ -8,13 +8,20 @@ import cloudinary from '../config/cloudinary.js';
 // ============================================
 export const subirFormula = async (req, res) => {
   try {
-    const { condicion, imagen_formula, observaciones } = req.body;
+    const { condicion, observaciones } = req.body;
     const usuario = req.usuario;
 
-    if (!condicion || !imagen_formula) {
+    if (!condicion) {
       return res.status(400).json({
         success: false,
-        message: 'Faltan campos requeridos: condicion, imagen_formula'
+        message: 'El campo condicion es requerido'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'La imagen de la fórmula es requerida'
       });
     }
 
@@ -26,24 +33,10 @@ export const subirFormula = async (req, res) => {
       });
     }
 
-    // SUBIR IMAGEN AUTOMÁTICAMENTE A CLOUDINARY
-  
-    const resultado = await subirImagenDesdeUrl(imagen_formula, 'opticam/formulas');
-    //                                  ↑
-    //                     Recibe la URL de la imagen desde el frontend
-    
-    if (!resultado.success) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error al subir la imagen a Cloudinary',
-        error: resultado.error
-      });
-    }
-
     const nuevoId = await FormulaModelo.crear({
       id_usuario: usuario.id_usuario,
       condicion,
-      imagen_formula: resultado.url,
+      imagen_formula: req.file.path,
       observaciones: observaciones || null
     });
 
@@ -114,7 +107,6 @@ export const eliminarFormula = async (req, res) => {
         console.log('Error al eliminar imagen:', error);
       }
     }
-    // ============================================================
 
     await FormulaModelo.eliminar(id);
 
