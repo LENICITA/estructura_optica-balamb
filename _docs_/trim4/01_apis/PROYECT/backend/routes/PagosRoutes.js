@@ -1,4 +1,3 @@
-// routes/PagosRoutes.js
 import express from 'express';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { adminMiddleware } from '../middlewares/adminMiddleware.js';
@@ -6,9 +5,7 @@ import * as pagosController from '../controllers/pagosController.js';
 
 const router = express.Router();
 
-// ============================================
 // RUTAS PÚBLICAS (requieren token - cliente)
-// ============================================
 
 // Obtener pagos de un pedido específico (cliente ve sus pagos)
 router.get('/pedido/:pedidoId', authMiddleware, pagosController.obtenerPagosPorPedido);
@@ -22,9 +19,7 @@ router.post('/', authMiddleware, pagosController.crearPago);
 // Verificar saldo pendiente de un pedido
 router.get('/pedido/:pedidoId/saldo', authMiddleware, pagosController.verificarSaldoPedido);
 
-// ============================================
 // RUTAS ADMIN (requieren token + admin)
-// ============================================
 
 // Obtener todos los pagos (admin - reportes)
 router.get('/', authMiddleware, adminMiddleware, pagosController.obtenerPagos);
@@ -35,9 +30,7 @@ router.get('/estadisticas', authMiddleware, adminMiddleware, pagosController.obt
 // Obtener pagos por rango de fechas (admin)
 router.get('/rango-fechas', authMiddleware, adminMiddleware, pagosController.obtenerPagosPorRangoFechas);
 
-// ============================================
 // RUTAS PARA BOLD (webhooks) - sin autenticación
-// ============================================
 
 // Bold confirma el pago (webhook)
 router.put('/:id/confirmar', pagosController.confirmarPago);

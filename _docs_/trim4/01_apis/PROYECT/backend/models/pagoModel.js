@@ -1,10 +1,7 @@
-// models/pagoModel.js
 import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
-// ============================================
 // MODELO PAGOS
-// ============================================
 const Pago = sequelize.define('Pago', {
   id_pago: {
     type: DataTypes.INTEGER,
@@ -53,14 +50,10 @@ const Pago = sequelize.define('Pago', {
   timestamps: false
 });
 
-// ============================================
 // MÉTODOS DEL MODELO
-// ============================================
 const PagoModel = {
 
-  // ==========================================
   // CLIENTE
-  // ==========================================
 
   // Crear un nuevo pago
   
@@ -92,9 +85,7 @@ const PagoModel = {
     return pago;
   },
 
-  // ==========================================
   // BOLD (webhook)
-  // ==========================================
 
   /**
    * Bold confirma el pago
@@ -152,9 +143,7 @@ const PagoModel = {
     return true;
   },
 
-  // ==========================================
   // ADMIN (solo consultas)
-  // ==========================================
 
   // Obtener todos los pagos
    
@@ -200,9 +189,7 @@ const PagoModel = {
     return pagos;
   },
 
-  // ==========================================
   // UTILIDADES
-  // ==========================================
 
   // Obtener total pagado de un pedido (suma de todos los pagos confirmados)
    
@@ -268,5 +255,5 @@ const PagoModel = {
   }
 };
 
-export { Pago }; // Exportación nombrada del modelo
+export { Pago };
 export default PagoModel;

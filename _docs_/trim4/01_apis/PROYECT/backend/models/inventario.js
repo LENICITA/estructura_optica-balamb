@@ -1,4 +1,3 @@
-// models/inventario.js
 import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
 

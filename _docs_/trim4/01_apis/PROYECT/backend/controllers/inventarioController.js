@@ -1,4 +1,3 @@
-// controllers/inventarioController.js
 import Inventario from '../models/inventario.js';
 import { obtenerUrlImagen, obtenerThumbnail } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';

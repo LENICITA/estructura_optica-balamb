@@ -1,15 +1,12 @@
-// controllers/formulaController.js
 import FormulaModelo from '../models/formula.js';
 import { obtenerUrlImagen } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';
 
-// ============================================
 // CLIENTE - SUBIR FÓRMULA
-// ============================================
 export const subirFormula = async (req, res) => {
   try {
     const { condicion, observaciones } = req.body;
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     if (!condicion) {
       return res.status(400).json({
@@ -68,7 +65,7 @@ export const subirFormula = async (req, res) => {
 export const eliminarFormula = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     const formula = await FormulaModelo.obtenerPorId(id);
     
@@ -125,18 +122,33 @@ export const eliminarFormula = async (req, res) => {
   }
 };
 
-// ============================================
 // CLIENTE - VER MIS FÓRMULAS
-// ============================================
 export const obtenerMisFormulas = async (req, res) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
-    const formulas = await FormulaModelo.obtenerPorCliente(usuario.id_usuario);
+    console.log('Usuario:', usuario);
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const formulas = await FormulaModelo.obtenerPorCliente(usuario.id);
+
+    console.log(`${formulas.length} fórmulas encontradas`);
 
     const formulasConImagen = formulas.map(f => ({
-      ...f,
-      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400)
+      id: f.id_formula,
+      condicion: f.condicion,
+      observaciones: f.observaciones,
+      imagen_formula: f.imagen_formula,
+      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400),
+      fecha_creacion: f.fecha_creacion,
+      estado: f.estado,
+      costo: f.costo
     }));
 
     res.json({
@@ -150,18 +162,16 @@ export const obtenerMisFormulas = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener tus fórmulas',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // CLIENTE/ADMIN - VER FÓRMULA POR ID
-// ============================================
 export const obtenerFormulaPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     const formula = await FormulaModelo.obtenerPorId(id);
 
@@ -199,9 +209,7 @@ export const obtenerFormulaPorId = async (req, res) => {
   }
 };
 
-// ============================================
 // ADMIN - VER TODAS LAS FÓRMULAS
-// ============================================
 export const obtenerTodasLasFormulas = async (req, res) => {
   try {
     const formulas = await FormulaModelo.obtenerTodas();
@@ -227,9 +235,7 @@ export const obtenerTodasLasFormulas = async (req, res) => {
   }
 };
 
-// ============================================
 // ADMIN - VER FÓRMULAS PENDIENTES
-// ============================================
 export const obtenerFormulasPendientes = async (req, res) => {
   try {
     const formulas = await FormulaModelo.obtenerPendientes();
@@ -255,9 +261,7 @@ export const obtenerFormulasPendientes = async (req, res) => {
   }
 };
 
-// ============================================
 // ADMIN - ASIGNAR PRECIO A FÓRMULA
-// ============================================
 export const asignarPrecioFormula = async (req, res) => {
   try {
     const { id } = req.params;
@@ -311,9 +315,7 @@ export const asignarPrecioFormula = async (req, res) => {
   }
 };
 
-// ============================================
 // ADMIN - CAMBIAR ESTADO DE FÓRMULA
-// ============================================
 export const cambiarEstadoFormula = async (req, res) => {
   try {
     const { id } = req.params;
@@ -360,13 +362,11 @@ export const cambiarEstadoFormula = async (req, res) => {
   }
 };
 
-// ============================================
 // CLIENTE - VER SI UNA FÓRMULA ESTÁ APROBADA
-// ============================================
 export const verificarFormulaAprobada = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
 
     const formula = await FormulaModelo.obtenerPorId(id);
 

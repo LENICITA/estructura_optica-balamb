@@ -1,6 +1,3 @@
-// models/chatbot.js
-// NO usa base de datos, solo contiene la lógica
-
 const ChatBot = {
   // ========== RESPUESTAS ==========
   respuestas: {
@@ -12,7 +9,7 @@ const ChatBot = {
     pago: "Aceptamos pagos a través de Bold, nuestra pasarela de pagos segura. Puedes pagar con tarjetas débito/crédito, Nequi, Daviplata y transferencias bancarias. ¡Todos los métodos están disponibles en Bold!",
     devolucion: "Tienes 15 días hábiles para solicitar devoluciones. El producto debe estar en perfecto estado.",
     despedida: "Gracias por contactarnos. ¡Que tengas un excelente día!",
-    ayuda: "📋 *Opciones disponibles:*\n\n• Productos - Información sobre gafas y lentes\n• Horario - Horarios de atención\n• Envío - Costos y tiempos de entrega\n• Fórmula médica - Envio de formulas\n• Pago - Métodos de pago aceptados\n• Devolución - Política de cambios y garantías\n\n💬 *¿Necesitas atención personalizada?* Escríbenos al WhatsApp: 📱 330-120-92941",
+    ayuda: "*Opciones disponibles:*\n\n• Productos - Información sobre gafas y lentes\n• Horario - Horarios de atención\n• Envío - Costos y tiempos de entrega\n• Fórmula médica - Envio de formulas\n• Pago - Métodos de pago aceptados\n• Devolución - Política de cambios y garantías\n\n *¿Necesitas atención personalizada?* Escríbenos al WhatsApp: 330-120-92941",
     default: "Lo siento, no entendí tu pregunta. ¿Podrías reformularla? O escribe 'ayuda' para ver las opciones disponibles."
   },
 

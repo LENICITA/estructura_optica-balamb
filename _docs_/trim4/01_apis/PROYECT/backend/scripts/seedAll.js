@@ -1,4 +1,3 @@
-// seeders/seedAll.js
 import sequelize from "../config/database.js";
 import bcrypt from "bcryptjs";
 import { subirImagenLocal } from "../utils/uploadLocal.js";
@@ -12,10 +11,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// ============================================================
-// CONFIGURACIÓN DEL ADMIN
-// ============================================================
+// CONFIGURACIÓN DEL ADMI
 const adminData = {
   nombre_completo: process.env.ADMIN_NOMBRE || "Administrador Sistema",
   telefono: process.env.ADMIN_TELEFONO || "3113578562",
@@ -27,10 +23,7 @@ const adminData = {
   contrasena: process.env.ADMIN_CONTRASENA || "Admin123!",
   estado: "ACTIVO"
 };
-
-// ============================================================
-// 1. USUARIOS (SIN ROLES EN EL OBJETO)
-// ============================================================
+// 1. USUARIOS (SIN ROLES EN EL OBJETO
 const usuariosData = [
   // CLIENTES CON PEDIDOS
   {
@@ -157,19 +150,13 @@ const usuariosData = [
     estado: "ACTIVO"
   }
 ];
-
-// ============================================================
-// 2. CATEGORÍAS
-// ============================================================
+// 2. CATEGORÍA
 const categoriasData = [
   { tipo_categoria: "MONTURAS", descripcion: "Monturas para lentes graduados" },
   { tipo_categoria: "ACCESORIOS", descripcion: "Accesorios para lentes y cuidado visual" },
   { tipo_categoria: "GAFAS DE SOL", descripcion: "Gafas con protección UV" }
 ];
-
-// ============================================================
-// 3. PRODUCTOS (30 PRODUCTOS)
-// ============================================================
+// 3. PRODUCTOS (30 PRODUCTOS
 const productosData = [
   // MONTURAS (id_categoria: 1) - 10 productos
   {
@@ -475,10 +462,7 @@ const productosData = [
     color: "Gris"
   }
 ];
-
-// ============================================================
-// 4. FÓRMULAS
-// ============================================================
+// 4. FÓRMULA
 const formulasData = [
   {
     id_usuario: 2, // María
@@ -537,18 +521,12 @@ const formulasData = [
     costo: 140000
   }
 ];
-
-// ============================================================
-// 5. VEHÍCULOS
-// ============================================================
+// 5. VEHÍCULO
 const vehiculosData = [
   { id_usuario: 7, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
   { id_usuario: 8, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
 ];
-
-// ============================================================
-// 6. PEDIDOS (12 PEDIDOS)
-// ============================================================
+// 6. PEDIDOS (12 PEDIDOS
 const pedidosData = [
   // Pedido 1: María - Bogotá, CON fórmula, 100% pagado
   {
@@ -671,10 +649,7 @@ const pedidosData = [
     fecha_estimada: "2025-03-01"
   }
 ];
-
-// ============================================================
-// 7. PEDIDOS_PRODUCTOS
-// ============================================================
+// 7. PEDIDOS_PRODUCTO
 const pedidosProductosData = [
   { id_pedido: 1, id_producto: 1, cant_productos: 1 },
   { id_pedido: 1, id_producto: 11, cant_productos: 1 },
@@ -700,10 +675,7 @@ const pedidosProductosData = [
   { id_pedido: 12, id_producto: 21, cant_productos: 1 },
   { id_pedido: 12, id_producto: 23, cant_productos: 1 }
 ];
-
-// ============================================================
-// 8. PAGOS (Pedido 8 tiene DOS PAGOS)
-// ============================================================
+// 8. PAGOS (Pedido 8 tiene DOS PAGOS
 const pagosData = [
   // Pedido 1: 100%
   {
@@ -795,10 +767,7 @@ const pagosData = [
   }
   // Pedido 6 y 12 NO tienen pagos (están en Pendiente)
 ];
-
-// ============================================================
-// 9. DISTRIBUCIONES (SOLO PEDIDOS PAGADOS)
-// ============================================================
+// 9. DISTRIBUCIONES (SOLO PEDIDOS PAGADOS
 const distribucionesData = [
   {
     id_pedido: 1,
@@ -850,10 +819,7 @@ const distribucionesData = [
     observaciones: "ENTREGA EN BOGOTÁ - REPARTIDOR\nBarrio Chapinero"
   }
 ];
-
-// ============================================================
-// FUNCIÓN: CREAR ROLES
-// ============================================================
+// FUNCIÓN: CREAR ROLE
 const crearRoles = async (transaction) => {
   console.log(" Creando roles...");
   const rolesData = [
@@ -875,10 +841,7 @@ const crearRoles = async (transaction) => {
   console.log("");
   return rolesCreados;
 };
-
-// ============================================================
-// FUNCIÓN: CREAR ADMIN
-// ============================================================
+// FUNCIÓN: CREAR ADMI
 const crearAdmin = async (transaction) => {
   console.log(" Creando administrador...");
 
@@ -897,7 +860,9 @@ const crearAdmin = async (transaction) => {
       fecha_nacimiento: adminData.fecha_nacimiento,
       documento: adminData.documento,
       ciudad: adminData.ciudad,
-      direccion: adminData.direccion
+      direccion: adminData.direccion,
+      reset_token: null,
+      reset_token_expiry: null
     }, { transaction });
     console.log(` Admin actualizado: ${adminData.email}`);
     return adminExistente;
@@ -912,16 +877,15 @@ const crearAdmin = async (transaction) => {
     direccion: adminData.direccion,
     email: adminData.email,
     contrasena: adminData.contrasena,
-    estado: adminData.estado
+    estado: adminData.estado,
+    reset_token: null,
+    reset_token_expiry: null
   }, { transaction });
 
   console.log(` Admin creado: ${adminData.email}`);
   return admin;
 };
-
-// ============================================================
-// FUNCIÓN: ASIGNAR ROL A USUARIO
-// ============================================================
+// FUNCIÓN: ASIGNAR ROL A USUARI
 const asignarRol = async (usuarioId, rolId, transaction) => {
   const [rolUsuario, created] = await RolUsuario.findOrCreate({
     where: {
@@ -936,10 +900,7 @@ const asignarRol = async (usuarioId, rolId, transaction) => {
   });
   return created;
 };
-
-// ============================================================
-// FUNCIÓN PRINCIPAL
-// ============================================================
+// FUNCIÓN PRINCIPA
 const seedAll = async () => {
   const transaction = await sequelize.transaction();
 
@@ -949,21 +910,21 @@ const seedAll = async () => {
     await sequelize.authenticate();
     console.log("Conexión a la base de datos establecida\n");
 
-    // ============================================================
+
     // 1. ROLES
-    // ============================================================
+
     const roles = await crearRoles(transaction);
 
-    // ============================================================
+
     // 2. ADMIN
-    // ============================================================
+
     const admin = await crearAdmin(transaction);
     await asignarRol(admin.id_usuario, roles.ADMIN.id_rol, transaction);
     console.log(` Rol ADMIN asignado\n`);
 
-    // ============================================================
+
     // 3. USUARIOS
-    // ============================================================
+
     console.log(" Insertando usuarios...");
     const usuariosIds = {};
 
@@ -973,10 +934,11 @@ const seedAll = async () => {
     for (const usuario of usuariosData) {
       const hashedPassword = await bcrypt.hash(usuario.contrasena, 10);
 
+      // AGREGAR reset_token y reset_token_expiry (NULL por defecto)
       const [result] = await sequelize.query(
         `INSERT INTO USUARIOS 
-         (nombre_completo, telefono, fecha_nacimiento, documento, ciudad, direccion, email, contrasena, estado)
-         VALUES (:nombre_completo, :telefono, :fecha_nacimiento, :documento, :ciudad, :direccion, :email, :contrasena, :estado)`,
+         (nombre_completo, telefono, fecha_nacimiento, documento, ciudad, direccion, email, contrasena, estado, reset_token, reset_token_expiry)
+         VALUES (:nombre_completo, :telefono, :fecha_nacimiento, :documento, :ciudad, :direccion, :email, :contrasena, :estado, NULL, NULL)`,
         {
           replacements: {
             nombre_completo: usuario.nombre_completo,
@@ -998,12 +960,11 @@ const seedAll = async () => {
       console.log(` Usuario: ${usuario.nombre_completo} (${usuario.email}) - ID: ${result}`);
     }
 
-    // ============================================================
+
     // 4. ASIGNAR ROLES A USUARIOS (TABLA INTERMEDIA ROL_USUARIO)
-    // ============================================================
+
     console.log("Asignando roles a usuarios...");
 
-    // Definir qué rol tiene cada usuario
     const rolesPorUsuario = {
       "admin@opticam.com": ["ADMIN"],
       "maria@email.com": ["CLIENTE"],
@@ -1042,9 +1003,9 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 5. CATEGORÍAS
-    // ============================================================
+
     console.log("Insertando categorías...");
     for (const categoria of categoriasData) {
       await sequelize.query(
@@ -1064,20 +1025,19 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 6. PRODUCTOS
-    // ============================================================
+
     console.log("Insertando productos...");
     for (const producto of productosData) {
       console.log(` Subiendo imagen local para: ${producto.nombre}`);
 
-        const resultado = await subirImagenLocal(producto.imagen, "opticam/productos");
+      const resultado = await subirImagenLocal(producto.imagen, "opticam/productos");
 
-        if (!resultado.success) {
+      if (!resultado.success) {
         console.log(` Error: ${resultado.error}`);
         continue;
       }
-
 
       await sequelize.query(
         `INSERT INTO PRODUCTOS 
@@ -1102,18 +1062,18 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 7. FÓRMULAS
-    // ============================================================
+
     console.log("Insertando fórmulas...");
     for (const formula of formulasData) {
       console.log(`Subiendo imagen local para fórmula (Usuario: ${formula.id_usuario})`);
 
-        const resultado = await subirImagenLocal(formula.imagen, "opticam/formulas");
-        if (!resultado.success) {
+      const resultado = await subirImagenLocal(formula.imagen, "opticam/formulas");
+      if (!resultado.success) {
         console.log(` Error en fórmula ${formula.id_usuario}: ${resultado.error}`);
-    continue;
-  }
+        continue;
+      }
 
       await sequelize.query(
         `INSERT INTO FORMULAS 
@@ -1136,14 +1096,29 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 8. VEHÍCULOS
-    // ============================================================
+
     console.log(" Insertando vehículos...");
     for (const vehiculo of vehiculosData) {
+      // Verificar si la placa ya existe
+      const [existing] = await sequelize.query(
+        `SELECT id_vehiculo FROM VEHICULOS WHERE placa = :placa`,
+        {
+          replacements: { placa: vehiculo.placa },
+          type: sequelize.QueryTypes.SELECT,
+          transaction
+        }
+      );
+
+      if (existing) {
+        console.log(`Vehículo con placa ${vehiculo.placa} ya existe, saltando...`);
+        continue;
+      }
+
       await sequelize.query(
         `INSERT INTO VEHICULOS (id_usuario, tipo, modelo, placa, color) 
-         VALUES (:id_usuario, :tipo, :modelo, :placa, :color)`,
+        VALUES (:id_usuario, :tipo, :modelo, :placa, :color)`,
         {
           replacements: vehiculo,
           type: sequelize.QueryTypes.INSERT,
@@ -1154,9 +1129,9 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 9. PEDIDOS
-    // ============================================================
+
     console.log(" Insertando pedidos...");
     for (const pedido of pedidosData) {
       const [result] = await sequelize.query(
@@ -1173,9 +1148,9 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 10. PEDIDOS_PRODUCTOS
-    // ============================================================
+
     console.log("Insertando productos en pedidos...");
     for (const pp of pedidosProductosData) {
       await sequelize.query(
@@ -1190,9 +1165,9 @@ const seedAll = async () => {
     }
     console.log(` ${pedidosProductosData.length} relaciones agregadas\n`);
 
-    // ============================================================
+
     // 11. PAGOS
-    // ============================================================
+
     console.log("Insertando pagos...");
     for (const pago of pagosData) {
       await sequelize.query(
@@ -1209,9 +1184,9 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // 12. DISTRIBUCIONES
-    // ============================================================
+
     console.log("Insertando distribuciones...");
     for (const distribucion of distribucionesData) {
       await sequelize.query(
@@ -1228,9 +1203,9 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // ============================================================
+
     // COMMIT
-    // ============================================================
+
     await transaction.commit();
 
     console.log("\n¡TODOS LOS DATOS FUERON INSERTADOS EXITOSAMENTE!");
@@ -1283,8 +1258,5 @@ const seedAll = async () => {
     process.exit(0);
   }
 };
-
-// ============================================================
-// EJECUTAR
-// ============================================================
+// EJECUTA
 seedAll();

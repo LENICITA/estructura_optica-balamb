@@ -1,4 +1,3 @@
-// controllers/pagosController.js
 import PagoModel from '../models/pagoModel.js';
 import sequelize from '../config/database.js';
 

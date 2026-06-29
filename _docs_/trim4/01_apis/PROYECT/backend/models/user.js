@@ -2,7 +2,6 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
-
 // tabla de USUARIOS en BD
 const Usuario = sequelize.define('Usuario', {
   id_usuario: {
@@ -84,20 +83,26 @@ const Usuario = sequelize.define('Usuario', {
     validate: {
       isIn: { args: [['ACTIVO', 'INACTIVO', 'SUSPENDIDO']], msg: "Estado invalido"}
     }
-  }, 
+  },
+  // CAMPOS PARA RECUPERACIÓN DE CONTRASEÑA
+  reset_token: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  reset_token_expiry: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
 }, {
   tableName: 'USUARIOS',
   timestamps: false,
-  // crear el hasheo de contraseña
   hooks: {
-    //cuando se crea la contraseña
     beforeCreate: async (usuario) => {
       if (usuario.contrasena) {
         const salt = await bcrypt.genSalt(10);
         usuario.contrasena = await bcrypt.hash(usuario.contrasena, salt);
       }
     },
-    // cuando se actualice la contraseña
     beforeUpdate: async (usuario) => {
       if (usuario.changed('contrasena')) {
         const salt = await bcrypt.genSalt(10);
@@ -107,47 +112,25 @@ const Usuario = sequelize.define('Usuario', {
   }
 });
 
-// compara las dos contraseñas de registro
+// Método para comparar contraseñas
 Usuario.prototype.comparePassword = async function (candidatePassword) {
+  if (!this.contrasena) return false;
   return await bcrypt.compare(candidatePassword, this.contrasena);  
 };
 
-// autenticacion
+// Método estático para autenticar
 Usuario.authenticate = async function (email, contrasena) {
   const user = await this.findOne({ where: { email }});
-  
-  if (!user) {
-    throw new Error("Usuario no encontrado")
-  }
-
+  if (!user) throw new Error("Usuario no encontrado");
   const isMatch = await user.comparePassword(contrasena);
-
-  if (!isMatch) {
-    throw new Error("Contraseña incorrecta");
-  }
-
+  if (!isMatch) throw new Error("Contraseña incorrecta");
   return user;
-}
+};
 
-//obtener rol del usuario
+// Obtener roles del usuario
 Usuario.prototype.getRoles = async function() {
   const roles = await this.getRoles();
   return roles.map(role => role.nombre);
-};
-
-// Agregar este método de instancia
-Usuario.prototype.comparePassword = async function(candidatePassword) {
-    if (!this.contrasena) return false;
-    return await bcrypt.compare(candidatePassword, this.contrasena);
-};
-
-// Método estático para autenticar
-Usuario.authenticate = async function(email, contrasena) {
-    const user = await this.findOne({ where: { email }});
-    if (!user) throw new Error("Usuario no encontrado");
-    const isMatch = await user.comparePassword(contrasena);
-    if (!isMatch) throw new Error("Contraseña incorrecta");
-    return user;
 };
 
 export default Usuario;

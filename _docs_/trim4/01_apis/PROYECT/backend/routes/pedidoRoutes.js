@@ -6,9 +6,7 @@ import * as pedidoController from '../controllers/pedidoController.js';
 
 const router = express.Router();
 
-// ============================================
 // RUTAS PARA CLIENTE (requieren token)
-// ============================================
 
 // Crear pedido (cliente)
 router.post('/', authMiddleware, pedidoController.crearPedido);
@@ -22,9 +20,7 @@ router.get('/:id', authMiddleware, pedidoController.obtenerPedidoPorId);
 // Cancelar pedido (cliente dueño)
 router.put('/:id/cancelar', authMiddleware, pedidoController.cancelarPedido);
 
-// ============================================
 // RUTAS PARA ADMIN (requieren token + admin)
-// ============================================
 
 // Admin marca pedido como LISTO (gafas listas para pago restante)
 router.put('/:id/listo', authMiddleware, adminMiddleware, pedidoController.marcarPedidoComoListo);

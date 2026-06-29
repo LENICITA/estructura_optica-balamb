@@ -1,10 +1,7 @@
-// controllers/distribucionController.js
 import DistribucionModelo from '../models/Distribucion.js';
 import sequelize from '../config/database.js';
 
-// ============================================
 // ADMIN - ASIGNAR PEDIDO A REPARTIDOR
-// ============================================
 export const asignarPedido = async (req, res) => {
   try {
     const { id_pedido, id_usuario, observaciones } = req.body;
@@ -38,7 +35,6 @@ export const asignarPedido = async (req, res) => {
     }
 
     // OBTENER CIUDAD DEL USUARIO DEL PEDIDO
-
     const [usuarioPedido] = await sequelize.query(
       'SELECT ciudad FROM USUARIOS WHERE id_usuario = ?',
       { replacements: [pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
@@ -47,36 +43,33 @@ export const asignarPedido = async (req, res) => {
     const ciudad = usuarioPedido?.ciudad?.toLowerCase().trim() || '';
     const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
 
-    //DETERMINAR A QUIEN ASIGNAR SEGÚN CIUDAD
-
+    // DETERMINAR A QUIEN ASIGNAR SEGÚN CIUDAD
     let usuarioAsignado = id_usuario;
     let tipoAsignacion = '';
     let usuarioInfo = null;
 
     if (esBogota) {
+      // Verificar que el repartidor existe y tiene rol REPARTIDOR
+      const [repartidor] = await sequelize.query(
+        `SELECT u.id_usuario, u.nombre_completo, u.email, u.telefono
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ? AND r.nombre = 'REPARTIDOR' AND u.estado = 'ACTIVO'`,
+        { replacements: [id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
 
-    // Verificar que el repartidor existe y tiene rol REPARTIDOR
-    const [repartidor] = await sequelize.query(
-      `SELECT u.id_usuario, u.nombre_completo, u.email, u.telefono
-       FROM USUARIOS u
-       JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
-       JOIN ROLES r ON ru.id_rol = r.id_rol
-       WHERE u.id_usuario = ? AND r.nombre = 'REPARTIDOR' AND u.estado = 'ACTIVO'`,
-      { replacements: [id_usuario], type: sequelize.QueryTypes.SELECT }
-    );
-
-    if (!repartidor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Repartidor no encontrado o no tiene rol REPARTIDOR'
-      });
-    }
-        usuarioAsignado = id_usuario;
-        tipoAsignacion = 'REPARTIDOR';
-        usuarioInfo = repartidor;
-
+      if (!repartidor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Repartidor no encontrado o no tiene rol REPARTIDOR'
+        });
+      }
+      usuarioAsignado = id_usuario;
+      tipoAsignacion = 'REPARTIDOR';
+      usuarioInfo = repartidor;
     } else {
-      //FUERA DE BOGOTÁ → ADMIN (distribuidora externa)
+      // FUERA DE BOGOTÁ → ADMIN (distribuidora externa)
       const [admin] = await sequelize.query(
         `SELECT u.id_usuario 
          FROM USUARIOS u
@@ -109,8 +102,9 @@ export const asignarPedido = async (req, res) => {
 
       usuarioAsignado = admin.id_usuario;
       tipoAsignacion = 'DISTRIBUIDORA_EXTERNA';
-      usuarioInfo =admin;
+      usuarioInfo = admin;
     }
+
     // Verificar que el pedido no tenga una distribución activa
     const [distribucionExistente] = await sequelize.query(
       `SELECT * FROM DISTRIBUCIONES 
@@ -126,7 +120,6 @@ export const asignarPedido = async (req, res) => {
     }
 
     // CREAR OBSERVACIONES PERSONALIZADAS
-
     let observacionesFinal = observaciones || null;
     
     if (!esBogota) {
@@ -163,7 +156,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
 
     res.status(201).json({
       success: true,
-      message: 'mensaje',
+      message: mensaje,
       data: {
         distribucion: distribucionCreada,
         tipo_asignacion: tipoAsignacion,
@@ -171,9 +164,9 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
         es_bogota: esBogota,
         usuario_asignado: {
           id: usuarioAsignado,
-          nombre_completo: usuarioInfo.nombre_completo, 
-          email: usuarioInfo.email,                   
-          telefono: usuarioInfo.telefono  
+          nombre_completo: usuarioInfo.nombre_completo,
+          email: usuarioInfo.email,
+          telefono: usuarioInfo.telefono
         },
         pedido: {
           id_pedido: pedido.id_pedido,
@@ -194,14 +187,23 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
   }
 };
 
-// ============================================
 // REPARTIDOR - VER MIS PEDIDOS PENDIENTES (CON DIRECCIÓN)
-// ============================================
 export const obtenerPendientes = async (req, res) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
-    const distribuciones = await DistribucionModelo.obtenerPendientes(usuario.id_usuario);
+    console.log('Usuario autenticado:', usuario);
+    console.log('usuario.id:', usuario?.id);
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+    const distribuciones = await DistribucionModelo.obtenerPendientes(usuario.id);
+
+    console.log(`${distribuciones.length} pedidos pendientes encontrados`);
 
     res.json({
       success: true,
@@ -210,11 +212,12 @@ export const obtenerPendientes = async (req, res) => {
         id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
-        pedido: d.pedido ? {
-          id_pedido: d.pedido.id_pedido,
-          direccion_entrega: d.pedido.direccion_entrega,  // ← Dirección
-          total: d.pedido.total,
-          fecha_estimada: d.pedido.fecha_estimada
+        pedido: d.id_pedido ? {
+          id_pedido: d.id_pedido,
+          direccion_entrega: d.direccion_entrega || 'Sin dirección',
+          total: d.total || 0,
+          fecha_estimada: d.fecha_estimada || null,
+          cliente: d.cliente || 'Cliente'
         } : null
       }))
     });
@@ -224,19 +227,29 @@ export const obtenerPendientes = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener pedidos pendientes',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // REPARTIDOR - VER MIS PEDIDOS EN ENTREGA (CON DIRECCIÓN)
-// ============================================
 export const obtenerEnEntrega = async (req, res) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
-    const distribuciones = await DistribucionModelo.obtenerEnEntrega(usuario.id_usuario);
+    console.log('Usuario autenticado:', usuario);
+    console.log('usuario.id:', usuario?.id);
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    const distribuciones = await DistribucionModelo.obtenerEnEntrega(usuario.id);
+
+    console.log(`${distribuciones.length} pedidos en entrega encontrados`);
 
     res.json({
       success: true,
@@ -245,11 +258,12 @@ export const obtenerEnEntrega = async (req, res) => {
         id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
-        pedido: d.pedido ? {
-          id_pedido: d.pedido.id_pedido,
-          direccion_entrega: d.pedido.direccion_entrega,  // ← Dirección
-          total: d.pedido.total,
-          fecha_estimada: d.pedido.fecha_estimada
+        pedido: d.id_pedido ? {
+          id_pedido: d.id_pedido,
+          direccion_entrega: d.direccion_entrega || 'Sin dirección',
+          total: d.total || 0,
+          fecha_estimada: d.fecha_estimada || null,
+          cliente: d.cliente || 'Cliente'
         } : null
       }))
     });
@@ -259,18 +273,23 @@ export const obtenerEnEntrega = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener pedidos en entrega',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // REPARTIDOR - VER DETALLE DE UNA DISTRIBUCIÓN (CON DIRECCIÓN)
-// ============================================
 export const obtenerDistribucionPorId = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
 
     const distribucion = await DistribucionModelo.obtenerPorId(id);
 
@@ -281,9 +300,8 @@ export const obtenerDistribucionPorId = async (req, res) => {
       });
     }
 
-    // Verificar que el repartidor sea el dueño o sea admin
-    const esAdmin = usuario.rol === 'ADMIN';
-    if (!esAdmin && distribucion.id_usuario !== usuario.id_usuario) {
+    const esAdmin = usuario.roles?.includes('ADMIN') || false;
+    if (!esAdmin && distribucion.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para ver esta distribución'
@@ -300,7 +318,7 @@ export const obtenerDistribucionPorId = async (req, res) => {
         observaciones: distribucion.observaciones,
         pedido: distribucion.pedido ? {
           id_pedido: distribucion.pedido.id_pedido,
-          direccion_entrega: distribucion.pedido.direccion_entrega,  // ← Dirección
+          direccion_entrega: distribucion.pedido.direccion_entrega,
           total: distribucion.pedido.total,
           fecha_estimada: distribucion.pedido.fecha_estimada
         } : null,
@@ -318,18 +336,23 @@ export const obtenerDistribucionPorId = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener distribución',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // REPARTIDOR - INICIAR ENTREGA
-// ============================================
 export const iniciarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
 
     const distribucion = await DistribucionModelo.obtenerPorId(id);
 
@@ -340,7 +363,7 @@ export const iniciarEntrega = async (req, res) => {
       });
     }
 
-    if (distribucion.id_usuario !== usuario.id_usuario) {
+    if (distribucion.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para iniciar esta entrega'
@@ -367,18 +390,23 @@ export const iniciarEntrega = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al iniciar la entrega',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // REPARTIDOR - MARCAR COMO ENTREGADO
-// ============================================
 export const marcarEntregado = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuario = req.usuario;
+    const usuario = req.user;
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
 
     const distribucion = await DistribucionModelo.obtenerPorId(id);
 
@@ -389,7 +417,7 @@ export const marcarEntregado = async (req, res) => {
       });
     }
 
-    if (distribucion.id_usuario !== usuario.id_usuario) {
+    if (distribucion.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para marcar esta entrega'
@@ -416,19 +444,51 @@ export const marcarEntregado = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al marcar como entregado',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // REPARTIDOR - VER HISTORIAL DE ENTREGAS (CON DIRECCIÓN)
-// ============================================
 export const obtenerHistorial = async (req, res) => {
   try {
-    const usuario = req.usuario;
+    const usuario = req.user;
 
-    const historial = await DistribucionModelo.obtenerHistorial(usuario.id_usuario);
+    console.log('Usuario autenticado:', usuario);
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    console.log(`Buscando historial para repartidor ${usuario.id}`);
+
+    const historial = await sequelize.query(
+      `SELECT 
+        d.id_distribucion,
+        d.estado,
+        d.fecha_asignacion,
+        d.fecha_entrega,
+        d.observaciones,
+        p.id_pedido,
+        p.direccion_entrega,
+        p.total,
+        p.fecha_estimada,
+        u.nombre_completo as cliente
+       FROM DISTRIBUCIONES d
+       LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
+       LEFT JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+       WHERE d.id_usuario = ? AND d.estado = 'ENTREGADO'
+       ORDER BY d.fecha_entrega DESC`,
+      {
+        replacements: [usuario.id],
+        type: sequelize.QueryTypes.SELECT
+      }
+    );
+
+    console.log(`${historial.length} entregas completadas encontradas`);
 
     res.json({
       success: true,
@@ -438,11 +498,13 @@ export const obtenerHistorial = async (req, res) => {
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
         fecha_entrega: d.fecha_entrega,
-        pedido: d.pedido ? {
-          id_pedido: d.pedido.id_pedido,
-          direccion_entrega: d.pedido.direccion_entrega,  // ← Dirección
-          total: d.pedido.total,
-          fecha_estimada: d.pedido.fecha_estimada
+        observaciones: d.observaciones,
+        pedido: d.id_pedido ? {
+          id_pedido: d.id_pedido,
+          direccion_entrega: d.direccion_entrega || 'Sin dirección',
+          total: d.total || 0,
+          fecha_estimada: d.fecha_estimada || null,
+          cliente: d.cliente || 'Cliente'
         } : null
       }))
     });
@@ -452,14 +514,12 @@ export const obtenerHistorial = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener historial',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// ============================================
 // ADMIN - OBTENER TODAS LAS DISTRIBUCIONES
-// ============================================
 export const obtenerTodas = async (req, res) => {
   try {
     const distribuciones = await DistribucionModelo.obtenerTodas();
@@ -468,7 +528,7 @@ export const obtenerTodas = async (req, res) => {
       success: true,
       count: distribuciones.length,
       data: distribuciones.map(d => ({
-      id_distribucion: d.id_distribucion,
+        id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
         pedido: {
@@ -476,7 +536,7 @@ export const obtenerTodas = async (req, res) => {
           direccion_entrega: d.pedido?.direccion_entrega,
           total: d.pedido?.total
         },
-        repartidor: {  // ← Aquí está el nombre
+        repartidor: {
           id: d.repartidor?.id_usuario,
           nombre: d.repartidor?.nombre_completo
         }
@@ -493,9 +553,7 @@ export const obtenerTodas = async (req, res) => {
   }
 };
 
-// ============================================
 // ADMIN - CANCELAR ENTREGA
-// ============================================
 export const cancelarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
@@ -535,12 +593,7 @@ export const cancelarEntrega = async (req, res) => {
   }
 };
 
-// controllers/distribucionController.js
-// AGREGAR AL FINAL DEL ARCHIVO
-
-// ============================================
 // ADMIN - OBTENER DISTRIBUCIONES EXTERNAS (FUERA DE BOGOTÁ)
-// ============================================
 export const obtenerDistribucionesExternas = async (req, res) => {
   try {
     // Buscar el ADMIN (distribuidora externa)
@@ -590,7 +643,6 @@ export const obtenerDistribucionesExternas = async (req, res) => {
               email: admin.email,
               telefono: admin.telefono
             },
-            // Datos del cliente
             cliente: {
               id: usuario?.id_usuario || null,
               nombre_completo: usuario?.nombre_completo || 'Desconocido',

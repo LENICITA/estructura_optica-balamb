@@ -1,4 +1,3 @@
-// routes/inventarioRoutes.js
 import express from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";

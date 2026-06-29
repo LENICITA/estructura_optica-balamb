@@ -1,10 +1,7 @@
-// models/pedidos.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-// ============================================
 // MODELO PEDIDOS
-// ============================================
 const Pedido = sequelize.define('Pedido', {
   id_pedido: {
     type: DataTypes.INTEGER,
@@ -56,39 +53,36 @@ const Pedido = sequelize.define('Pedido', {
   }
 }, {
   tableName: 'PEDIDOS',
-  timestamps: false,
-  hooks: {
-    beforeCreate: (pedido) => {
-      const fechaPedido = new Date();
-      const dias = 8 + Math.floor(Math.random() * 3);
-      const fechaEstimada = new Date(fechaPedido);
-      fechaEstimada.setDate(fechaPedido.getDate() + dias);
-      pedido.fecha_estimada = fechaEstimada.toISOString().split('T')[0];
-    }
-  }
+  timestamps: false
 });
 
-// ============================================
 // MÉTODOS DEL MODELO
-// ============================================
 const PedidoModelo = {
 
-  // ==========================================
   // CLIENTE
-  // ==========================================
 
   /**
    * Crear un nuevo pedido
    */
   crear: async (data) => {
+    console.log('Datos recibidos en crear:', data);
+    console.log('fecha_estimada recibida:', data.fecha_estimada);
+
+    // Asegurar que fecha_estimada esté definida
+    if (!data.fecha_estimada) {
+      throw new Error('fecha_estimada es requerida');
+    }
+
     const pedido = await Pedido.create({
       id_usuario: data.id_usuario,
       id_formula: data.id_formula || null,
       direccion_entrega: data.direccion_entrega,
       estado: 'Pendiente',
       costo_envio: data.costo_envio || 0,
-      total: data.total
+      total: data.total,
+      fecha_estimada: data.fecha_estimada
     });
+    console.log('Pedido creado:', pedido.id_pedido);
     return pedido.id_pedido;
   },
 
@@ -99,9 +93,9 @@ const PedidoModelo = {
     const pedidos = await sequelize.query(
       `SELECT p.*, 
         (SELECT COUNT(*) FROM PEDIDOS_PRODUCTOS pp WHERE pp.id_pedido = p.id_pedido) as total_productos
-       FROM PEDIDOS p
-       WHERE p.id_usuario = ?
-       ORDER BY p.fecha_pedido DESC`,
+      FROM PEDIDOS p
+      WHERE p.id_usuario = ?
+      ORDER BY p.fecha_pedido DESC`,
       { replacements: [id_usuario], type: sequelize.QueryTypes.SELECT }
     );
     return pedidos;
@@ -123,9 +117,7 @@ const PedidoModelo = {
     return pedido;
   },
 
-  // ==========================================
   // ADMIN
-  // ==========================================
 
   /**
    * Obtener todos los pedidos con datos del cliente y fórmula
@@ -174,9 +166,7 @@ const PedidoModelo = {
     return true;
   },
 
-  // ==========================================
   // UTILIDADES
-  // ==========================================
 
   /**
    * Verificar si el pedido pertenece al usuario
@@ -225,10 +215,8 @@ const PedidoModelo = {
         SUM(CASE WHEN estado = 'Entregado' THEN 1 ELSE 0 END) as entregados,
         SUM(CASE WHEN estado = 'Cancelado' THEN 1 ELSE 0 END) as cancelados,
         SUM(total) as ingresos_totales,
-        AVG(total) as promedio_venta,
-        SUM(CASE WHEN ciudad = 'Bogotá' OR ciudad = 'Bogota' THEN 0 ELSE costo_envio END) as total_envios_cobrados
-       FROM PEDIDOS p
-       JOIN USUARIOS u ON p.id_usuario = u.id_usuario`,
+        AVG(total) as promedio_venta
+       FROM PEDIDOS`,
       { type: sequelize.QueryTypes.SELECT }
     );
     return stats;
