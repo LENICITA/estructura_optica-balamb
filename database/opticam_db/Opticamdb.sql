@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS `Opticamdb`.`USUARIOS` (
   `email` VARCHAR(100) NOT NULL,
   `contrasena` VARCHAR(200) NOT NULL,
   `estado` ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') NOT NULL DEFAULT 'ACTIVO',
-  `reset_token` VARCHAR(100) NULL DEFAULT 'NULL',
-  `reset_token_expiry` DATETIME NULL DEFAULT 'NULL',
+  `reset_token` VARCHAR(100) NULL,
+  `reset_token_expiry` DATETIME NULL,
   PRIMARY KEY (`id_usuario`))
 ENGINE = InnoDB;
 
@@ -210,7 +210,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Opticamdb`.`DISTRIBUCIONES` (
   `id_distribucion` INT NOT NULL AUTO_INCREMENT,
-  `id_usuario` INT NOT NULL,
+  `id_usuario` INT NULL,
   `id_pedido` INT NOT NULL,
   `fecha_asignacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_entrega` DATETIME NOT NULL,
