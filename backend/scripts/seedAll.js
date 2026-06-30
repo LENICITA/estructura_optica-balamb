@@ -767,58 +767,6 @@ const pagosData = [
   }
   // Pedido 6 y 12 NO tienen pagos (están en Pendiente)
 ];
-// 9. DISTRIBUCIONES (SOLO PEDIDOS PAGADOS
-const distribucionesData = [
-  {
-    id_pedido: 1,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-01-16 14:00:00",
-    observaciones: "ENTREGA EN BOGOTÁ - REPARTIDOR\nBarrio Chapinero"
-  },
-  {
-    id_pedido: 3,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-01-26 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Cali"
-  },
-  {
-    id_pedido: 7,
-    id_usuario: null,
-    estado: "ENTREGADO",
-    fecha_entrega: "2025-01-10 15:30:00",
-    observaciones: "ENTREGA EN BOGOTÁ - ENTREGADO"
-  },
-  {
-    id_pedido: 8,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-11 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Medellín\nPedido con dos pagos del 50% completados"
-  },
-  {
-    id_pedido: 9,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-16 14:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Medellín\nMúltiples productos"
-  },
-  {
-    id_pedido: 10,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-21 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Cali\nMúltiples productos"
-  },
-  {
-    id_pedido: 11,
-    id_usuario: null,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-26 14:00:00",
-    observaciones: "ENTREGA EN BOGOTÁ - REPARTIDOR\nBarrio Chapinero"
-  }
-];
 // FUNCIÓN: CREAR ROLE
 const crearRoles = async (transaction) => {
   console.log(" Creando roles...");
