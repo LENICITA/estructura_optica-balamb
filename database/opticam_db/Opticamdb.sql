@@ -210,7 +210,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `Opticamdb`.`DISTRIBUCIONES` (
   `id_distribucion` INT NOT NULL AUTO_INCREMENT,
-  `id_usuario` INT NULL,
+  `id_usuario` INT NOT NULL,
   `id_pedido` INT NOT NULL,
   `fecha_asignacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fecha_entrega` DATETIME NOT NULL,
@@ -230,8 +230,3 @@ CREATE TABLE IF NOT EXISTS `Opticamdb`.`DISTRIBUCIONES` (
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB;
-
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
