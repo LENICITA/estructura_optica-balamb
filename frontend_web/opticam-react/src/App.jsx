@@ -42,6 +42,7 @@ import PerfilRepartidor from './components/repartidor/PerfilRepartidor';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import RecuperarPassword from './components/Auth/RecuperarPassword';
+import ResetPassword from './components/Auth/ResetPassword';
 
 // ALL
 import Principal from './components/Principal';
@@ -61,6 +62,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/recuperar-password" element={<RecuperarPassword />} />
+              
+              {/* RUTA DE RECUPERACIÓN DE CONTRASEÑA */}
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* ================== CLIENTE PÚBLICO ================== */}
               <Route path="/principal-cliente" element={<PrincipalCliente />} />
@@ -106,7 +110,7 @@ function App() {
               {/* =================== ALL ================== */}
               <Route path='/principal' element={<Principal />} />
 
-              {/* ================== 404 ================== */}
+              {/* ================== 404 - DEBE SER LA ÚLTIMA RUTA ================== */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

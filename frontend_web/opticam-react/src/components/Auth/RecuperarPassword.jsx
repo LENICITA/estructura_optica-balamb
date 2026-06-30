@@ -7,12 +7,14 @@ const RecuperarPassword = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLink, setResetLink] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
+    setResetLink(null);
     setLoading(true);
 
     if (!email) {
@@ -27,10 +29,15 @@ const RecuperarPassword = () => {
       if (response.data.success) {
         setMessage(`Se ha enviado un enlace de recuperación a ${email}`);
         
+        if (response.data.resetLink) {
+          setResetLink(response.data.resetLink);
+        }
+        
         setEmail('');
+        
         setTimeout(() => {
           navigate('/login');
-        }, 3000);
+        }, 5000);
       } else {
         setError(response.data.message || 'Error al enviar el correo');
       }
@@ -39,7 +46,7 @@ const RecuperarPassword = () => {
       if (err.response?.status === 404) {
         setError('No existe una cuenta con este email');
       } else if (err.response?.status === 400) {
-        setError(err.response.data?.message);
+        setError(err.response.data?.message || 'Datos inválidos');
       } else {
         setError('Error al procesar la solicitud. Intenta nuevamente.');
       }
@@ -51,7 +58,6 @@ const RecuperarPassword = () => {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-10 px-4 bg-gray-50">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
         <div className="bg-[#B90F0F] text-white text-center py-6">
           <i className="fa-solid fa-lock text-3xl mb-2"></i>
           <h2 className="text-xl font-bold">Restablecer contraseña</h2>
@@ -69,8 +75,17 @@ const RecuperarPassword = () => {
           )}
 
           {message && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm whitespace-pre-line">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
               {message}
+            </div>
+          )}
+
+          {resetLink && (
+            <div className="bg-blue-50 border border-blue-300 text-blue-700 px-4 py-3 rounded-lg mb-4 text-sm break-all">
+              <p className="font-semibold">Enlace de prueba (solo desarrollo):</p>
+              <a href={resetLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                {resetLink}
+              </a>
             </div>
           )}
 
@@ -95,7 +110,14 @@ const RecuperarPassword = () => {
               className="w-full bg-[#B90F0F] text-white py-3 rounded-xl font-semibold hover:bg-[#8a0b0b] transition disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              {loading ? 'Enviando...' : 'Enviar enlace de recuperación'}
+              {loading ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                  Enviando...
+                </>
+              ) : (
+                'Enviar enlace de recuperación'
+              )}
             </button>
           </form>
 

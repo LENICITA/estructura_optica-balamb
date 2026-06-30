@@ -16,10 +16,10 @@ const router = express.Router();
 router.post('/login', login);
 router.post('/register', register);
 
-//RUTAS DE RECUPERACION DE CONTRASEÑA
+// RUTAS DE RECUPERACIÓN DE CONTRASEÑA
 router.post('/recuperar-password', solicitarRecuperacion);
 router.get('/verificar-token/:token', verificarTokenRecuperacion);
-router.post('/reset-password', resetearPassword);
+router.post('/resetear-password', resetearPassword);
 
 // RUTAS PROTEGIDAS (requieren autenticación)
 router.get('/verify', authMiddleware, verifyToken);

@@ -70,11 +70,11 @@ const Usuario = sequelize.define('Usuario', {
     }
   },
   contrasena: {
-    type: DataTypes.STRING(200),
+    type: DataTypes.STRING(255),
     allowNull: false,
     validate: {
       notEmpty: { msg: "La contraseña es requerida" },
-      len: { args: [8, 200], msg: "La contraseña debe tener al menos 8 caracteres" }
+      len: { args: [8, 255], msg: "La contraseña debe tener al menos 8 caracteres" }
     }
   },
   estado: {
@@ -84,9 +84,8 @@ const Usuario = sequelize.define('Usuario', {
       isIn: { args: [['ACTIVO', 'INACTIVO', 'SUSPENDIDO']], msg: "Estado invalido"}
     }
   },
-  // CAMPOS PARA RECUPERACIÓN DE CONTRASEÑA
   reset_token: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING(255),
     allowNull: true
   },
   reset_token_expiry: {
@@ -105,8 +104,12 @@ const Usuario = sequelize.define('Usuario', {
     },
     beforeUpdate: async (usuario) => {
       if (usuario.changed('contrasena')) {
-        const salt = await bcrypt.genSalt(10);
-        usuario.contrasena = await bcrypt.hash(usuario.contrasena, salt);
+        const contrasena = usuario.getDataValue('contrasena');
+        // Solo hashear si NO es un hash de bcrypt
+        if (!contrasena.startsWith('$2a$') && !contrasena.startsWith('$2b$') && !contrasena.startsWith('$2y$')) {
+          const salt = await bcrypt.genSalt(10);
+          usuario.contrasena = await bcrypt.hash(contrasena, salt);
+        }
       }
     }
   }

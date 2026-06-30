@@ -4,6 +4,7 @@ import sequelize from "../config/database.js";
 import { generateToken } from "../utils/generadorToken.js";
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { Op } from 'sequelize';
 
 // LOGIN
 export const login = async (req, res) => {
@@ -17,7 +18,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Buscar usuario con roles
         const usuario = await Usuario.findOne({
             where: { email: email.toLowerCase() },
             include: [{
@@ -29,24 +29,24 @@ export const login = async (req, res) => {
         });
 
         if (!usuario) {
+            console.log('Usuario no encontrado:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Credenciales inválidas'
             });
         }
 
-        // Verificar contraseña
-        const isMatch = await bcrypt.compare(contrasena, usuario.contrasena);
-        console.log('Contraseña correcta:', isMatch);
+        const isMatch = await usuario.comparePassword(contrasena);
+        console.log('¿Contraseña correcta?', isMatch);
 
         if (!isMatch) {
+            console.log('Contraseña incorrecta para:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Credenciales inválidas'
             });
         }
 
-        // Verificar estado
         if (usuario.estado !== 'ACTIVO') {
             return res.status(403).json({
                 success: false,
@@ -54,13 +54,10 @@ export const login = async (req, res) => {
             });
         }
 
-        // Generar token
         const token = generateToken(usuario.id_usuario);
-
-        // Preparar respuesta con roles
         const roles = usuario.roles?.map(rol => rol.nombre) || [];
 
-        console.log(`Login exitoso: ${usuario.nombre_completo} (${roles.join(', ')})`);
+        console.log(`Login exitoso: ${usuario.nombre_completo}`);
 
         res.json({
             success: true,
@@ -79,19 +76,15 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en login: ', error);
-        console.error('Detalles:', error.message);
-        console.error('Stack:', error.stack);
-        
+        console.error('Error en login:', error);
         res.status(500).json({
             success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Error interno del servidor'
         });
     }
 };
 
-// REGISTRO DE USUARIO
+// REGISTER
 export const register = async (req, res) => {
     const transaction = await sequelize.transaction();
     
@@ -108,7 +101,6 @@ export const register = async (req, res) => {
             rol = 'CLIENTE'
         } = req.body;
 
-        // Validaciones
         if (!nombre_completo || !email || !contrasena) {
             await transaction.rollback();
             return res.status(400).json({
@@ -117,7 +109,14 @@ export const register = async (req, res) => {
             });
         }
 
-        // Verificar email
+        if (contrasena.length < 8) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La contraseña debe tener al menos 8 caracteres'
+            });
+        }
+
         const emailExistente = await Usuario.findOne({
             where: { email: email.toLowerCase() },
             transaction
@@ -131,7 +130,6 @@ export const register = async (req, res) => {
             });
         }
 
-        // Verificar documento (si se proporcionó)
         if (documento) {
             const documentoExistente = await Usuario.findOne({
                 where: { documento },
@@ -147,7 +145,6 @@ export const register = async (req, res) => {
             }
         }
 
-        // Crear usuario
         const usuario = await Usuario.create({
             nombre_completo,
             telefono: telefono || '',
@@ -160,7 +157,6 @@ export const register = async (req, res) => {
             estado: 'ACTIVO'
         }, { transaction });
 
-        // Asignar rol
         const rolEncontrado = await Role.findOne({
             where: { nombre: rol.toUpperCase() },
             transaction
@@ -172,7 +168,6 @@ export const register = async (req, res) => {
                 id_rol: rolEncontrado.id_rol
             }, { transaction });
         } else {
-            // Si no existe el rol, asignar CLIENTE por defecto
             const rolCliente = await Role.findOne({
                 where: { nombre: 'CLIENTE' },
                 transaction
@@ -187,7 +182,6 @@ export const register = async (req, res) => {
 
         await transaction.commit();
 
-        // Obtener usuario con roles
         const usuarioConRoles = await Usuario.findByPk(usuario.id_usuario, {
             include: [{
                 model: Role,
@@ -197,11 +191,9 @@ export const register = async (req, res) => {
         });
 
         const roles = usuarioConRoles.roles?.map(r => r.nombre) || [];
-
-        // Generar token
         const token = generateToken(usuario.id_usuario);
 
-        console.log(`Usuario registrado: ${usuario.nombre_completo} (${roles.join(', ')})`);
+        console.log(`Usuario registrado: ${usuario.nombre_completo}`);
 
         res.status(201).json({
             success: true,
@@ -224,13 +216,12 @@ export const register = async (req, res) => {
         console.error('Error en register:', error);
         res.status(500).json({
             success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Error interno del servidor'
         });
     }
 };
 
-// VERIFICAR TOKEN
+// VERIFY TOKEN
 export const verifyToken = async (req, res) => {
     try {
         const usuario = await Usuario.findByPk(req.user.id, {
@@ -297,6 +288,8 @@ export const solicitarRecuperacion = async (req, res) => {
     try {
         const { email } = req.body;
 
+        console.log('Solicitud de recuperación para:', email);
+
         if (!email) {
             return res.status(400).json({
                 success: false,
@@ -304,41 +297,36 @@ export const solicitarRecuperacion = async (req, res) => {
             });
         }
 
-        // Buscar usuario
         const usuario = await Usuario.findOne({
             where: { email: email.toLowerCase() }
         });
 
         if (!usuario) {
+            console.log('Email no encontrado:', email);
             return res.status(404).json({
                 success: false,
                 message: 'No existe una cuenta con este email'
             });
         }
 
-        // Generar token de recuperación (válido por 1 hora)
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora
+        const resetTokenExpiry = new Date(Date.now() + 3600000);
 
-        // Guardar token en el usuario
         await usuario.update({
             reset_token: resetToken,
             reset_token_expiry: resetTokenExpiry
         });
 
-        // Por ahora, devolvemos el token para pruebas
         const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
-        console.log(`Token de recuperación para ${email}: ${resetToken}`);
-        console.log(`Enlace: ${resetLink}`);
+        console.log('Token generado:', resetToken);
+        console.log('Enlace:', resetLink);
 
         res.json({
             success: true,
             message: 'Se ha enviado un enlace de recuperación a tu correo',
-            data: {
-                resetToken,
-                resetLink
-            }
+            resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
+            token: resetToken
         });
 
     } catch (error) {
@@ -355,6 +343,8 @@ export const verificarTokenRecuperacion = async (req, res) => {
     try {
         const { token } = req.params;
 
+        console.log('Verificando token:', token);
+
         if (!token) {
             return res.status(400).json({
                 success: false,
@@ -366,17 +356,20 @@ export const verificarTokenRecuperacion = async (req, res) => {
             where: {
                 reset_token: token,
                 reset_token_expiry: {
-                    [Op.gt]: new Date() // Token no expirado
+                    [Op.gt]: new Date()
                 }
             }
         });
 
         if (!usuario) {
+            console.log('Token inválido o expirado');
             return res.status(400).json({
                 success: false,
                 message: 'Token inválido o expirado'
             });
         }
+
+        console.log('Token válido para:', usuario.email);
 
         res.json({
             success: true,
@@ -396,10 +389,12 @@ export const verificarTokenRecuperacion = async (req, res) => {
     }
 };
 
-// RECUPERAR CONTRASEÑA - Resetear contraseña
+// RECUPERAR CONTRASEÑA - Resetear contraseña (VERSIÓN DEFINITIVA)
 export const resetearPassword = async (req, res) => {
     try {
         const { token, nueva_contrasena } = req.body;
+
+        console.log('Reset de contraseña solicitado');
 
         if (!token || !nueva_contrasena) {
             return res.status(400).json({
@@ -415,7 +410,6 @@ export const resetearPassword = async (req, res) => {
             });
         }
 
-        // Buscar usuario con token válido
         const usuario = await Usuario.findOne({
             where: {
                 reset_token: token,
@@ -426,24 +420,47 @@ export const resetearPassword = async (req, res) => {
         });
 
         if (!usuario) {
+            console.log('Token inválido o expirado');
             return res.status(400).json({
                 success: false,
                 message: 'Token inválido o expirado. Solicita un nuevo enlace.'
             });
         }
 
-        // Hashear nueva contraseña
+        console.log('Usuario encontrado:', usuario.email);
+
+        // GENERAR HASH
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(nueva_contrasena, salt);
 
-        // Actualizar contraseña y limpiar tokens
-        await usuario.update({
-            contrasena: hashedPassword,
-            reset_token: null,
-            reset_token_expiry: null
-        });
+        console.log('Hash generado:', hashedPassword.substring(0, 30) + '...');
 
-        console.log(`Contraseña actualizada para: ${usuario.email}`);
+        // ACTUALIZAR USANDO UPDATE DIRECTO
+        await Usuario.update(
+            {
+                contrasena: hashedPassword,
+                reset_token: null,
+                reset_token_expiry: null
+            },
+            {
+                where: { id_usuario: usuario.id_usuario }
+            }
+        );
+
+        // VERIFICAR QUE SE GUARDÓ CORRECTAMENTE
+        const usuarioVerificado = await Usuario.findByPk(usuario.id_usuario);
+        const testMatch = await usuarioVerificado.comparePassword(nueva_contrasena);
+        console.log('Prueba de login inmediata:', testMatch);
+
+        if (!testMatch) {
+            console.error('ERROR: La contraseña no se guardó correctamente');
+            return res.status(500).json({
+                success: false,
+                message: 'Error al guardar la contraseña. Intenta nuevamente.'
+            });
+        }
+
+        console.log(`Contraseña actualizada exitosamente para: ${usuario.email}`);
 
         res.json({
             success: true,
@@ -454,7 +471,7 @@ export const resetearPassword = async (req, res) => {
         console.error('Error en resetearPassword:', error);
         res.status(500).json({
             success: false,
-            message: 'Error al resetear la contraseña'
+            message: 'Error al resetear la contraseña: ' + error.message
         });
     }
 };
