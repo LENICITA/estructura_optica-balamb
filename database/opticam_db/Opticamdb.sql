@@ -25,9 +25,9 @@ CREATE TABLE IF NOT EXISTS `Opticamdb`.`USUARIOS` (
   `direccion` VARCHAR(45) NOT NULL,
   `fecha_registro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `email` VARCHAR(100) NOT NULL,
-  `contrasena` VARCHAR(200) NOT NULL,
+  `contrasena` VARCHAR(255) NOT NULL,
   `estado` ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') NOT NULL DEFAULT 'ACTIVO',
-  `reset_token` VARCHAR(100) NULL,
+  `reset_token` VARCHAR(255) NULL,
   `reset_token_expiry` DATETIME NULL,
   PRIMARY KEY (`id_usuario`))
 ENGINE = InnoDB;
