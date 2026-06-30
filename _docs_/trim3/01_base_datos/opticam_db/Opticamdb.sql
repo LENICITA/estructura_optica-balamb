@@ -19,19 +19,21 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 -- Tabla USUARIOS
 -- -----------------------------------------------------
-CREATE TABLE USUARIOS (
-  id_usuario INT NOT NULL AUTO_INCREMENT,
-  nombre_completo VARCHAR(100) NOT NULL,
-  telefono VARCHAR(20) NOT NULL,
-  fecha_nacimiento DATE NOT NULL,
-  documento BIGINT NOT NULL,
-  ciudad VARCHAR(20) NOT NULL,
-  direccion VARCHAR(45) NOT NULL,
-  fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  email VARCHAR(100) NOT NULL,
-  contrasena VARCHAR(200) NOT NULL,
-  estado ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') NOT NULL DEFAULT 'ACTIVO',
-  PRIMARY KEY (id_usuario))
+CREATE TABLE IF NOT EXISTS `Opticamdb`.`USUARIOS` (
+  `id_usuario` INT NOT NULL AUTO_INCREMENT,
+  `nombre_completo` VARCHAR(100) NOT NULL,
+  `telefono` VARCHAR(20) NOT NULL,
+  `fecha_nacimiento` DATE NOT NULL,
+  `documento` BIGINT NOT NULL,
+  `ciudad` VARCHAR(20) NOT NULL,
+  `direccion` VARCHAR(45) NOT NULL,
+  `fecha_registro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `email` VARCHAR(100) NOT NULL,
+  `contrasena` VARCHAR(255) NOT NULL,
+  `estado` ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') NOT NULL DEFAULT 'ACTIVO',
+  `reset_token` VARCHAR(255) NULL,
+  `reset_token_expiry` DATETIME NULL,
+  PRIMARY KEY (`id_usuario`))
 ENGINE = InnoDB;
 
 
