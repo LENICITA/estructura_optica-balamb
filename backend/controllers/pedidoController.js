@@ -332,11 +332,10 @@ export const cancelarPedido = async (req, res) => {
       });
     }
 
-    const estadosNoCancelables = ['Entregado', 'En Proceso', 'Enviado'];
-    if (estadosNoCancelables.includes(pedido.estado)) {
+    if (pedido.estado !== 'Pendiente') {
       return res.status(400).json({
         success: false,
-        message: `No puedes cancelar un pedido en estado ${pedido.estado}`
+        message: `Solo puedes cancelar pedidos en estado "Pendiente". Estado actual: ${pedido.estado}`
       });
     }
 
@@ -382,7 +381,7 @@ export const marcarPedidoComoListo = async (req, res) => {
     }
 
     // Verificar que tenga un abono del 50%
-    const [pagos] = await sequelize.query(
+    const pagos = await sequelize.query(
       `SELECT eleccion_pago FROM PAGOS 
        WHERE id_pedido = ? AND estado = 'Confirmado'`,
       { replacements: [id], type: sequelize.QueryTypes.SELECT }
