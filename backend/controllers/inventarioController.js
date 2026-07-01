@@ -215,11 +215,10 @@ export const getProductosByMarca = async (req, res) => {
 export const getMarcas = async (req, res) => {
   try {
     const results = await Inventario.getMarcas();
-    const marcas = results.map(item => item.marca);
     res.json({
       success: true,
-      count: marcas.length,
-      marcas: marcas
+      count: results.length,
+      marcas: results
     });
   } catch (error) {
     console.error("Error al obtener marcas:", error);
@@ -234,11 +233,10 @@ export const getMarcas = async (req, res) => {
 export const getColores = async (req, res) => {
   try {
     const results = await Inventario.getColores();
-    const colores = results.map(item => item.color);
     res.json({
       success: true,
-      count: colores.length,
-      colores: colores
+      count: results.length,
+      colores: results
     });
   } catch (error) {
     console.error("Error al obtener colores:", error);
