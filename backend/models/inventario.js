@@ -322,35 +322,29 @@ const Inventario = {
 
   // Obtener todas las marcas únicas
   getMarcas: async () => {
-    try {
-      const marcas = await Producto.findAll({
-        attributes: [
-          [sequelize.fn('DISTINCT', sequelize.col('marca')), 'marca']
-        ],
-        order: [['marca', 'ASC']]
-      });
-
-      return marcas.map(item => item.marca);
-    } catch (error) {
-      throw error;
-    }
-  },
+  try {
+    const marcas = await sequelize.query(
+      `SELECT DISTINCT marca FROM PRODUCTOS WHERE marca IS NOT NULL AND marca != '' ORDER BY marca ASC`,
+      { type: sequelize.QueryTypes.SELECT }
+    );
+    return marcas.map(item => item.marca);
+  } catch (error) {
+    throw error;
+  }
+},
 
   // Obtener todos los colores únicos
   getColores: async () => {
-    try {
-      const colores = await Producto.findAll({
-        attributes: [
-          [sequelize.fn('DISTINCT', sequelize.col('color')), 'color']
-        ],
-        order: [['color', 'ASC']]
-      });
-
-      return colores.map(item => item.color);
-    } catch (error) {
-      throw error;
-    }
-  },
+  try {
+    const colores = await sequelize.query(
+      `SELECT DISTINCT color FROM PRODUCTOS WHERE color IS NOT NULL AND color != '' ORDER BY color ASC`,
+      { type: sequelize.QueryTypes.SELECT }
+    );
+    return colores.map(item => item.color);
+  } catch (error) {
+    throw error;
+  }
+},
 
   // Crear producto
   create: async (data) => {
