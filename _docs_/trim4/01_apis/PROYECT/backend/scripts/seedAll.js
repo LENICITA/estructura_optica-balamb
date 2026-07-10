@@ -767,58 +767,6 @@ const pagosData = [
   }
   // Pedido 6 y 12 NO tienen pagos (están en Pendiente)
 ];
-// 9. DISTRIBUCIONES (SOLO PEDIDOS PAGADOS
-const distribucionesData = [
-  {
-    id_pedido: 1,
-    id_usuario: 7,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-01-16 14:00:00",
-    observaciones: "ENTREGA EN BOGOTÁ - REPARTIDOR\nBarrio Chapinero"
-  },
-  {
-    id_pedido: 3,
-    id_usuario: 1,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-01-26 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Cali"
-  },
-  {
-    id_pedido: 7,
-    id_usuario: 7,
-    estado: "ENTREGADO",
-    fecha_entrega: "2025-01-10 15:30:00",
-    observaciones: "ENTREGA EN BOGOTÁ - ENTREGADO"
-  },
-  {
-    id_pedido: 8,
-    id_usuario: 1,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-11 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Medellín\nPedido con dos pagos del 50% completados"
-  },
-  {
-    id_pedido: 9,
-    id_usuario: 1,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-16 14:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Medellín\nMúltiples productos"
-  },
-  {
-    id_pedido: 10,
-    id_usuario: 1,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-21 10:00:00",
-    observaciones: "ENVÍO FUERA DE BOGOTÁ - DISTRIBUIDORA EXTERNA\nCiudad: Cali\nMúltiples productos"
-  },
-  {
-    id_pedido: 11,
-    id_usuario: 7,
-    estado: "PENDIENTE",
-    fecha_entrega: "2025-02-26 14:00:00",
-    observaciones: "ENTREGA EN BOGOTÁ - REPARTIDOR\nBarrio Chapinero"
-  }
-];
 // FUNCIÓN: CREAR ROLE
 const crearRoles = async (transaction) => {
   console.log(" Creando roles...");
@@ -1185,25 +1133,6 @@ const seedAll = async () => {
     console.log("");
 
 
-    // 12. DISTRIBUCIONES
-
-    console.log("Insertando distribuciones...");
-    for (const distribucion of distribucionesData) {
-      await sequelize.query(
-        `INSERT INTO DISTRIBUCIONES 
-         (id_pedido, id_usuario, estado, fecha_entrega, observaciones) 
-         VALUES (:id_pedido, :id_usuario, :estado, :fecha_entrega, :observaciones)`,
-        {
-          replacements: distribucion,
-          type: sequelize.QueryTypes.INSERT,
-          transaction
-        }
-      );
-      console.log(`Distribución - Pedido ${distribucion.id_pedido} - ${distribucion.estado}`);
-    }
-    console.log("");
-
-
     // COMMIT
 
     await transaction.commit();
@@ -1217,7 +1146,6 @@ const seedAll = async () => {
     console.log(` Vehículos: ${vehiculosData.length}`);
     console.log(` Pedidos: ${pedidosData.length}`);
     console.log(` Pagos: ${pagosData.length}`);
-    console.log(` Distribuciones: ${distribucionesData.length}`);
 
     console.log("\n CREDENCIALES DE ADMIN:");
     console.log(`  Email: ${adminData.email}`);

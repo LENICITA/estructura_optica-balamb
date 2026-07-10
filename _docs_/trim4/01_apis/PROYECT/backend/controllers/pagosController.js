@@ -87,22 +87,40 @@ export const crearPago = async (req, res) => {
       });
     }
 
-    // ===== LÓGICA PARA 50% (PRIMER Y SEGUNDO PAGO) =====
+    // Verificar el estado del pedido
+    if (pedido.estado === 'Pagado') {
+      return res.status(400).json({
+        success: false,
+        message: 'Este pedido ya está pagado completamente'
+      });
+    }
+
+    // ===== LÓGICA PARA 50% =====
     if (eleccion_pago === '50%') {
+      const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
+      const saldoRestante = pedido.total - totalPagado;
+      
       // Verificar si ya tiene un abono del 50%
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
       
       if (tieneAbono) {
-        // Si ya tiene abono, debe estar en estado 'Listo' para pagar el saldo
-        if (pedido.estado !== 'Listo') {
+        // Si ya tiene abono, este es el segundo pago del 50%
+        if (pedido.estado !== 'Abonado') {
           return res.status(400).json({
             success: false,
-            message: 'El pedido debe estar en estado LISTO para pagar el saldo restante'
+            message: 'El pedido debe estar en estado ABONADO para pagar el saldo restante'
           });
         }
-        //  Permitir el segundo pago del 50% (saldo restante)
+        
+        // Verificar que el monto sea el saldo restante
+        if (monto < saldoRestante) {
+          return res.status(400).json({
+            success: false,
+            message: `El saldo restante es ${saldoRestante}. Debes pagar esa cantidad para completar el pago`
+          });
+        }
       } else {
-        // Primer pago del 50% - verificar que no tenga pago completo previo
+        // Primer pago del 50% - verificar que no tenga pago completo
         const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
         if (tieneCompleto) {
           return res.status(400).json({
@@ -110,12 +128,24 @@ export const crearPago = async (req, res) => {
             message: 'Este pedido ya fue pagado completamente'
           });
         }
-        // Permitir el primer pago del 50%
+        
+        // El monto debe ser aproximadamente el 50% del total
+        const monto50Esperado = pedido.total / 2;
+        const margenError = 100; // Permitir margen de error de 100 unidades
+        if (Math.abs(monto - monto50Esperado) > margenError) {
+          return res.status(400).json({
+            success: false,
+            message: `El monto debe ser aproximadamente el 50% del total (${monto50Esperado})`
+          });
+        }
       }
     }
 
     // ===== LÓGICA PARA 100% =====
     if (eleccion_pago === '100%') {
+      const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
+      const saldoRestante = pedido.total - totalPagado;
+      
       // Verificar que no tenga pago completo previo
       const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
       if (tieneCompleto) {
@@ -128,16 +158,20 @@ export const crearPago = async (req, res) => {
       // Verificar si ya tiene abono del 50% (para pago de saldo completo)
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
       if (tieneAbono) {
-        const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
-        const saldoRestante = pedido.total - totalPagado;
-        
         if (monto < saldoRestante) {
           return res.status(400).json({
             success: false,
             message: `El saldo restante es ${saldoRestante}. Debes pagar esa cantidad para completar`
           });
         }
-        // Permitir pago del saldo restante en un solo pago
+      } else {
+        // Pago completo de una vez - debe ser el total del pedido
+        if (Math.abs(monto - pedido.total) > 100) {
+          return res.status(400).json({
+            success: false,
+            message: `El monto debe ser el total del pedido (${pedido.total}) para pago completo`
+          });
+        }
       }
     }
 
@@ -176,21 +210,25 @@ export const confirmarPago = async (req, res) => {
       return res.status(400).json({ success: false, message: 'El pago ya está confirmado' });
     }
 
-    // Confirmar pago (esto actualiza el estado del pedido según 50% o 100%)
+    // Confirmar pago
     await PagoModel.confirmarPago(id);
 
     const pagoActualizado = await PagoModel.obtenerPorId(id);
     
+    // Obtener el estado actual del pedido
+    const [pedido] = await sequelize.query(
+      'SELECT estado FROM PEDIDOS WHERE id_pedido = ?',
+      { replacements: [pago.id_pedido], type: sequelize.QueryTypes.SELECT }
+    );
+
     // Determinar mensaje según el caso
     let mensaje = '';
-    if (pago.eleccion_pago === '100%') {
-      mensaje = 'Pago completo confirmado. El pedido está en estado PAGADO';
-    } else if (pago.eleccion_pago === '50%') {
-      // Verificar si es el primer o segundo pago del 50%
-      const tieneAbonoPrevio = await PagoModel.tieneAbono50Previo(pago.id_pedido, pago.id_pago);
-      mensaje = tieneAbonoPrevio 
-        ? 'Saldo del 50% confirmado. El pedido está en estado PAGADO'
-        : 'Abono del 50% confirmado. El pedido está en estado ABONADO';
+    if (pedido.estado === 'Pagado') {
+      mensaje = 'El pedido ha sido pagado completamente';
+    } else if (pedido.estado === 'Abonado') {
+      mensaje = 'Abono del 50% confirmado. El pedido está en estado ABONADO';
+    } else {
+      mensaje = `Pago confirmado. Estado actual del pedido: ${pedido.estado}`;
     }
 
     res.json({ 
@@ -242,16 +280,20 @@ export const rechazarPago = async (req, res) => {
 // ========== OBTENER ESTADÍSTICAS (ADMIN) ==========
 export const obtenerEstadisticas = async (req, res) => {
   try {
+    console.log('🔍 Obteniendo estadísticas de pagos...');
+    
     const estadisticas = await PagoModel.obtenerEstadisticas();
+    console.log('📈 Estadísticas obtenidas:', estadisticas);
 
     // Pagos por método (50% o 100%)
     const pagosPorMetodo = await sequelize.query(
-      `SELECT eleccion_pago, COUNT(*) as cantidad, SUM(monto) as total
+      `SELECT eleccion_pago, COUNT(*) as cantidad, COALESCE(SUM(monto), 0) as total
        FROM PAGOS 
        WHERE estado = 'Confirmado' 
        GROUP BY eleccion_pago`,
       { type: sequelize.QueryTypes.SELECT }
     );
+    console.log('📊 Pagos por método:', pagosPorMetodo);
 
     res.json({ 
       success: true, 
@@ -262,8 +304,12 @@ export const obtenerEstadisticas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener estadísticas', error: error.message });
+    console.error('❌ Error al obtener estadísticas:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error al obtener estadísticas', 
+      error: error.message 
+    });
   }
 };
 
@@ -329,5 +375,36 @@ export const verificarSaldoPedido = async (req, res) => {
   } catch (error) {
     console.error('Error al verificar saldo:', error);
     res.status(500).json({ success: false, message: 'Error al verificar saldo', error: error.message });
+  }
+};
+
+// ========== OBTENER DETALLE COMPLETO DE PAGO (ADMIN) ==========
+export const obtenerDetallePago = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pago = await sequelize.query(
+      `SELECT 
+        p.*,
+        pe.total as total_pedido,
+        pe.estado as estado_pedido,
+        u.nombre_completo as usuario,
+        u.email as email_usuario
+       FROM PAGOS p
+       JOIN PEDIDOS pe ON p.id_pedido = pe.id_pedido
+       JOIN USUARIOS u ON pe.id_usuario = u.id_usuario
+       WHERE p.id_pago = ?`,
+      { replacements: [id], type: sequelize.QueryTypes.SELECT }
+    );
+
+    if (!pago || pago.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
+    }
+
+    res.json({ success: true, data: pago[0] });
+
+  } catch (error) {
+    console.error('Error al obtener detalle del pago:', error);
+    res.status(500).json({ success: false, message: 'Error al obtener detalle del pago', error: error.message });
   }
 };

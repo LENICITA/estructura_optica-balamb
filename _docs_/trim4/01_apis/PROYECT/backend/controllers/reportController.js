@@ -122,7 +122,7 @@ export const reporteProductosMasVendidos = async (req, res) => {
     }
 };
 
-// REPORTE 3: Desempeño de repartidores
+// REPORTE 3: Desempeño de repartidores (CORREGIDO)
 export const reporteDesempenoRepartidores = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -131,7 +131,7 @@ export const reporteDesempenoRepartidores = async (req, res) => {
         const replacements = {};
 
         if (fecha_inicio && fecha_fin) {
-            whereClause = 'AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin';
+            whereClause = 'AND d.fecha_entrega BETWEEN :fecha_inicio AND :fecha_fin';
             replacements.fecha_inicio = fecha_inicio;
             replacements.fecha_fin = fecha_fin;
         }
@@ -144,19 +144,21 @@ export const reporteDesempenoRepartidores = async (req, res) => {
                 u.ciudad,
                 v.tipo as tipo_vehiculo,
                 v.placa,
-                COUNT(DISTINCT p.id_pedido) as pedidos_asignados,
-                SUM(p.total) as valor_total_entregas,
-                AVG(p.total) as promedio_venta
+                COUNT(DISTINCT d.id_pedido) as pedidos_asignados,
+                SUM(CASE WHEN d.estado = 'ENTREGADO' THEN 1 ELSE 0 END) as pedidos_entregados,
+                SUM(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE 0 END) as valor_total_entregas,
+                AVG(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE NULL END) as promedio_venta,
+                u.estado as usuario_estado
             FROM USUARIOS u
             INNER JOIN VEHICULOS v ON u.id_usuario = v.id_usuario
             INNER JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
             INNER JOIN ROLES r ON ru.id_rol = r.id_rol
-            LEFT JOIN PEDIDOS p ON u.id_usuario = p.id_usuario
-                AND p.estado = 'ENTREGADO'
-                ${whereClause}
+            INNER JOIN DISTRIBUCIONES d ON u.id_usuario = d.id_usuario
+            LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
             WHERE r.nombre = 'REPARTIDOR'
-            GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.placa
-            ORDER BY pedidos_asignados DESC
+            ${whereClause}
+            GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.placa, u.estado
+            ORDER BY pedidos_entregados DESC, pedidos_asignados DESC
         `;
 
         const results = await sequelize.query(query, {
@@ -205,12 +207,15 @@ export const reporteEstadoPedidos = async (req, res) => {
             GROUP BY estado
             ORDER BY 
                 CASE estado
-                    WHEN 'PENDIENTE' THEN 1
-                    WHEN 'EN_PROCESO' THEN 2
-                    WHEN 'ENVIADO' THEN 3
-                    WHEN 'ENTREGADO' THEN 4
-                    WHEN 'CANCELADO' THEN 5
-                    ELSE 6
+                    WHEN 'Pendiente' THEN 1
+                    WHEN 'Abonado' THEN 2
+                    WHEN 'Listo' THEN 3
+                    WHEN 'Pagado' THEN 4
+                    WHEN 'En Proceso' THEN 5
+                    WHEN 'Enviado' THEN 6
+                    WHEN 'Entregado' THEN 7
+                    WHEN 'Cancelado' THEN 8
+                    ELSE 9
                 END
         `;
 
@@ -300,7 +305,7 @@ export const reporteClientesFrecuentes = async (req, res) => {
     }
 };
 
-// REPORTE 6: Resumen general del negocio
+// REPORTE 6: Resumen general del negocio (CORREGIDO)
 export const reporteResumenGeneral = async (req, res) => {
     try {
         const queries = {
@@ -324,18 +329,23 @@ export const reporteResumenGeneral = async (req, res) => {
             total_pedidos: `
                 SELECT COUNT(*) as total, SUM(total) as monto_total 
                 FROM PEDIDOS 
-                WHERE estado != 'CANCELADO'
+                WHERE estado != 'Cancelado'
             `,
             pedidos_ultimo_mes: `
                 SELECT COUNT(*) as total, SUM(total) as monto_total 
                 FROM PEDIDOS 
                 WHERE fecha_pedido >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                AND estado != 'CANCELADO'
+                AND estado != 'Cancelado'
             `,
-            formulas_activas: `
+            formulas_aprobadas: `
                 SELECT COUNT(*) as total 
                 FROM FORMULAS 
-                WHERE estado = 'ACTIVO'
+                WHERE estado = 'Aprobado'
+            `,
+            formulas_pendientes: `
+                SELECT COUNT(*) as total 
+                FROM FORMULAS 
+                WHERE estado = 'Pendiente'
             `,
             ingresos_por_mes: `
                 SELECT 
@@ -344,7 +354,7 @@ export const reporteResumenGeneral = async (req, res) => {
                     SUM(total) as ingresos,
                     SUM(costo_envio) as envios
                 FROM PEDIDOS 
-                WHERE estado != 'CANCELADO'
+                WHERE estado != 'Cancelado'
                 AND fecha_pedido >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
                 GROUP BY DATE_FORMAT(fecha_pedido, '%Y-%m')
                 ORDER BY mes DESC
@@ -371,7 +381,8 @@ export const reporteResumenGeneral = async (req, res) => {
                 ingresos_totales: results.total_pedidos?.monto_total || 0,
                 pedidos_ultimo_mes: results.pedidos_ultimo_mes?.total || 0,
                 ingresos_ultimo_mes: results.pedidos_ultimo_mes?.monto_total || 0,
-                formulas_activas: results.formulas_activas?.total || 0,
+                formulas_aprobadas: results.formulas_aprobadas?.total || 0,
+                formulas_pendientes: results.formulas_pendientes?.total || 0,
                 ingresos_por_mes: results.ingresos_por_mes || []
             }
         });
@@ -410,7 +421,7 @@ export const reporteVentasPorCategoria = async (req, res) => {
             INNER JOIN PRODUCTOS pr ON c.id_categoria = pr.id_categoria
             INNER JOIN PEDIDOS_PRODUCTOS pp ON pr.id_producto = pp.id_producto
             INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
-            WHERE p.estado != 'CANCELADO'
+            WHERE p.estado != 'Cancelado'
             ${whereClause}
             GROUP BY c.id_categoria, c.tipo_categoria
             ORDER BY ingresos DESC
@@ -444,7 +455,7 @@ export const reporteVentasPorCategoria = async (req, res) => {
     }
 };
 
-// REPORTE 8: Análisis de fórmulas
+// REPORTE 8: Análisis de fórmulas (CORREGIDO)
 export const reporteAnalisisFormulas = async (req, res) => {
     try {
         const query = `
@@ -455,7 +466,7 @@ export const reporteAnalisisFormulas = async (req, res) => {
                 SUM(f.costo) as costo_total,
                 COUNT(DISTINCT f.id_usuario) as clientes_unicos
             FROM FORMULAS f
-            WHERE f.estado = 'ACTIVO'
+            WHERE f.estado = 'Aprobado'
             GROUP BY f.condicion
             ORDER BY cantidad DESC
         `;
@@ -466,16 +477,31 @@ export const reporteAnalisisFormulas = async (req, res) => {
 
         const queryTendencia = `
             SELECT 
-                DATE_FORMAT(fecha_creacion, '%Y-%m') as mes,
+                DATE_FORMAT(f.fecha_creacion, '%Y-%m') as mes,
                 COUNT(*) as nuevas_formulas,
-                AVG(costo) as costo_promedio
-            FROM FORMULAS
-            WHERE fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-            GROUP BY DATE_FORMAT(fecha_creacion, '%Y-%m')
+                AVG(f.costo) as costo_promedio,
+                SUM(CASE WHEN f.estado = 'Aprobado' THEN 1 ELSE 0 END) as aprobadas
+            FROM FORMULAS f
+            WHERE f.fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(f.fecha_creacion, '%Y-%m')
             ORDER BY mes DESC
         `;
 
         const tendencia = await sequelize.query(queryTendencia, {
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Estadísticas adicionales de fórmulas
+        const queryEstadisticas = `
+            SELECT 
+                estado,
+                COUNT(*) as total,
+                AVG(costo) as costo_promedio
+            FROM FORMULAS
+            GROUP BY estado
+        `;
+
+        const estadisticas = await sequelize.query(queryEstadisticas, {
             type: sequelize.QueryTypes.SELECT
         });
 
@@ -484,7 +510,8 @@ export const reporteAnalisisFormulas = async (req, res) => {
             data: {
                 distribucion_condiciones: results,
                 tendencia_mensual: tendencia,
-                total_formulas: results.reduce((acc, item) => acc + parseInt(item.cantidad), 0)
+                estadisticas_estado: estadisticas,
+                total_formulas_aprobadas: results.reduce((acc, item) => acc + parseInt(item.cantidad), 0)
             }
         });
 
@@ -497,7 +524,7 @@ export const reporteAnalisisFormulas = async (req, res) => {
     }
 };
 
-// REPORTE 9: Generar PDF (para el frontend)
+// REPORTE 9: Generar PDF (CORREGIDO)
 export const generarReportePDF = async (req, res) => {
     try {
         const { tipo, periodo, fecha_inicio, fecha_fin } = req.body;
@@ -533,7 +560,7 @@ export const generarReportePDF = async (req, res) => {
     }
 };
 
-// FUNCIONES DE OBTENCIÓN DE DATOS PARA PDF
+// ==================== FUNCIONES DE OBTENCIÓN DE DATOS PARA PDF (CORREGIDAS) ====================
 
 const obtenerDatosParaPDF = async (tipo, periodo, fechaInicio, fechaFin) => {
     const hoy = new Date();
@@ -582,7 +609,7 @@ const obtenerDatosParaPDF = async (tipo, periodo, fechaInicio, fechaFin) => {
             datos = await obtenerDatosInventarioSQL();
             break;
         case 'repartidores':
-            datos = await obtenerDatosRepartidoresSQL();
+            datos = await obtenerDatosRepartidoresSQL(replacements);
             break;
         case 'clientes':
             datos = await obtenerDatosClientesSQL(replacements);
@@ -620,7 +647,7 @@ const obtenerDatosVentasSQL = async (replacements) => {
             COUNT(DISTINCT p.id_usuario) as clientes_unicos
         FROM PEDIDOS p
         WHERE p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
-        AND p.estado != 'CANCELADO'
+        AND p.estado != 'Cancelado'
         GROUP BY DATE(p.fecha_pedido)
         ORDER BY fecha DESC
     `;
@@ -638,7 +665,7 @@ const obtenerDatosVentasSQL = async (replacements) => {
             COUNT(DISTINCT id_usuario) as clientes_unicos
         FROM PEDIDOS
         WHERE fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
-        AND estado != 'CANCELADO'
+        AND estado != 'Cancelado'
     `;
 
     const [resumen] = await sequelize.query(resumenQuery, {
@@ -678,7 +705,7 @@ const obtenerDatosInventarioSQL = async () => {
     };
 };
 
-const obtenerDatosRepartidoresSQL = async () => {
+const obtenerDatosRepartidoresSQL = async (replacements) => {
     const query = `
         SELECT 
             u.id_usuario,
@@ -688,20 +715,24 @@ const obtenerDatosRepartidoresSQL = async () => {
             v.tipo as tipo_vehiculo,
             v.modelo,
             v.placa,
-            COUNT(DISTINCT p.id_pedido) as pedidos_asignados,
-            SUM(CASE WHEN p.estado = 'ENTREGADO' THEN 1 ELSE 0 END) as pedidos_entregados,
-            u.estado
+            COUNT(DISTINCT d.id_pedido) as pedidos_asignados,
+            SUM(CASE WHEN d.estado = 'ENTREGADO' THEN 1 ELSE 0 END) as pedidos_entregados,
+            SUM(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE 0 END) as valor_entregas,
+            u.estado as usuario_estado
         FROM USUARIOS u
         INNER JOIN VEHICULOS v ON u.id_usuario = v.id_usuario
         INNER JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
         INNER JOIN ROLES r ON ru.id_rol = r.id_rol
-        LEFT JOIN PEDIDOS p ON u.id_usuario = p.id_usuario
+        INNER JOIN DISTRIBUCIONES d ON u.id_usuario = d.id_usuario
+        LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
         WHERE r.nombre = 'REPARTIDOR'
+        AND d.fecha_entrega BETWEEN :fecha_inicio AND :fecha_fin
         GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.modelo, v.placa, u.estado
-        ORDER BY pedidos_asignados DESC
+        ORDER BY pedidos_entregados DESC, pedidos_asignados DESC
     `;
 
     const repartidores = await sequelize.query(query, {
+        replacements,
         type: sequelize.QueryTypes.SELECT
     });
 
@@ -728,7 +759,7 @@ const obtenerDatosClientesSQL = async (replacements) => {
         INNER JOIN ROLES r ON ru.id_rol = r.id_rol
         INNER JOIN PEDIDOS p ON u.id_usuario = p.id_usuario
         WHERE r.nombre = 'CLIENTE'
-        AND p.estado != 'CANCELADO'
+        AND p.estado != 'Cancelado'
         AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
         GROUP BY u.id_usuario, u.nombre_completo, u.email, u.telefono, u.ciudad
         HAVING total_pedidos > 0
@@ -745,7 +776,7 @@ const obtenerDatosClientesSQL = async (replacements) => {
         SELECT COUNT(DISTINCT id_usuario) as total
         FROM PEDIDOS
         WHERE fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
-        AND estado != 'CANCELADO'
+        AND estado != 'Cancelado'
     `;
 
     const [total] = await sequelize.query(totalQuery, {
@@ -774,7 +805,7 @@ const obtenerProductosMasVendidosSQL = async (replacements) => {
         INNER JOIN PRODUCTOS pr ON pp.id_producto = pr.id_producto
         INNER JOIN CATEGORIAS c ON pr.id_categoria = c.id_categoria
         INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
-        WHERE p.estado != 'CANCELADO'
+        WHERE p.estado != 'Cancelado'
         AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
         GROUP BY pr.id_producto, pr.nombre, pr.marca, pr.precio, c.tipo_categoria
         ORDER BY total_vendidos DESC
@@ -804,12 +835,15 @@ const obtenerEstadoPedidosSQL = async (replacements) => {
         GROUP BY estado
         ORDER BY 
             CASE estado
-                WHEN 'PENDIENTE' THEN 1
-                WHEN 'EN_PROCESO' THEN 2
-                WHEN 'ENVIADO' THEN 3
-                WHEN 'ENTREGADO' THEN 4
-                WHEN 'CANCELADO' THEN 5
-                ELSE 6
+                WHEN 'Pendiente' THEN 1
+                WHEN 'Abonado' THEN 2
+                WHEN 'Listo' THEN 3
+                WHEN 'Pagado' THEN 4
+                WHEN 'En Proceso' THEN 5
+                WHEN 'Enviado' THEN 6
+                WHEN 'Entregado' THEN 7
+                WHEN 'Cancelado' THEN 8
+                ELSE 9
             END
     `;
 
@@ -842,7 +876,7 @@ const obtenerVentasCategoriaSQL = async (replacements) => {
         INNER JOIN PRODUCTOS pr ON c.id_categoria = pr.id_categoria
         INNER JOIN PEDIDOS_PRODUCTOS pp ON pr.id_producto = pp.id_producto
         INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
-        WHERE p.estado != 'CANCELADO'
+        WHERE p.estado != 'Cancelado'
         AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
         GROUP BY c.id_categoria, c.tipo_categoria
         ORDER BY ingresos DESC
