@@ -11,8 +11,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// CONFIGURACIÓN DEL ADMIN
+// CONFIGURACIÓN DEL ADMI
 const adminData = {
   nombre_completo: process.env.ADMIN_NOMBRE || "Administrador Sistema",
   telefono: process.env.ADMIN_TELEFONO || "3113578562",
@@ -24,16 +23,16 @@ const adminData = {
   contrasena: process.env.ADMIN_CONTRASENA || "Admin123!",
   estado: "ACTIVO"
 };
-
-// 1. USUARIOS
+// 1. USUARIOS (SIN ROLES EN EL OBJETO
 const usuariosData = [
+  // CLIENTES CON PEDIDOS
   {
     nombre_completo: "María González",
     telefono: "3002345678",
     fecha_nacimiento: "1985-06-20",
     documento: 2345678901,
     ciudad: "Bogotá",
-    direccion: "Calle 123 #45-67",
+    direccion: "Carrera 45 #23-12",
     email: "maria@email.com",
     contrasena: "Maria123*",
     estado: "ACTIVO"
@@ -93,6 +92,7 @@ const usuariosData = [
     contrasena: "Carmen606*",
     estado: "ACTIVO"
   },
+  // REPARTIDORES
   {
     nombre_completo: "Ana Martínez",
     telefono: "3004567890",
@@ -115,6 +115,7 @@ const usuariosData = [
     contrasena: "Luis101*",
     estado: "ACTIVO"
   },
+  // CLIENTES SIN PEDIDOS
   {
     nombre_completo: "Diego Fernández",
     telefono: "3009012345",
@@ -149,19 +150,17 @@ const usuariosData = [
     estado: "ACTIVO"
   }
 ];
-
-// 2. CATEGORÍAS
+// 2. CATEGORÍA
 const categoriasData = [
   { tipo_categoria: "MONTURAS", descripcion: "Monturas para lentes graduados" },
   { tipo_categoria: "ACCESORIOS", descripcion: "Accesorios para lentes y cuidado visual" },
   { tipo_categoria: "GAFAS DE SOL", descripcion: "Gafas con protección UV" }
 ];
-
-// 3. PRODUCTOS - Definidos con nombre_categoria en lugar de id_categoria
+// 3. PRODUCTOS (30 PRODUCTOS
 const productosData = [
-  // MONTURAS - 10 productos
+  // MONTURAS (id_categoria: 1) - 10 productos
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Elegance",
     descripcion: "Montura ligera de titanio",
     marca: "Rayban",
@@ -171,7 +170,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Vintage",
     descripcion: "Estilo clásico con acabado mate",
     marca: "Oakley",
@@ -181,7 +180,7 @@ const productosData = [
     color: "Marrón"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Sport",
     descripcion: "Diseño deportivo y resistente",
     marca: "Nike",
@@ -191,7 +190,7 @@ const productosData = [
     color: "Azul"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Classic",
     descripcion: "Diseño atemporal y elegante",
     marca: "Rayban",
@@ -201,7 +200,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Minimal",
     descripcion: "Diseño minimalista y ligero",
     marca: "Oakley",
@@ -211,7 +210,7 @@ const productosData = [
     color: "Plateado"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Infinity",
     descripcion: "Diseño moderno sin marco superior",
     marca: "Rayban",
@@ -221,7 +220,7 @@ const productosData = [
     color: "Dorado"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Retro",
     descripcion: "Estilo años 50 con acabado brillante",
     marca: "Oakley",
@@ -231,7 +230,7 @@ const productosData = [
     color: "Rosa"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Aviator",
     descripcion: "Estilo piloto con doble puente",
     marca: "Rayban",
@@ -241,7 +240,7 @@ const productosData = [
     color: "Dorado"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Urban",
     descripcion: "Diseño urbano y moderno",
     marca: "Nike",
@@ -251,7 +250,7 @@ const productosData = [
     color: "Blanco"
   },
   {
-    nombre_categoria: "MONTURAS",
+    id_categoria: 1,
     nombre: "Montura Executive",
     descripcion: "Diseño ejecutivo para oficina",
     marca: "Oakley",
@@ -260,9 +259,9 @@ const productosData = [
     material: "Titanio",
     color: "Amarillo"
   },
-  // GAFAS DE SOL - 10 productos
+  // GAFAS DE SOL (id_categoria: 3) - 10 productos
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Polarizadas",
     descripcion: "Protección UV400 con lentes polarizadas",
     marca: "Rayban",
@@ -272,7 +271,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Deportivas",
     descripcion: "Diseño aerodinámico para deportes",
     marca: "Oakley",
@@ -282,7 +281,7 @@ const productosData = [
     color: "Rojo"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Clásicas",
     descripcion: "Estilo clásico con protección UV",
     marca: "Rayban",
@@ -292,7 +291,7 @@ const productosData = [
     color: "Marrón"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Espejo",
     descripcion: "Lentes espejo con protección total",
     marca: "Nike",
@@ -302,7 +301,7 @@ const productosData = [
     color: "Plateado"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Infantiles",
     descripcion: "Gafas de sol para niños",
     marca: "Generic",
@@ -312,7 +311,7 @@ const productosData = [
     color: "Azul"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Wayfarer",
     descripcion: "Estilo Wayfarer con protección UV",
     marca: "Rayban",
@@ -322,7 +321,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Cat Eye",
     descripcion: "Diseño cat eye para mujer",
     marca: "Oakley",
@@ -332,7 +331,7 @@ const productosData = [
     color: "Rosa"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Round",
     descripcion: "Diseño redondo estilo vintage",
     marca: "Rayban",
@@ -342,7 +341,7 @@ const productosData = [
     color: "Dorado"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Futurist",
     descripcion: "Diseño futurista con lentes oscuras",
     marca: "Nike",
@@ -352,7 +351,7 @@ const productosData = [
     color: "Plateado"
   },
   {
-    nombre_categoria: "GAFAS DE SOL",
+    id_categoria: 3,
     nombre: "Gafas Eco",
     descripcion: "Gafas ecológicas con materiales reciclados",
     marca: "Generic",
@@ -361,9 +360,9 @@ const productosData = [
     material: "Plástico reciclado",
     color: "Verde"
   },
-  // ACCESORIOS - 10 productos
+  // ACCESORIOS (id_categoria: 2) - 10 productos
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Estuche para Lentes",
     descripcion: "Estuche rígido con interior de terciopelo",
     marca: "Generic",
@@ -373,7 +372,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Kit de Limpieza",
     descripcion: "Kit completo con líquido y microfibra",
     marca: "Generic",
@@ -383,7 +382,7 @@ const productosData = [
     color: "Blanco"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Cadena para Lentes",
     descripcion: "Cadena decorativa para lentes",
     marca: "Generic",
@@ -393,7 +392,7 @@ const productosData = [
     color: "Dorado"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Fundas de Microfibra",
     descripcion: "Set de 3 fundas de microfibra para lentes",
     marca: "Generic",
@@ -403,7 +402,7 @@ const productosData = [
     color: "Multicolor"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Soporte para Lentes",
     descripcion: "Soporte de escritorio para lentes",
     marca: "Generic",
@@ -413,7 +412,7 @@ const productosData = [
     color: "Transparente"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Aromatizante para Lentes",
     descripcion: "Aromatizante con aceites esenciales",
     marca: "Generic",
@@ -423,7 +422,7 @@ const productosData = [
     color: "Transparente"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Estuche para Lentes",
     descripcion: "Estuche rígido con interior de terciopelo",
     marca: "Generic",
@@ -433,7 +432,7 @@ const productosData = [
     color: "Rosa"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Clip Solar para Lentes",
     descripcion: "Clip con filtro solar para lentes",
     marca: "Generic",
@@ -443,7 +442,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Correa Deportiva",
     descripcion: "Correa elástica para sujetar lentes",
     marca: "Generic",
@@ -453,7 +452,7 @@ const productosData = [
     color: "Negro"
   },
   {
-    nombre_categoria: "ACCESORIOS",
+    id_categoria: 2,
     nombre: "Caja Organizadora",
     descripcion: "Caja para guardar lentes y accesorios",
     marca: "Generic",
@@ -463,11 +462,10 @@ const productosData = [
     color: "Gris"
   }
 ];
-
-// 4. FÓRMULAS
+// 4. FÓRMULA
 const formulasData = [
   {
-    email_usuario: "maria@email.com",
+    id_usuario: 2, // María
     condicion: "MIOPIA",
     imagen: path.join(__dirname, '../public/img/miopia1.jpg'),
     observaciones: "Paciente con miopía severa -5.00 en ambos ojos",
@@ -475,7 +473,7 @@ const formulasData = [
     costo: 150000
   },
   {
-    email_usuario: "carlos@email.com",
+    id_usuario: 3, // Carlos
     condicion: "ASTIGMATISMO",
     imagen: path.join(__dirname, '../public/img/astigmatismo1.jpg'),
     observaciones: "Astigmatismo mixto con leve hipermetropía",
@@ -483,7 +481,7 @@ const formulasData = [
     costo: 120000
   },
   {
-    email_usuario: "laura@email.com",
+    id_usuario: 6, // Laura
     condicion: "DALTONISMO",
     imagen: path.join(__dirname, '../public/img/daltonismo1.jpg'),
     observaciones: "Daltonismo rojo-verde, necesita filtros especiales",
@@ -491,7 +489,7 @@ const formulasData = [
     costo: 0
   },
   {
-    email_usuario: "juan@email.com",
+    id_usuario: 7, // Juan
     condicion: "BAJA VISION",
     imagen: path.join(__dirname, '../public/img/bajavision1.jpg'),
     observaciones: "Paciente con baja visión severa, requiere aumentos especiales",
@@ -499,7 +497,7 @@ const formulasData = [
     costo: 0
   },
   {
-    email_usuario: "patricia@email.com",
+    id_usuario: 8, // Patricia
     condicion: "MIOPIA",
     imagen: path.join(__dirname, '../public/img/miopia2.jpg'),
     observaciones: "Miopía moderada -3.00, con ligero astigmatismo",
@@ -507,7 +505,7 @@ const formulasData = [
     costo: 130000
   },
   {
-    email_usuario: "diego@email.com",
+    id_usuario: 9, // Diego
     condicion: "ASTIGMATISMO",
     imagen: path.join(__dirname, '../public/img/astigmatismo2.jpg'),
     observaciones: "Astigmatismo simple, corrección con lentes tóricos",
@@ -515,7 +513,7 @@ const formulasData = [
     costo: 0
   },
   {
-    email_usuario: "carmen@email.com",
+    id_usuario: 10, // Carmen
     condicion: "DALTONISMO",
     imagen: path.join(__dirname, '../public/img/daltonismo2.jpg'),
     observaciones: "Daltonismo completo, necesita adaptación especial",
@@ -523,117 +521,127 @@ const formulasData = [
     costo: 140000
   }
 ];
-
-// 5. VEHÍCULOS
+// 5. VEHÍCULO
 const vehiculosData = [
-  { email_usuario: "ana@email.com", tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" },
-  { email_usuario: "luis@email.com", tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" }
+  { id_usuario: 7, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
+  { id_usuario: 8, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
 ];
-
-// 6. PEDIDOS
+// 6. PEDIDOS (12 PEDIDOS
 const pedidosData = [
+  // Pedido 1: María - Bogotá, CON fórmula, 100% pagado
   {
-    email_usuario: "maria@email.com",
-    email_formula: "maria@email.com",
+    id_usuario: 2,
+    id_formula: 1,
     direccion_entrega: "Calle 123 #45-67, Bogotá",
     estado: "Pagado",
     costo_envio: 0,
     total: 720000,
     fecha_estimada: "2025-01-15"
   },
+  // Pedido 2: Carlos - Medellín, CON fórmula, 50% (abono)
   {
-    email_usuario: "carlos@email.com",
-    email_formula: "carlos@email.com",
+    id_usuario: 3,
+    id_formula: 2,
     direccion_entrega: "Carrera 45 #23-12, Medellín",
     estado: "Abonado",
     costo_envio: 10000,
     total: 310000,
     fecha_estimada: "2025-01-20"
   },
+  // Pedido 3: Laura - Cali, SIN fórmula, 100% pagado
   {
-    email_usuario: "laura@email.com",
-    email_formula: null,
+    id_usuario: 6,
+    id_formula: null,
     direccion_entrega: "Avenida 3 #78-90, Cali",
     estado: "Pagado",
     costo_envio: 10000,
     total: 230000,
     fecha_estimada: "2025-01-25"
   },
+  // Pedido 4: Patricia - Medellín, CON fórmula, 50% (esperando segundo pago)
   {
-    email_usuario: "patricia@email.com",
-    email_formula: "patricia@email.com",
+    id_usuario: 8,
+    id_formula: 5,
     direccion_entrega: "Carrera 50 #10-20, Medellín",
     estado: "Listo",
     costo_envio: 10000,
     total: 420000,
     fecha_estimada: "2025-01-28"
   },
+  // Pedido 5: Juan - Bogotá, SIN fórmula, 50% (en proceso)
   {
-    email_usuario: "juan@email.com",
-    email_formula: null,
+    id_usuario: 7,
+    id_formula: null,
     direccion_entrega: "Calle 100 #20-30, Bogotá",
     estado: "En Proceso",
     costo_envio: 0,
     total: 210000,
     fecha_estimada: "2025-02-01"
   },
+  // Pedido 6: Carmen - Bogotá, SIN fórmula, SIN PAGOS (pendiente)
   {
-    email_usuario: "carmen@email.com",
-    email_formula: null,
+    id_usuario: 10,
+    id_formula: null,
     direccion_entrega: "Calle 45 #30-40, Bogotá",
     estado: "Pendiente",
     costo_envio: 0,
     total: 45000,
     fecha_estimada: "2025-02-05"
   },
+  // Pedido 7: María - Bogotá, SIN fórmula, 100% pagado y entregado
   {
-    email_usuario: "maria@email.com",
-    email_formula: null,
+    id_usuario: 2,
+    id_formula: null,
     direccion_entrega: "Calle 123 #45-67, Bogotá",
     estado: "Entregado",
     costo_envio: 0,
     total: 250000,
     fecha_estimada: "2025-01-10"
   },
+  //  Pedido 8: Patricia - Medellín, CON fórmula, DOS PAGOS 50%
   {
-    email_usuario: "patricia@email.com",
-    email_formula: "patricia@email.com",
+    id_usuario: 8,
+    id_formula: 5,
     direccion_entrega: "Carrera 50 #10-20, Medellín",
     estado: "Pagado",
     costo_envio: 10000,
     total: 420000,
     fecha_estimada: "2025-02-10"
   },
+  // Pedido 9: Carlos - Medellín, CON fórmula, 100% pagado, MÚLTIPLES PRODUCTOS
   {
-    email_usuario: "carlos@email.com",
-    email_formula: "carlos@email.com",
+    id_usuario: 3,
+    id_formula: 2,
     direccion_entrega: "Carrera 45 #23-12, Medellín",
     estado: "Pagado",
     costo_envio: 10000,
     total: 660000,
     fecha_estimada: "2025-02-15"
   },
+  // Pedido 10: Laura - Cali, SIN fórmula, 100% pagado, MÚLTIPLES PRODUCTOS
   {
-    email_usuario: "laura@email.com",
-    email_formula: null,
+    id_usuario: 6,
+    id_formula: null,
     direccion_entrega: "Avenida 3 #78-90, Cali",
     estado: "Pagado",
     costo_envio: 10000,
     total: 648000,
     fecha_estimada: "2025-02-20"
   },
+  // Pedido 11: Juan - Bogotá, SIN fórmula, 100% pagado, MÚLTIPLES PRODUCTOS
   {
-    email_usuario: "juan@email.com",
-    email_formula: null,
+    id_usuario: 7,
+    id_formula: null,
     direccion_entrega: "Calle 100 #20-30, Bogotá",
     estado: "Pagado",
     costo_envio: 0,
     total: 595000,
     fecha_estimada: "2025-02-25"
   },
+  // Pedido 12: Patricia - Medellín, CON fórmula, SIN PAGOS (pendiente)
   {
-    email_usuario: "patricia@email.com",
-    email_formula: "patricia@email.com",
+    id_usuario: 8,
+    id_formula: 5,
     direccion_entrega: "Carrera 50 #10-20, Medellín",
     estado: "Pendiente",
     costo_envio: 10000,
@@ -641,61 +649,125 @@ const pedidosData = [
     fecha_estimada: "2025-03-01"
   }
 ];
-
-// 7. PEDIDOS_PRODUCTO - Usar índice del producto en lugar de ID fijo
+// 7. PEDIDOS_PRODUCTO
 const pedidosProductosData = [
-  { num_pedido: 1, indice_producto: 0, cant_productos: 1 },  // Montura Elegance
-  { num_pedido: 1, indice_producto: 10, cant_productos: 1 }, // Gafas Polarizadas
-  { num_pedido: 2, indice_producto: 1, cant_productos: 1 },  // Montura Vintage
-  { num_pedido: 3, indice_producto: 4, cant_productos: 1 },  // Montura Minimal
-  { num_pedido: 4, indice_producto: 11, cant_productos: 1 }, // Gafas Deportivas
-  { num_pedido: 5, indice_producto: 2, cant_productos: 1 },  // Montura Sport
-  { num_pedido: 6, indice_producto: 20, cant_productos: 1 }, // Estuche para Lentes
-  { num_pedido: 7, indice_producto: 0, cant_productos: 1 },  // Montura Elegance
-  { num_pedido: 8, indice_producto: 11, cant_productos: 1 }, // Gafas Deportivas
-  { num_pedido: 9, indice_producto: 1, cant_productos: 1 },  // Montura Vintage
-  { num_pedido: 9, indice_producto: 11, cant_productos: 1 }, // Gafas Deportivas
-  { num_pedido: 9, indice_producto: 20, cant_productos: 1 }, // Estuche para Lentes
-  { num_pedido: 9, indice_producto: 21, cant_productos: 1 }, // Kit de Limpieza
-  { num_pedido: 10, indice_producto: 5, cant_productos: 1 }, // Montura Infinity
-  { num_pedido: 10, indice_producto: 12, cant_productos: 1 },// Gafas Clásicas
-  { num_pedido: 10, indice_producto: 22, cant_productos: 1 },// Cadena para Lentes
-  { num_pedido: 11, indice_producto: 9, cant_productos: 1 }, // Montura Executive
-  { num_pedido: 11, indice_producto: 15, cant_productos: 1 },// Gafas Wayfarer
-  { num_pedido: 11, indice_producto: 21, cant_productos: 1 },// Kit de Limpieza
-  { num_pedido: 11, indice_producto: 24, cant_productos: 1 },// Soporte para Lentes
-  { num_pedido: 12, indice_producto: 16, cant_productos: 1 },// Gafas Cat Eye
-  { num_pedido: 12, indice_producto: 20, cant_productos: 1 },// Estuche para Lentes
-  { num_pedido: 12, indice_producto: 22, cant_productos: 1 } // Cadena para Lentes
+  { id_pedido: 1, id_producto: 1, cant_productos: 1 },
+  { id_pedido: 1, id_producto: 11, cant_productos: 1 },
+  { id_pedido: 2, id_producto: 2, cant_productos: 1 },
+  { id_pedido: 3, id_producto: 5, cant_productos: 1 },
+  { id_pedido: 4, id_producto: 12, cant_productos: 1 },
+  { id_pedido: 5, id_producto: 3, cant_productos: 1 },
+  { id_pedido: 6, id_producto: 21, cant_productos: 1 },
+  { id_pedido: 7, id_producto: 1, cant_productos: 1 },
+  { id_pedido: 8, id_producto: 12, cant_productos: 1 },
+  { id_pedido: 9, id_producto: 2, cant_productos: 1 },
+  { id_pedido: 9, id_producto: 12, cant_productos: 1 },
+  { id_pedido: 9, id_producto: 21, cant_productos: 1 },
+  { id_pedido: 9, id_producto: 22, cant_productos: 1 },
+  { id_pedido: 10, id_producto: 6, cant_productos: 1 },
+  { id_pedido: 10, id_producto: 13, cant_productos: 1 },
+  { id_pedido: 10, id_producto: 23, cant_productos: 1 },
+  { id_pedido: 11, id_producto: 10, cant_productos: 1 },
+  { id_pedido: 11, id_producto: 16, cant_productos: 1 },
+  { id_pedido: 11, id_producto: 22, cant_productos: 1 },
+  { id_pedido: 11, id_producto: 25, cant_productos: 1 },
+  { id_pedido: 12, id_producto: 17, cant_productos: 1 },
+  { id_pedido: 12, id_producto: 21, cant_productos: 1 },
+  { id_pedido: 12, id_producto: 23, cant_productos: 1 }
 ];
-
-// 8. PAGOS
+// 8. PAGOS (Pedido 8 tiene DOS PAGOS
 const pagosData = [
-  { num_pedido: 1, eleccion_pago: "100%", monto: 720000, estado: "Confirmado", fecha_pago: "2025-01-05 10:00:00" },
-  { num_pedido: 2, eleccion_pago: "50%", monto: 155000, estado: "Confirmado", fecha_pago: "2025-01-08 14:30:00" },
-  { num_pedido: 3, eleccion_pago: "100%", monto: 230000, estado: "Confirmado", fecha_pago: "2025-01-10 09:15:00" },
-  { num_pedido: 4, eleccion_pago: "50%", monto: 210000, estado: "Confirmado", fecha_pago: "2025-01-12 11:45:00" },
-  { num_pedido: 5, eleccion_pago: "50%", monto: 105000, estado: "Confirmado", fecha_pago: "2025-01-15 16:20:00" },
-  { num_pedido: 7, eleccion_pago: "100%", monto: 250000, estado: "Confirmado", fecha_pago: "2025-01-02 13:00:00" },
-  { num_pedido: 8, eleccion_pago: "50%", monto: 210000, estado: "Confirmado", fecha_pago: "2025-02-01 10:00:00" },
-  { num_pedido: 8, eleccion_pago: "50%", monto: 210000, estado: "Confirmado", fecha_pago: "2025-02-08 14:30:00" },
-  { num_pedido: 9, eleccion_pago: "100%", monto: 660000, estado: "Confirmado", fecha_pago: "2025-02-12 09:00:00" },
-  { num_pedido: 10, eleccion_pago: "100%", monto: 648000, estado: "Confirmado", fecha_pago: "2025-02-18 11:00:00" },
-  { num_pedido: 11, eleccion_pago: "100%", monto: 595000, estado: "Confirmado", fecha_pago: "2025-02-22 10:30:00" }
+  // Pedido 1: 100%
+  {
+    id_pedido: 1,
+    eleccion_pago: "100%",
+    monto: 720000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-05 10:00:00"
+  },
+  // Pedido 2: 50%
+  {
+    id_pedido: 2,
+    eleccion_pago: "50%",
+    monto: 155000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-08 14:30:00"
+  },
+  // Pedido 3: 100%
+  {
+    id_pedido: 3,
+    eleccion_pago: "100%",
+    monto: 230000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-10 09:15:00"
+  },
+  // Pedido 4: 50%
+  {
+    id_pedido: 4,
+    eleccion_pago: "50%",
+    monto: 210000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-12 11:45:00"
+  },
+  // Pedido 5: 50%
+  {
+    id_pedido: 5,
+    eleccion_pago: "50%",
+    monto: 105000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-15 16:20:00"
+  },
+  // Pedido 7: 100%
+  {
+    id_pedido: 7,
+    eleccion_pago: "100%",
+    monto: 250000,
+    estado: "Confirmado",
+    fecha_pago: "2025-01-02 13:00:00"
+  },
+  //  Pedido 8: PRIMER PAGO 50%
+  {
+    id_pedido: 8,
+    eleccion_pago: "50%",
+    monto: 210000,
+    estado: "Confirmado",
+    fecha_pago: "2025-02-01 10:00:00"
+  },
+  //  Pedido 8: SEGUNDO PAGO 50% (mismo id_pedido)
+  {
+    id_pedido: 8,
+    eleccion_pago: "50%",
+    monto: 210000,
+    estado: "Confirmado",
+    fecha_pago: "2025-02-08 14:30:00"
+  },
+  // Pedido 9: 100%
+  {
+    id_pedido: 9,
+    eleccion_pago: "100%",
+    monto: 660000,
+    estado: "Confirmado",
+    fecha_pago: "2025-02-12 09:00:00"
+  },
+  // Pedido 10: 100%
+  {
+    id_pedido: 10,
+    eleccion_pago: "100%",
+    monto: 648000,
+    estado: "Confirmado",
+    fecha_pago: "2025-02-18 11:00:00"
+  },
+  // Pedido 11: 100%
+  {
+    id_pedido: 11,
+    eleccion_pago: "100%",
+    monto: 595000,
+    estado: "Confirmado",
+    fecha_pago: "2025-02-22 10:30:00"
+  }
+  // Pedido 6 y 12 NO tienen pagos (están en Pendiente)
 ];
-
-// 9. DISTRIBUCIONES
-const distribucionesData = [
-  { num_pedido: 1, email_usuario: "ana@email.com", fecha_entrega: "2025-01-16 10:00:00", estado: "EN_ENTREGA", observaciones: "Entrega en zona norte de Bogotá" },
-  { num_pedido: 3, email_usuario: "luis@email.com", fecha_entrega: "2025-01-26 14:30:00", estado: "ENTREGADO", observaciones: "Entregado en portería" },
-  { num_pedido: 7, email_usuario: "ana@email.com", fecha_entrega: "2025-01-11 09:15:00", estado: "ENTREGADO", observaciones: "Entregado en mano" },
-  { num_pedido: 8, email_usuario: "luis@email.com", fecha_entrega: "2025-02-11 11:00:00", estado: "EN_ENTREGA", observaciones: "Llamar antes de llegar" },
-  { num_pedido: 9, email_usuario: "ana@email.com", fecha_entrega: "2025-02-16 09:00:00", estado: "PENDIENTE", observaciones: "Esperando confirmación" },
-  { num_pedido: 10, email_usuario: "luis@email.com", fecha_entrega: "2025-02-21 10:00:00", estado: "PENDIENTE", observaciones: "Coordinar entrega" },
-  { num_pedido: 11, email_usuario: "ana@email.com", fecha_entrega: "2025-02-26 15:00:00", estado: "PENDIENTE", observaciones: "Dejar en conserjería" }
-];
-
-// FUNCIÓN: CREAR ROLES
+// FUNCIÓN: CREAR ROLE
 const crearRoles = async (transaction) => {
   console.log(" Creando roles...");
   const rolesData = [
@@ -717,8 +789,7 @@ const crearRoles = async (transaction) => {
   console.log("");
   return rolesCreados;
 };
-
-// FUNCIÓN: CREAR ADMIN
+// FUNCIÓN: CREAR ADMI
 const crearAdmin = async (transaction) => {
   console.log(" Creando administrador...");
 
@@ -762,8 +833,7 @@ const crearAdmin = async (transaction) => {
   console.log(` Admin creado: ${adminData.email}`);
   return admin;
 };
-
-// FUNCIÓN: ASIGNAR ROL A USUARIO
+// FUNCIÓN: ASIGNAR ROL A USUARI
 const asignarRol = async (usuarioId, rolId, transaction) => {
   const [rolUsuario, created] = await RolUsuario.findOrCreate({
     where: {
@@ -778,8 +848,7 @@ const asignarRol = async (usuarioId, rolId, transaction) => {
   });
   return created;
 };
-
-// FUNCIÓN PRINCIPAL
+// FUNCIÓN PRINCIPA
 const seedAll = async () => {
   const transaction = await sequelize.transaction();
 
@@ -789,65 +858,59 @@ const seedAll = async () => {
     await sequelize.authenticate();
     console.log("Conexión a la base de datos establecida\n");
 
+
     // 1. ROLES
+
     const roles = await crearRoles(transaction);
 
+
     // 2. ADMIN
+
     const admin = await crearAdmin(transaction);
     await asignarRol(admin.id_usuario, roles.ADMIN.id_rol, transaction);
     console.log(` Rol ADMIN asignado\n`);
 
+
     // 3. USUARIOS
+
     console.log(" Insertando usuarios...");
     const usuariosIds = {};
 
+    // Insertar admin primero
     usuariosIds[adminData.email] = admin.id_usuario;
 
     for (const usuario of usuariosData) {
       const hashedPassword = await bcrypt.hash(usuario.contrasena, 10);
 
-      let [existing] = await sequelize.query(
-        `SELECT id_usuario FROM USUARIOS WHERE email = :email`,
+      // AGREGAR reset_token y reset_token_expiry (NULL por defecto)
+      const [result] = await sequelize.query(
+        `INSERT INTO USUARIOS 
+         (nombre_completo, telefono, fecha_nacimiento, documento, ciudad, direccion, email, contrasena, estado, reset_token, reset_token_expiry)
+         VALUES (:nombre_completo, :telefono, :fecha_nacimiento, :documento, :ciudad, :direccion, :email, :contrasena, :estado, NULL, NULL)`,
         {
-          replacements: { email: usuario.email },
-          type: sequelize.QueryTypes.SELECT,
+          replacements: {
+            nombre_completo: usuario.nombre_completo,
+            telefono: usuario.telefono,
+            fecha_nacimiento: usuario.fecha_nacimiento,
+            documento: usuario.documento,
+            ciudad: usuario.ciudad,
+            direccion: usuario.direccion,
+            email: usuario.email,
+            contrasena: hashedPassword,
+            estado: usuario.estado
+          },
+          type: sequelize.QueryTypes.INSERT,
           transaction
         }
       );
 
-      let idUsuario;
-      if (existing) {
-        idUsuario = existing.id_usuario;
-        console.log(` Usuario ya existe: ${usuario.email} (ID: ${idUsuario})`);
-      } else {
-        const [result] = await sequelize.query(
-          `INSERT INTO USUARIOS 
-           (nombre_completo, telefono, fecha_nacimiento, documento, ciudad, direccion, email, contrasena, estado, reset_token, reset_token_expiry)
-           VALUES (:nombre_completo, :telefono, :fecha_nacimiento, :documento, :ciudad, :direccion, :email, :contrasena, :estado, NULL, NULL)`,
-          {
-            replacements: {
-              nombre_completo: usuario.nombre_completo,
-              telefono: usuario.telefono,
-              fecha_nacimiento: usuario.fecha_nacimiento,
-              documento: usuario.documento,
-              ciudad: usuario.ciudad,
-              direccion: usuario.direccion,
-              email: usuario.email,
-              contrasena: hashedPassword,
-              estado: usuario.estado
-            },
-            type: sequelize.QueryTypes.INSERT,
-            transaction
-          }
-        );
-        idUsuario = result;
-        console.log(` Usuario creado: ${usuario.nombre_completo} (${usuario.email}) - ID: ${idUsuario}`);
-      }
-
-      usuariosIds[usuario.email] = idUsuario;
+      usuariosIds[usuario.email] = result;
+      console.log(` Usuario: ${usuario.nombre_completo} (${usuario.email}) - ID: ${result}`);
     }
 
-    // 4. ASIGNAR ROLES A USUARIOS
+
+    // 4. ASIGNAR ROLES A USUARIOS (TABLA INTERMEDIA ROL_USUARIO)
+
     console.log("Asignando roles a usuarios...");
 
     const rolesPorUsuario = {
@@ -888,50 +951,32 @@ const seedAll = async () => {
     }
     console.log("");
 
-    // 5. CATEGORÍAS
-    console.log("Insertando categorías...");
-    const categoriasIds = {};
 
+    // 5. CATEGORÍAS
+
+    console.log("Insertando categorías...");
     for (const categoria of categoriasData) {
-      let [existing] = await sequelize.query(
-        `SELECT id_categoria FROM CATEGORIAS WHERE tipo_categoria = :tipo_categoria`,
+      await sequelize.query(
+        `INSERT INTO CATEGORIAS (tipo_categoria, descripcion) 
+         VALUES (:tipo_categoria, :descripcion) 
+         ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion)`,
         {
-          replacements: { tipo_categoria: categoria.tipo_categoria },
-          type: sequelize.QueryTypes.SELECT,
+          replacements: {
+            tipo_categoria: categoria.tipo_categoria,
+            descripcion: categoria.descripcion
+          },
+          type: sequelize.QueryTypes.INSERT,
           transaction
         }
       );
-
-      let idCategoria;
-      
-      if (existing) {
-        idCategoria = existing.id_categoria;
-        console.log(`Categoría ya existe: ${categoria.tipo_categoria} (ID: ${idCategoria})`);
-      } else {
-        const [result] = await sequelize.query(
-          `INSERT INTO CATEGORIAS (tipo_categoria, descripcion) 
-           VALUES (:tipo_categoria, :descripcion)`,
-          {
-            replacements: {
-              tipo_categoria: categoria.tipo_categoria,
-              descripcion: categoria.descripcion
-            },
-            type: sequelize.QueryTypes.INSERT,
-            transaction
-          }
-        );
-        idCategoria = result;
-        console.log(`Categoría creada: ${categoria.tipo_categoria} (ID: ${idCategoria})`);
-      }
-      
-      categoriasIds[categoria.tipo_categoria] = idCategoria;
+      console.log(`Categoría: ${categoria.tipo_categoria}`);
     }
     console.log("");
 
-    // 6. PRODUCTOS
-    console.log("Insertando productos...");
-    const productosIds = [];
 
+    // 6. PRODUCTOS
+
+    console.log("Insertando productos...");
     for (const producto of productosData) {
       console.log(` Subiendo imagen local para: ${producto.nombre}`);
 
@@ -942,85 +987,49 @@ const seedAll = async () => {
         continue;
       }
 
-      const idCategoriaReal = categoriasIds[producto.nombre_categoria];
-      
-      if (!idCategoriaReal) {
-        console.log(` Error: No se encontró categoría ${producto.nombre_categoria} para el producto ${producto.nombre}`);
-        continue;
-      }
-
-      // Verificar si el producto ya existe
-      let [existing] = await sequelize.query(
-        `SELECT id_producto FROM PRODUCTOS WHERE nombre = :nombre AND marca = :marca`,
+      await sequelize.query(
+        `INSERT INTO PRODUCTOS 
+         (id_categoria, nombre, descripcion, marca, precio, imagen, material, color) 
+         VALUES (:id_categoria, :nombre, :descripcion, :marca, :precio, :imagen, :material, :color)`,
         {
-          replacements: { 
+          replacements: {
+            id_categoria: producto.id_categoria,
             nombre: producto.nombre,
-            marca: producto.marca
+            descripcion: producto.descripcion,
+            marca: producto.marca,
+            precio: producto.precio,
+            imagen: resultado.url,
+            material: producto.material,
+            color: producto.color
           },
-          type: sequelize.QueryTypes.SELECT,
+          type: sequelize.QueryTypes.INSERT,
           transaction
         }
       );
-
-      let idProducto;
-      if (existing) {
-        idProducto = existing.id_producto;
-        console.log(` Producto ya existe: ${producto.nombre} (ID: ${idProducto})`);
-      } else {
-        const [result] = await sequelize.query(
-          `INSERT INTO PRODUCTOS 
-           (id_categoria, nombre, descripcion, marca, precio, imagen, material, color) 
-           VALUES (:id_categoria, :nombre, :descripcion, :marca, :precio, :imagen, :material, :color)`,
-          {
-            replacements: {
-              id_categoria: idCategoriaReal,
-              nombre: producto.nombre,
-              descripcion: producto.descripcion,
-              marca: producto.marca,
-              precio: producto.precio,
-              imagen: resultado.url,
-              material: producto.material,
-              color: producto.color
-            },
-            type: sequelize.QueryTypes.INSERT,
-            transaction
-          }
-        );
-        idProducto = result;
-        console.log(`Producto creado: ${producto.nombre} (ID: ${idProducto})`);
-      }
-      
-      productosIds.push(idProducto);
+      console.log(`Producto: ${producto.nombre}`);
     }
     console.log("");
 
+
     // 7. FÓRMULAS
+
     console.log("Insertando fórmulas...");
-    const formulasIds = {};
-
     for (const formula of formulasData) {
-      const idUsuario = usuariosIds[formula.email_usuario];
-      
-      if (!idUsuario) {
-        console.log(` Error: Usuario ${formula.email_usuario} no encontrado, saltando...`);
-        continue;
-      }
-
-      console.log(`Subiendo imagen local para fórmula (Usuario: ${formula.email_usuario})`);
+      console.log(`Subiendo imagen local para fórmula (Usuario: ${formula.id_usuario})`);
 
       const resultado = await subirImagenLocal(formula.imagen, "opticam/formulas");
       if (!resultado.success) {
-        console.log(` Error en fórmula ${formula.email_usuario}: ${resultado.error}`);
+        console.log(` Error en fórmula ${formula.id_usuario}: ${resultado.error}`);
         continue;
       }
 
-      const [result] = await sequelize.query(
+      await sequelize.query(
         `INSERT INTO FORMULAS 
          (id_usuario, condicion, imagen_formula, observaciones, estado, costo) 
          VALUES (:id_usuario, :condicion, :imagen_formula, :observaciones, :estado, :costo)`,
         {
           replacements: {
-            id_usuario: idUsuario,
+            id_usuario: formula.id_usuario,
             condicion: formula.condicion,
             imagen_formula: resultado.url,
             observaciones: formula.observaciones,
@@ -1031,21 +1040,16 @@ const seedAll = async () => {
           transaction
         }
       );
-      formulasIds[formula.email_usuario] = result;
-      console.log(`Fórmula creada para usuario ${formula.email_usuario} (ID: ${result})`);
+      console.log(`Fórmula creada para usuario ${formula.id_usuario}`);
     }
     console.log("");
 
+
     // 8. VEHÍCULOS
+
     console.log(" Insertando vehículos...");
     for (const vehiculo of vehiculosData) {
-      const idUsuario = usuariosIds[vehiculo.email_usuario];
-      
-      if (!idUsuario) {
-        console.log(` Error: Usuario ${vehiculo.email_usuario} no encontrado, saltando...`);
-        continue;
-      }
-
+      // Verificar si la placa ya existe
       const [existing] = await sequelize.query(
         `SELECT id_vehiculo FROM VEHICULOS WHERE placa = :placa`,
         {
@@ -1064,13 +1068,7 @@ const seedAll = async () => {
         `INSERT INTO VEHICULOS (id_usuario, tipo, modelo, placa, color) 
         VALUES (:id_usuario, :tipo, :modelo, :placa, :color)`,
         {
-          replacements: {
-            id_usuario: idUsuario,
-            tipo: vehiculo.tipo,
-            modelo: vehiculo.modelo,
-            placa: vehiculo.placa,
-            color: vehiculo.color
-          },
+          replacements: vehiculo,
           type: sequelize.QueryTypes.INSERT,
           transaction
         }
@@ -1079,77 +1077,35 @@ const seedAll = async () => {
     }
     console.log("");
 
+
     // 9. PEDIDOS
+
     console.log(" Insertando pedidos...");
-    const pedidosIds = [];
-
-    for (let i = 0; i < pedidosData.length; i++) {
-      const pedido = pedidosData[i];
-      const idUsuario = usuariosIds[pedido.email_usuario];
-      
-      if (!idUsuario) {
-        console.log(` Error: Usuario ${pedido.email_usuario} no encontrado, saltando...`);
-        continue;
-      }
-
-      let idFormula = null;
-      if (pedido.email_formula) {
-        idFormula = formulasIds[pedido.email_formula];
-        if (!idFormula) {
-          console.log(` Error: Fórmula para ${pedido.email_formula} no encontrada, saltando...`);
-          continue;
-        }
-      }
-
+    for (const pedido of pedidosData) {
       const [result] = await sequelize.query(
         `INSERT INTO PEDIDOS 
          (id_usuario, id_formula, direccion_entrega, estado, costo_envio, total, fecha_estimada) 
          VALUES (:id_usuario, :id_formula, :direccion_entrega, :estado, :costo_envio, :total, :fecha_estimada)`,
         {
-          replacements: {
-            id_usuario: idUsuario,
-            id_formula: idFormula,
-            direccion_entrega: pedido.direccion_entrega,
-            estado: pedido.estado,
-            costo_envio: pedido.costo_envio,
-            total: pedido.total,
-            fecha_estimada: pedido.fecha_estimada
-          },
+          replacements: pedido,
           type: sequelize.QueryTypes.INSERT,
           transaction
         }
       );
-      pedidosIds.push(result);
-      console.log(`Pedido ${i + 1} creado (ID: ${result})`);
+      console.log(`Pedido ID: ${result}`);
     }
     console.log("");
 
+
     // 10. PEDIDOS_PRODUCTOS
+
     console.log("Insertando productos en pedidos...");
     for (const pp of pedidosProductosData) {
-      const idPedido = pedidosIds[pp.num_pedido - 1];
-      
-      if (!idPedido) {
-        console.log(` Error: Pedido ${pp.num_pedido} no encontrado, saltando...`);
-        continue;
-      }
-
-      const idProductoReal = productosIds[pp.indice_producto];
-      
-      if (!idProductoReal) {
-        console.log(` Error: Producto con índice ${pp.indice_producto} no encontrado, saltando...`);
-        continue;
-      }
-
       await sequelize.query(
         `INSERT INTO PEDIDOS_PRODUCTOS (id_pedido, id_producto, cant_productos) 
          VALUES (:id_pedido, :id_producto, :cant_productos)`,
         {
-          replacements: {
-            id_pedido: idPedido,
-            id_producto: idProductoReal,
-            cant_productos: pp.cant_productos
-          },
+          replacements: pp,
           type: sequelize.QueryTypes.INSERT,
           transaction
         }
@@ -1157,87 +1113,39 @@ const seedAll = async () => {
     }
     console.log(` ${pedidosProductosData.length} relaciones agregadas\n`);
 
+
     // 11. PAGOS
+
     console.log("Insertando pagos...");
     for (const pago of pagosData) {
-      const idPedido = pedidosIds[pago.num_pedido - 1];
-      
-      if (!idPedido) {
-        console.log(` Error: Pedido ${pago.num_pedido} no encontrado, saltando...`);
-        continue;
-      }
-
       await sequelize.query(
         `INSERT INTO PAGOS 
          (id_pedido, eleccion_pago, monto, estado, fecha_pago) 
          VALUES (:id_pedido, :eleccion_pago, :monto, :estado, :fecha_pago)`,
         {
-          replacements: {
-            id_pedido: idPedido,
-            eleccion_pago: pago.eleccion_pago,
-            monto: pago.monto,
-            estado: pago.estado,
-            fecha_pago: pago.fecha_pago
-          },
+          replacements: pago,
           type: sequelize.QueryTypes.INSERT,
           transaction
         }
       );
-      console.log(`Pago - Pedido ${pago.num_pedido} - ${pago.eleccion_pago} - ${pago.estado}`);
+      console.log(`Pago - Pedido ${pago.id_pedido} - ${pago.eleccion_pago} - ${pago.estado}`);
     }
     console.log("");
 
-    // 12. DISTRIBUCIONES
-    console.log("Insertando distribuciones...");
-
-    for (const distribucion of distribucionesData) {
-      const idPedido = pedidosIds[distribucion.num_pedido - 1];
-      
-      if (!idPedido) {
-        console.log(` Error: Pedido ${distribucion.num_pedido} no encontrado, saltando...`);
-        continue;
-      }
-
-      const idUsuario = usuariosIds[distribucion.email_usuario];
-      
-      if (!idUsuario) {
-        console.log(` Error: Usuario ${distribucion.email_usuario} no encontrado, saltando...`);
-        continue;
-      }
-
-      await sequelize.query(
-        `INSERT INTO DISTRIBUCIONES 
-         (id_pedido, id_usuario, fecha_entrega, estado, observaciones) 
-         VALUES (:id_pedido, :id_usuario, :fecha_entrega, :estado, :observaciones)`,
-        {
-          replacements: {
-            id_pedido: idPedido,
-            id_usuario: idUsuario,
-            fecha_entrega: distribucion.fecha_entrega,
-            estado: distribucion.estado,
-            observaciones: distribucion.observaciones
-          },
-          type: sequelize.QueryTypes.INSERT,
-          transaction
-        }
-      );
-      console.log(`Distribución - Pedido ${distribucion.num_pedido} - ${distribucion.estado}`);
-    }
-    console.log("");
 
     // COMMIT
+
     await transaction.commit();
 
     console.log("\n¡TODOS LOS DATOS FUERON INSERTADOS EXITOSAMENTE!");
     console.log("\n Resumen:");
-    console.log(` Usuarios: ${Object.keys(usuariosIds).length}`);
+    console.log(` Usuarios: ${usuariosData.length + 1} (incluyendo admin)`);
     console.log(` Categorías: ${categoriasData.length}`);
-    console.log(` Productos: ${productosIds.length}`);
-    console.log(` Fórmulas: ${Object.keys(formulasIds).length}`);
+    console.log(` Productos: ${productosData.length}`);
+    console.log(` Fórmulas: ${formulasData.length}`);
     console.log(` Vehículos: ${vehiculosData.length}`);
-    console.log(` Pedidos: ${pedidosIds.length}`);
+    console.log(` Pedidos: ${pedidosData.length}`);
     console.log(` Pagos: ${pagosData.length}`);
-    console.log(` Distribuciones: ${distribucionesData.length}`);
 
     console.log("\n CREDENCIALES DE ADMIN:");
     console.log(`  Email: ${adminData.email}`);
@@ -1253,6 +1161,20 @@ const seedAll = async () => {
     console.log(`  Ana (Repartidor): ana@email.com / Ana789*`);
     console.log(`  Luis (Repartidor): luis@email.com / Luis101*`);
 
+    console.log("\n FLUJO DE PEDIDOS:");
+    console.log(` Pedido 1: ${pedidosData[0].estado} (100% pagado → Distribución)`);
+    console.log(` Pedido 2: ${pedidosData[1].estado} (50% abonado, esperando segundo pago)`);
+    console.log(` Pedido 3: ${pedidosData[2].estado} (100% pagado → Distribución)`);
+    console.log(` Pedido 4: ${pedidosData[3].estado} (50% abonado, gafas listas para segundo pago)`);
+    console.log(` Pedido 5: ${pedidosData[4].estado} (50% abonado, en proceso)`);
+    console.log(` Pedido 6: ${pedidosData[5].estado} (pendiente de pago - SIN PAGOS)`);
+    console.log(` Pedido 7: ${pedidosData[6].estado} (entregado)`);
+    console.log(` Pedido 8: ${pedidosData[7].estado} (DOS pagos 50% completados → Distribución) `);
+    console.log(` Pedido 9: ${pedidosData[8].estado} (100% pagado, múltiples productos)`);
+    console.log(` Pedido 10: ${pedidosData[9].estado} (100% pagado, múltiples productos)`);
+    console.log(` Pedido 11: ${pedidosData[10].estado} (100% pagado, múltiples productos)`);
+    console.log(` Pedido 12: ${pedidosData[11].estado} (pendiente de pago - SIN PAGOS)`);
+
   } catch (error) {
     await transaction.rollback();
     console.error("\n Error al insertar datos:", error);
@@ -1264,6 +1186,5 @@ const seedAll = async () => {
     process.exit(0);
   }
 };
-
-// EJECUTAR
+// EJECUTA
 seedAll();

@@ -139,5 +139,5 @@ const PedidoProductoModelo  = {
   }
 };
 
-export { PedidoProducto };
+export { PedidoProducto }; 
 export default PedidoProductoModelo;

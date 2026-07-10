@@ -899,3 +899,151 @@ const obtenerVentasCategoriaSQL = async (replacements) => {
         detalle
     };
 };
+
+// FUNCIÓN PARA DIBUJAR EL PDF
+const dibujarReportePDF = async (doc, datos, tipo, periodo) => {
+    // Logo y título
+    doc.fontSize(24)
+       .fillColor('#B90F0F')
+       .text('ÓPTICA BALAMB', { align: 'center' })
+       .moveDown();
+
+    doc.fontSize(18)
+       .fillColor('#333333')
+       .text(datos.titulo || `Reporte de ${tipo}`, { align: 'center' })
+       .moveDown();
+
+    // Información del reporte
+    doc.fontSize(10)
+       .fillColor('#666666')
+       .text(`Generado: ${datos.fechaGeneracion}`, { align: 'right' })
+       .text(`Período: ${periodo}`, { align: 'right' })
+       .text(`Fecha Inicio: ${datos.fechaInicio || 'N/A'}`, { align: 'right' })
+       .text(`Fecha Fin: ${datos.fechaFin || 'N/A'}`, { align: 'right' })
+       .moveDown(2);
+
+    // Línea separadora
+    doc.strokeColor('#CCCCCC')
+       .lineWidth(1)
+       .moveTo(50, doc.y)
+       .lineTo(550, doc.y)
+       .stroke()
+       .moveDown();
+
+    // SECCIÓN: Resumen
+    doc.fontSize(14)
+       .fillColor('#B90F0F')
+       .text('📊 RESUMEN', { underline: true })
+       .moveDown(0.5);
+
+    doc.fontSize(11)
+       .fillColor('#333333');
+
+    if (datos.resumen) {
+        const resumen = datos.resumen;
+        Object.entries(resumen).forEach(([key, value]) => {
+            const label = {
+                total_pedidos: 'Total Pedidos',
+                ventas_totales: 'Ventas Totales',
+                promedio_venta: 'Promedio Venta',
+                clientes_unicos: 'Clientes Únicos',
+                monto_total: 'Monto Total',
+                total_unidades: 'Unidades Vendidas',
+                total_ingresos: 'Ingresos Totales'
+            }[key] || key;
+
+            let formattedValue = value;
+            if (key.includes('total') || key.includes('ventas') || key.includes('ingresos') || key.includes('monto')) {
+                formattedValue = `$${parseFloat(value || 0).toLocaleString('es-CO')}`;
+            }
+
+            doc.text(`  • ${label}: ${formattedValue}`);
+        });
+    } else if (tipo === 'repartidores') {
+        doc.text(`  • Total Repartidores: ${datos.totalRepartidores || 0}`);
+    } else if (tipo === 'inventario') {
+        doc.text(`  • Total Productos: ${datos.totalProductos || 0}`);
+        doc.text(`  • Valor Total: $${(datos.valorTotal || 0).toLocaleString('es-CO')}`);
+    }
+
+    doc.moveDown(2);
+
+    // SECCIÓN: Detalle
+    doc.fontSize(14)
+       .fillColor('#B90F0F')
+       .text('📋 DETALLE', { underline: true })
+       .moveDown(0.5);
+
+    doc.fontSize(9)
+       .fillColor('#333333');
+
+    if (tipo === 'ventas' && datos.detalle) {
+        doc.text('Ventas por día:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.slice(0, 15).forEach((item) => {
+            doc.text(
+                `  ${item.fecha} - Pedidos: ${item.total_pedidos} - Ventas: $${(item.ventas_totales || 0).toLocaleString('es-CO')} - Promedio: $${(item.promedio_venta || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'inventario' && datos.porCategoria) {
+        doc.text('Productos por categoría:', { underline: true });
+        doc.moveDown(0.3);
+        Object.entries(datos.porCategoria).forEach(([categoria, data]) => {
+            doc.text(`  ${categoria}: ${data.cantidad} productos ($${data.valor.toLocaleString('es-CO')})`);
+        });
+        if (datos.productos) {
+            doc.moveDown().text('Top productos:', { underline: true });
+            doc.moveDown(0.3);
+            datos.productos.slice(0, 10).forEach((p, i) => {
+                doc.text(`  ${i+1}. ${p.nombre} - $${(p.precio || 0).toLocaleString('es-CO')}`);
+            });
+        }
+    } else if (tipo === 'repartidores' && datos.repartidores) {
+        doc.text('Repartidores:', { underline: true });
+        doc.moveDown(0.3);
+        datos.repartidores.forEach((r) => {
+            doc.text(
+                `  ${r.repartidor} - ${r.tipo_vehiculo || 'Sin vehículo'} - ${r.pedidos_asignados || 0} entregas - Estado: ${r.estado || 'N/A'}`
+            );
+        });
+    } else if (tipo === 'clientes' && datos.clientes) {
+        doc.text('Top clientes:', { underline: true });
+        doc.moveDown(0.3);
+        datos.clientes.slice(0, 10).forEach((c, i) => {
+            doc.text(
+                `  ${i+1}. ${c.cliente} - ${c.total_pedidos} pedidos - $${(c.total_gastado || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'productos-mas-vendidos' && datos.productos) {
+        doc.text('Top productos:', { underline: true });
+        doc.moveDown(0.3);
+        datos.productos.forEach((p, i) => {
+            doc.text(
+                `  ${i+1}. ${p.producto} - ${p.total_vendidos} vendidos - $${(p.ingreso_total || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'estado-pedidos' && datos.detalle) {
+        doc.text('Distribución de pedidos:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.forEach((item) => {
+            doc.text(
+                `  ${item.estado}: ${item.cantidad} pedidos - $${(item.monto_total || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'ventas-categoria' && datos.detalle) {
+        doc.text('Ventas por categoría:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.forEach((item) => {
+            doc.text(
+                `  ${item.categoria}: ${item.unidades_vendidas || 0} unidades - $${(item.ingresos || 0).toLocaleString('es-CO')}`
+            );
+        });
+    }
+
+    // Pie de página
+    doc.moveDown(3)
+       .fontSize(8)
+       .fillColor('#999999')
+       .text('Reporte generado automáticamente por el sistema de Óptica Balamb', { align: 'center' })
+       .text(`Página ${doc.pageNumber}`, { align: 'center' });
+};
