@@ -44,6 +44,21 @@ const Pago = sequelize.define('Pago', {
     type: DataTypes.ENUM('Pendiente', 'Confirmado', 'Rechazado'),
     allowNull: false,
     defaultValue: 'Pendiente'
+  },
+  bold_reference: {
+    type: DataTypes.STRING(300),
+    allowNull: true,
+    comment: 'Referencia LNK_xxx que devuelve Bold al crear el link'
+  },
+  bold_payment_id: {
+    type: DataTypes.STRING(300),
+    allowNull: true,
+    comment: 'ID del pago que Bold envía en el webhook (PAY_xxx)'
+  },
+  bold_link: {
+    type: DataTypes.STRING(300),
+    allowNull: true,
+    comment: 'URL completa de Bold a la que redirigir al cliente'
   }
 }, {
   tableName: 'PAGOS',
@@ -64,7 +79,10 @@ const PagoModel = {
       eleccion_pago: data.eleccion_pago,
       canal_pago: data.canal_pago || 'Bold',
       monto: data.monto,
-      estado: 'Pendiente'
+      estado: 'Pendiente',
+      bold_reference: data.bold_reference || null,
+      bold_payment_id: data.bold_payment_id || null,
+      bold_link: data.bold_link || null
     });
     return pago.id_pago;
   },
@@ -178,67 +196,6 @@ const PagoModel = {
     if (!pago) return false;
     await pago.update({ estado: 'Rechazado' });
     return true;
-  },
-
-  // ========== ADMIN (SOLO CONSULTAS) ==========
-
-  /**
-   * Obtener todos los pagos
-   */
-  obtenerTodos: async () => {
-    const pagos = await sequelize.query(
-      `SELECT p.*, pe.total as total_pedido, u.email as email_usuario
-       FROM PAGOS p
-       JOIN PEDIDOS pe ON p.id_pedido = pe.id_pedido
-       JOIN USUARIOS u ON pe.id_usuario = u.id_usuario
-       ORDER BY p.fecha_pago DESC`,
-      { type: sequelize.QueryTypes.SELECT }
-    );
-    return pagos;
-  },
-
-  /**
-   * Obtener estadísticas de pagos
-   */
-  obtenerEstadisticas: async () => {
-    const [stats] = await sequelize.query(
-      `SELECT 
-        COALESCE(SUM(CASE WHEN estado = 'Confirmado' THEN monto ELSE 0 END), 0) as total_recaudado,
-        COALESCE(SUM(CASE WHEN estado = 'Pendiente' THEN monto ELSE 0 END), 0) as total_pendiente,
-        COALESCE(COUNT(CASE WHEN estado = 'Confirmado' THEN 1 END), 0) as pagos_confirmados,
-        COALESCE(COUNT(CASE WHEN estado = 'Pendiente' THEN 1 END), 0) as pagos_pendientes,
-        COALESCE(COUNT(CASE WHEN estado = 'Rechazado' THEN 1 END), 0) as pagos_rechazados,
-        COALESCE(SUM(CASE WHEN estado = 'Confirmado' AND eleccion_pago = '50%' THEN monto ELSE 0 END), 0) as total_abonos_50,
-        COALESCE(SUM(CASE WHEN estado = 'Confirmado' AND eleccion_pago = '100%' THEN monto ELSE 0 END), 0) as total_pagos_completos
-       FROM PAGOS`,
-      { type: sequelize.QueryTypes.SELECT }
-    );
-    
-    // Si no hay resultados, devolver valores por defecto
-    return stats || {
-      total_recaudado: 0,
-      total_pendiente: 0,
-      pagos_confirmados: 0,
-      pagos_pendientes: 0,
-      pagos_rechazados: 0,
-      total_abonos_50: 0,
-      total_pagos_completos: 0
-    };
-  },
-
-  /**
-   * Obtener pagos por rango de fechas
-   */
-  obtenerPorRangoFechas: async (fechaInicio, fechaFin) => {
-    const pagos = await Pago.findAll({
-      where: {
-        fecha_pago: {
-          [Op.between]: [fechaInicio, fechaFin]
-        }
-      },
-      order: [['fecha_pago', 'DESC']]
-    });
-    return pagos;
   },
 
   // ========== UTILIDADES ==========

@@ -1,31 +1,6 @@
 import PagoModel from '../models/pagoModel.js';
 import sequelize from '../config/database.js';
-
-// ========== OBTENER TODOS LOS PAGOS (ADMIN) ==========
-export const obtenerPagos = async (req, res) => {
-  try {
-    const pagos = await PagoModel.obtenerTodos();
-    res.json({ success: true, count: pagos.length, data: pagos });
-  } catch (error) {
-    console.error('Error al obtener pagos:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener los pagos', error: error.message });
-  }
-};
-
-// ========== OBTENER PAGO POR ID ==========
-export const obtenerPagoPorId = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const pago = await PagoModel.obtenerPorId(id);
-    if (!pago) {
-      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
-    }
-    res.json({ success: true, data: pago });
-  } catch (error) {
-    console.error('Error al obtener pago:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener el pago', error: error.message });
-  }
-};
+import boldClient from '../config/bold.js';
 
 // ========== OBTENER PAGOS POR PEDIDO ==========
 export const obtenerPagosPorPedido = async (req, res) => {
@@ -52,6 +27,7 @@ export const obtenerPagosPorPedido = async (req, res) => {
 export const crearPago = async (req, res) => {
   try {
     const { id_pedido, eleccion_pago, canal_pago = 'Bold', monto } = req.body;
+    const usuario = req.user;
 
     // Validar campos requeridos
     if (!id_pedido || !eleccion_pago || !monto) {
@@ -77,6 +53,15 @@ export const crearPago = async (req, res) => {
 
     if (!pedido) {
       return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    }
+
+    // VERIFICAR QUE EL PEDIDO PERTENEZCA AL USUARIO
+
+    if (pedido.id_usuario !== usuario.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No puedes pagar un pedido que no te pertenece'
+      });
     }
 
     // Verificar que el monto no exceda el total del pedido
@@ -175,24 +160,62 @@ export const crearPago = async (req, res) => {
       }
     }
 
+    // ==========================================
+    // CONEXIÓN CON BOLD
+    // ==========================================
+
+    // Calcular IVA (19%)
+    const valorIva = Math.round(monto * 0.19);
+    const baseGravable = monto - valorIva;
+
+    // Crear link de pago en Bold
+    const boldResponse = await boldClient.post('/online/link/v1', {
+      amount_type: "CLOSE",
+      amount: {
+        currency: "COP",
+        total_amount: monto,
+        taxes: [
+          {
+            type: "VAT",
+            base: baseGravable,
+            value: valorIva
+          }
+        ],
+        tip_amount: 0
+      },
+      reference: `${id_pedido}-${eleccion_pago}-${Date.now()}`,
+      description: `Pago ${eleccion_pago} del pedido #${id_pedido}`,
+      payer_email: usuario.email || 'cliente@email.com'
+    });
+
+    // Extraer datos de la respuesta de Bold
+    const { payment_link, url: bold_link } = boldResponse.data.payload;
+
+
     // Crear el pago
     const nuevoId = await PagoModel.crear({ 
       id_pedido, 
       eleccion_pago, 
       canal_pago, 
-      monto 
+      monto,
+      bold_reference: payment_link,
+      bold_link: bold_link
     });
 
     const nuevoPago = await PagoModel.obtenerPorId(nuevoId);
     res.status(201).json({ 
       success: true, 
-      message: 'Pago registrado exitosamente. Esperando confirmación de Bold', 
-      data: nuevoPago 
+      message: 'Link de pago generado exitosamente',
+      data: {
+        id_pago: nuevoId,
+        bold_link: bold_link, 
+        bold_reference: payment_link
+      }
     });
 
   } catch (error) {
-    console.error('Error al crear pago:', error);
-    res.status(500).json({ success: false, message: 'Error al crear el pago', error: error.message });
+    console.error('Error al crear pago:', error.response?.data || error.message);
+    res.status(500).json({ success: false, message: 'Error al crear el pago', error: error.response?.data || error.message });
   }
 };
 
@@ -277,63 +300,6 @@ export const rechazarPago = async (req, res) => {
   }
 };
 
-// ========== OBTENER ESTADÍSTICAS (ADMIN) ==========
-export const obtenerEstadisticas = async (req, res) => {
-  try {
-    console.log('🔍 Obteniendo estadísticas de pagos...');
-    
-    const estadisticas = await PagoModel.obtenerEstadisticas();
-    console.log('📈 Estadísticas obtenidas:', estadisticas);
-
-    // Pagos por método (50% o 100%)
-    const pagosPorMetodo = await sequelize.query(
-      `SELECT eleccion_pago, COUNT(*) as cantidad, COALESCE(SUM(monto), 0) as total
-       FROM PAGOS 
-       WHERE estado = 'Confirmado' 
-       GROUP BY eleccion_pago`,
-      { type: sequelize.QueryTypes.SELECT }
-    );
-    console.log('📊 Pagos por método:', pagosPorMetodo);
-
-    res.json({ 
-      success: true, 
-      data: { 
-        resumen: estadisticas, 
-        pagos_por_metodo: pagosPorMetodo 
-      } 
-    });
-
-  } catch (error) {
-    console.error('❌ Error al obtener estadísticas:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error al obtener estadísticas', 
-      error: error.message 
-    });
-  }
-};
-
-// ========== OBTENER PAGOS POR RANGO DE FECHAS (ADMIN) ==========
-export const obtenerPagosPorRangoFechas = async (req, res) => {
-  try {
-    const { fechaInicio, fechaFin } = req.query;
-
-    if (!fechaInicio || !fechaFin) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Se requieren fechaInicio y fechaFin' 
-      });
-    }
-
-    const pagos = await PagoModel.obtenerPorRangoFechas(fechaInicio, fechaFin);
-    res.json({ success: true, count: pagos.length, data: pagos });
-
-  } catch (error) {
-    console.error('Error al obtener pagos por fechas:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener pagos por fechas', error: error.message });
-  }
-};
-
 // ========== VERIFICAR SALDO DE PEDIDO ==========
 export const verificarSaldoPedido = async (req, res) => {
   try {
@@ -378,33 +344,3 @@ export const verificarSaldoPedido = async (req, res) => {
   }
 };
 
-// ========== OBTENER DETALLE COMPLETO DE PAGO (ADMIN) ==========
-export const obtenerDetallePago = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const pago = await sequelize.query(
-      `SELECT 
-        p.*,
-        pe.total as total_pedido,
-        pe.estado as estado_pedido,
-        u.nombre_completo as usuario,
-        u.email as email_usuario
-       FROM PAGOS p
-       JOIN PEDIDOS pe ON p.id_pedido = pe.id_pedido
-       JOIN USUARIOS u ON pe.id_usuario = u.id_usuario
-       WHERE p.id_pago = ?`,
-      { replacements: [id], type: sequelize.QueryTypes.SELECT }
-    );
-
-    if (!pago || pago.length === 0) {
-      return res.status(404).json({ success: false, message: 'Pago no encontrado' });
-    }
-
-    res.json({ success: true, data: pago[0] });
-
-  } catch (error) {
-    console.error('Error al obtener detalle del pago:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener detalle del pago', error: error.message });
-  }
-};

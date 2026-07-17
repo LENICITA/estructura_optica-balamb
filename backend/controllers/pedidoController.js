@@ -15,7 +15,7 @@ const calcularCostoEnvio = (ciudad) => {
 // CLIENTE - CREAR PEDIDO (CON FÓRMULA)
 export const crearPedido = async (req, res) => {
   try {
-    const { id_formula, direccion_entrega, productos } = req.body;
+    const { id_formula, direccion_entrega, ciudad_envio, productos } = req.body;
     const usuario = req.user;
 
     console.log('Usuario autenticado:', usuario);
@@ -31,6 +31,13 @@ export const crearPedido = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'La dirección de entrega es obligatoria'
+      });
+    }
+
+    if (!ciudad_envio) {
+      return res.status(400).json({
+        success: false,
+        message: 'La ciudad de envío es obligatoria'
       });
     }
 
@@ -65,7 +72,7 @@ export const crearPedido = async (req, res) => {
       ciudad = usuarioData?.ciudad || '';
     }
 
-    const costo_envio = calcularCostoEnvio(ciudad);
+    const costo_envio = calcularCostoEnvio(ciudad_envio);
     console.log('Ciudad:', ciudad);
     console.log('Costo envío:', costo_envio);
 
@@ -145,6 +152,7 @@ export const crearPedido = async (req, res) => {
       id_usuario: usuario.id,
       id_formula: id_formula || null,
       direccion_entrega: direccion_entrega,
+      ciudad_envio: ciudad_envio,
       total: total,
       costo_envio: costo_envio,
       fecha_estimada: fechaEstimadaStr
@@ -168,6 +176,7 @@ export const crearPedido = async (req, res) => {
         total: total,
         estado: pedido.estado,
         direccion_entrega: pedido.direccion_entrega,
+        ciudad_envio: pedido.ciudad_envio,
         formula: formulaData ? {
           id_formula: formulaData.id_formula,
           condicion: formulaData.condicion,
@@ -253,12 +262,12 @@ export const obtenerPedidoPorId = async (req, res) => {
 
     // Verificar permisos
     const esAdmin = usuario.roles?.includes('ADMIN') || false;
-    if (!esAdmin && pedido.id_usuario !== usuario.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver este pedido'
-      });
-    }
+    if (esAdmin && (pedido.estado === 'Pendiente' || pedido.estado === 'Cancelado')) {
+  return res.status(403).json({
+    success: false,
+    message: 'No tienes permiso para ver este pedido'
+  });
+}
 
     const productos = await PedidoProductoModelo.obtenerPorPedido(id);
 
@@ -271,6 +280,7 @@ export const obtenerPedidoPorId = async (req, res) => {
           fecha_estimada: pedido.fecha_estimada,
           estado: pedido.estado,
           direccion_entrega: pedido.direccion_entrega,
+          ciudad_envio: pedido.ciudad_envio,
           costo_envio: pedido.costo_envio,
           total: pedido.total,
           cliente: {
@@ -450,7 +460,7 @@ export const obtenerPedidosPorEstado = async (req, res) => {
   try {
     const { estado } = req.params;
 
-    const estadosValidos = ['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'];
+    const estadosValidos = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
@@ -482,11 +492,11 @@ export const actualizarEstadoPedido = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    const estadosValidos = ['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'];
+    const estadosValidos = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado inválido. Debe ser: Pendiente, Abonado, Listo, Pagado, En Proceso, Enviado, Entregado, Cancelado'
+        message: 'Estado inválido. Debe ser: Abonado, Listo, Pagado, En Proceso, Enviado, Entregado'
       });
     }
 

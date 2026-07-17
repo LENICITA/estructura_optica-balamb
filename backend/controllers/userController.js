@@ -666,16 +666,33 @@ export const obtenerPerfil = async (req, res) => {
 export const actualizarPerfil = async (req, res) => {
     try {
         const usuarioId = req.user.id;
-        const { direccion, email, telefono } = req.body;
+        const { nombre_completo, telefono, direccion, ciudad, email } = req.body;
 
-        console.log(`📡 Actualizando perfil del usuario ${usuarioId}`);
+        console.log(` Actualizando perfil del usuario ${usuarioId}`);
 
-        const usuario = await Usuario.findByPk(usuarioId);
+        const usuario = await Usuario.findByPk(usuarioId, {
+            include: [{
+                model: Role,
+                as: 'roles',
+                through: { attributes: [] },
+                attributes: ['nombre']
+            }]
+        });
 
         if (!usuario) {
             return res.status(404).json({
                 success: false,
                 message: 'Usuario no encontrado'
+            });
+        }
+
+        const roles = usuario.roles?.map(r => r.nombre) || [];
+
+        // REPARTIDOR NO PUEDE EDITAR SU PERFIL
+        if (roles.includes('REPARTIDOR')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Los repartidores no pueden editar su perfil. Contacta al administrador.'
             });
         }
 
@@ -698,9 +715,11 @@ export const actualizarPerfil = async (req, res) => {
 
         // Actualizar solo los campos permitidos
         await usuario.update({
+            nombre_completo: nombre_completo || usuario.nombre_completo,
+            telefono: telefono || usuario.telefono,
             direccion: direccion !== undefined ? direccion : usuario.direccion,
-            email: email || usuario.email,
-            telefono: telefono || usuario.telefono
+            ciudad: ciudad || usuario.ciudad,
+            email: email || usuario.email
         });
 
         console.log('Perfil actualizado');
