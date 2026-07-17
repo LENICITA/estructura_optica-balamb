@@ -10,52 +10,11 @@ const ChatBot = {
     devolucion: "Tienes 15 días hábiles para solicitar devoluciones. El producto debe estar en perfecto estado.",
     despedida: "Gracias por contactarnos. ¡Que tengas un excelente día!",
     ayuda: "*Opciones disponibles:*\n\n• Productos - Información sobre gafas y lentes\n• Horario - Horarios de atención\n• Envío - Costos y tiempos de entrega\n• Fórmula médica - Envio de formulas\n• Pago - Métodos de pago aceptados\n• Devolución - Política de cambios y garantías\n\n *¿Necesitas atención personalizada?* Escríbenos al WhatsApp: 330-120-92941",
+    precios: "Nuestros precios varían según el producto:\n\n• Gafas de sol: desde $80,000\n• Monturas: desde $120,000\n• Lentes progresivos: desde $250,000\n• Lentes de contacto: desde $60,000\n\n*Los precios pueden variar según la marca y graduación.*",
+    contacto: "Puedes contactarnos a través de:\n\n WhatsApp: 330-120-92941\n Correo: opticavirtualbalmb@gmail.com",
+    garantia: "Todos nuestros productos tienen 30 días de garantía contra defectos de fabricación",
     default: "Lo siento, no entendí tu pregunta. ¿Podrías reformularla? O escribe 'ayuda' para ver las opciones disponibles."
   },
-
-  // ========== FAQ ==========
-  faqs: [
-    {
-      id: 1,
-      pregunta: "¿Qué productos ofrecen?",
-      respuesta: "Ofrecemos gafas de sol, monturas, lentes progresivos, lentes de contacto y accesorios."
-    },
-    {
-      id: 2,
-      pregunta: "¿Cómo puedo comprar?",
-      respuesta: "Puedes comprar directamente en nuestra web, seleccionando los productos, guardandolos en el carrito y realizando el pago online con un abono del 50% si asi lo deseas."
-    },
-    {
-      id: 3,
-      pregunta: "¿Cuánto cuesta el envío?",
-      respuesta: "El costo de envío es de $5,000 para fuera de la ciudad de bogotá. Envíos gratis en la ciudad de bogotá."
-    },
-    {
-      id: 4,
-      pregunta: "¿Cuánto tarda la entrega?",
-      respuesta: "La entrega demora entre 8 a 10 días hábiles después de confirmado el pago."
-    },
-    {
-      id: 5,
-      pregunta: "¿Aceptan devoluciones?",
-      respuesta: "Sí, aceptamos devoluciones dentro de los 15 días hábiles posteriores a la compra."
-    },
-    {
-      id: 6,
-      pregunta: "¿Necesito fórmula médica para comprar gafas?",
-      respuesta: "Solo para lentes graduados necesitas fórmula médica. Para gafas de sol no es necesaria."
-    },
-    {
-      id: 7,
-      pregunta: "¿Qué métodos de pago aceptan?",
-      respuesta: "Aceptamos todos los métodos de pago a través de Bold: tarjetas débito/crédito, Nequi, Daviplata, transferencias bancarias y más. Es nuestra pasarela de pagos segura y confiable."
-    },
-    {
-      id: 8,
-      pregunta: "¿Cómo contactar con atención al cliente?",
-      respuesta: "Puedes contactarnos al WhatsApp 330-120-92941 o al correo opticavirtualbalmb@gmail.com"
-    }
-  ],
 
   // ========== DETECTAR INTENCIÓN ==========
   detectarIntencion: (mensaje) => {
@@ -89,6 +48,16 @@ const ChatBot = {
       return 'ayuda';
     }
     
+    if (msg.includes('precio') || msg.includes('costos') || msg.includes('cuanto cuesta') || msg.includes('valor') || msg.includes('precios')) {
+      return 'precios';
+    }
+    if (msg.includes('contacto') || msg.includes('contactar') || msg.includes('hablar') || msg.includes('comunicarse') || msg.includes('atención al cliente') || msg.includes('soporte')) {
+      return 'contacto';
+    }
+    if (msg.includes('garantía') || msg.includes('garantia') || msg.includes('protección') || msg.includes('defecto') || msg.includes('falla')) {
+      return 'garantia';
+    }
+
     return 'default';
   },
 
@@ -96,20 +65,6 @@ const ChatBot = {
   obtenerRespuesta: (intencion) => {
     return ChatBot.respuestas[intencion] || ChatBot.respuestas.default;
   },
-
-  // ========== OBTENER FAQ ==========
-  getFaqs: () => {
-    return ChatBot.faqs;
-  },
-
-  // ========== BUSCAR FAQ ==========
-  searchFaqs: (termino) => {
-    const search = termino.toLowerCase();
-    return ChatBot.faqs.filter(faq => 
-      faq.pregunta.toLowerCase().includes(search) || 
-      faq.respuesta.toLowerCase().includes(search)
-    );
-  }
 };
 
 export default ChatBot;

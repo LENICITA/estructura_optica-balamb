@@ -532,7 +532,8 @@ const pedidosData = [
   {
     id_usuario: 2,
     id_formula: 1,
-    direccion_entrega: "Calle 123 #45-67, Bogotá",
+    direccion_entrega: "Calle 123 #45-67",
+    ciudad_envio: "Bogotá",  
     estado: "Pagado",
     costo_envio: 0,
     total: 720000,
@@ -542,7 +543,8 @@ const pedidosData = [
   {
     id_usuario: 3,
     id_formula: 2,
-    direccion_entrega: "Carrera 45 #23-12, Medellín",
+    direccion_entrega: "Carrera 45 #23-12",
+    ciudad_envio: "Medellín",  
     estado: "Abonado",
     costo_envio: 10000,
     total: 310000,
@@ -552,7 +554,8 @@ const pedidosData = [
   {
     id_usuario: 6,
     id_formula: null,
-    direccion_entrega: "Avenida 3 #78-90, Cali",
+    direccion_entrega: "Avenida 3 #78-90",
+    ciudad_envio: "Cali",
     estado: "Pagado",
     costo_envio: 10000,
     total: 230000,
@@ -562,7 +565,8 @@ const pedidosData = [
   {
     id_usuario: 8,
     id_formula: 5,
-    direccion_entrega: "Carrera 50 #10-20, Medellín",
+    direccion_entrega: "Carrera 50 #10-20",
+    ciudad_envio: "Medellín",  
     estado: "Listo",
     costo_envio: 10000,
     total: 420000,
@@ -572,7 +576,8 @@ const pedidosData = [
   {
     id_usuario: 7,
     id_formula: null,
-    direccion_entrega: "Calle 100 #20-30, Bogotá",
+    direccion_entrega: "Calle 100 #20-30",
+    ciudad_envio: "Bogotá",  
     estado: "En Proceso",
     costo_envio: 0,
     total: 210000,
@@ -582,7 +587,8 @@ const pedidosData = [
   {
     id_usuario: 10,
     id_formula: null,
-    direccion_entrega: "Calle 45 #30-40, Bogotá",
+    direccion_entrega: "Calle 45 #30-40",
+    ciudad_envio: "Bogotá",
     estado: "Pendiente",
     costo_envio: 0,
     total: 45000,
@@ -592,7 +598,8 @@ const pedidosData = [
   {
     id_usuario: 2,
     id_formula: null,
-    direccion_entrega: "Calle 123 #45-67, Bogotá",
+    direccion_entrega: "Calle 123 #45-67",
+    ciudad_envio: "Bogotá",  
     estado: "Entregado",
     costo_envio: 0,
     total: 250000,
@@ -602,7 +609,8 @@ const pedidosData = [
   {
     id_usuario: 8,
     id_formula: 5,
-    direccion_entrega: "Carrera 50 #10-20, Medellín",
+    direccion_entrega: "Carrera 50 #10-20",
+    ciudad_envio: "Medellín",  
     estado: "Pagado",
     costo_envio: 10000,
     total: 420000,
@@ -612,7 +620,8 @@ const pedidosData = [
   {
     id_usuario: 3,
     id_formula: 2,
-    direccion_entrega: "Carrera 45 #23-12, Medellín",
+    direccion_entrega: "Carrera 45 #23-12",
+    ciudad_envio: "Medellín",  
     estado: "Pagado",
     costo_envio: 10000,
     total: 660000,
@@ -622,7 +631,8 @@ const pedidosData = [
   {
     id_usuario: 6,
     id_formula: null,
-    direccion_entrega: "Avenida 3 #78-90, Cali",
+    direccion_entrega: "Avenida 3 #78-90",
+    ciudad_envio: "Cali",
     estado: "Pagado",
     costo_envio: 10000,
     total: 648000,
@@ -632,7 +642,8 @@ const pedidosData = [
   {
     id_usuario: 7,
     id_formula: null,
-    direccion_entrega: "Calle 100 #20-30, Bogotá",
+    direccion_entrega: "Calle 100 #20-30",
+    ciudad_envio: "Bogotá",
     estado: "Pagado",
     costo_envio: 0,
     total: 595000,
@@ -642,7 +653,8 @@ const pedidosData = [
   {
     id_usuario: 8,
     id_formula: 5,
-    direccion_entrega: "Carrera 50 #10-20, Medellín",
+    direccion_entrega: "Carrera 50 #10-20",
+    ciudad_envio: "Medellín",
     estado: "Pendiente",
     costo_envio: 10000,
     total: 463000,
@@ -1084,8 +1096,8 @@ const seedAll = async () => {
     for (const pedido of pedidosData) {
       const [result] = await sequelize.query(
         `INSERT INTO PEDIDOS 
-         (id_usuario, id_formula, direccion_entrega, estado, costo_envio, total, fecha_estimada) 
-         VALUES (:id_usuario, :id_formula, :direccion_entrega, :estado, :costo_envio, :total, :fecha_estimada)`,
+         (id_usuario, id_formula, direccion_entrega, ciudad_envio, estado, costo_envio, total, fecha_estimada) 
+         VALUES (:id_usuario, :id_formula, :direccion_entrega, :ciudad_envio, :estado, :costo_envio, :total, :fecha_estimada)`,
         {
           replacements: pedido,
           type: sequelize.QueryTypes.INSERT,

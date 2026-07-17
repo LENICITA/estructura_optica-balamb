@@ -37,6 +37,10 @@ const Pedido = sequelize.define('Pedido', {
     type: DataTypes.STRING(45),
     allowNull: false
   },
+  ciudad_envio: {  
+    type: DataTypes.STRING(45),
+    allowNull: false
+  },
   estado: {
     type: DataTypes.ENUM('Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'),
     allowNull: false,
@@ -77,6 +81,7 @@ const PedidoModelo = {
       id_usuario: data.id_usuario,
       id_formula: data.id_formula || null,
       direccion_entrega: data.direccion_entrega,
+      ciudad_envio: data.ciudad_envio,
       estado: 'Pendiente',
       costo_envio: data.costo_envio || 0,
       total: data.total,
@@ -129,6 +134,7 @@ const PedidoModelo = {
        FROM PEDIDOS p
        JOIN USUARIOS u ON p.id_usuario = u.id_usuario
        LEFT JOIN FORMULAS f ON p.id_formula = f.id_formula
+       WHERE p.estado NOT IN ('Pendiente', 'Cancelado')
        ORDER BY p.fecha_pedido DESC`,
       { type: sequelize.QueryTypes.SELECT }
     );
@@ -206,17 +212,16 @@ const PedidoModelo = {
     const [stats] = await sequelize.query(
       `SELECT 
         COUNT(*) as total_pedidos,
-        SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
         SUM(CASE WHEN estado = 'Abonado' THEN 1 ELSE 0 END) as abonados,
         SUM(CASE WHEN estado = 'Listo' THEN 1 ELSE 0 END) as listos,
         SUM(CASE WHEN estado = 'Pagado' THEN 1 ELSE 0 END) as pagados,
         SUM(CASE WHEN estado = 'En Proceso' THEN 1 ELSE 0 END) as en_proceso,
         SUM(CASE WHEN estado = 'Enviado' THEN 1 ELSE 0 END) as enviados,
         SUM(CASE WHEN estado = 'Entregado' THEN 1 ELSE 0 END) as entregados,
-        SUM(CASE WHEN estado = 'Cancelado' THEN 1 ELSE 0 END) as cancelados,
         SUM(total) as ingresos_totales,
         AVG(total) as promedio_venta
-       FROM PEDIDOS`,
+       FROM PEDIDOS
+       WHERE estado NOT IN ('Pendiente', 'Cancelado')`,
       { type: sequelize.QueryTypes.SELECT }
     );
     return stats;

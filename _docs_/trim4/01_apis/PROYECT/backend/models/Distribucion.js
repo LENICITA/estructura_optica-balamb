@@ -81,7 +81,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
           model: sequelize.models.Usuario,
@@ -100,7 +100,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
           model: sequelize.models.Usuario,
@@ -122,7 +122,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada', 'id_usuario']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada', 'id_usuario']
         }
       ],
       order: [['fecha_asignacion', 'DESC']]
@@ -145,7 +145,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'ASC']]
@@ -175,7 +175,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'DESC']]
@@ -202,7 +202,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
         }
       ],
       order: [['fecha_entrega', 'DESC']]
@@ -260,7 +260,7 @@ const DistribucionModelo = {
     
     // Actualizar estado del pedido a 'Pendiente'
     await sequelize.query(
-      'UPDATE PEDIDOS SET estado = "Pendiente" WHERE id_pedido = ?',
+      'UPDATE PEDIDOS SET estado = "Pagado" WHERE id_pedido = ?',
       { replacements: [distribucion.id_pedido] }
     );
     
