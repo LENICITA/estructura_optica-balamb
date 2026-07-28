@@ -24,7 +24,7 @@ export default function Home() {
     >
       {/* ===== BANNER HERO ===== */}
       <ImageBackground
-        source={require("../../../../assets/imagen-bg.jpeg")}
+        source={require("../../../../assets/imagen-bg.jpeg")}  // ✅ 5 niveles
         style={[styles.hero, { height: height * 0.4 }]}
         resizeMode="cover"
       >
@@ -37,7 +37,6 @@ export default function Home() {
         </TouchableOpacity>
       </ImageBackground>
 
-      {/* ===== TARJETAS ===== */}
       <View style={styles.cardsContainer}>
         
         {/* Tarjeta 1: Conócenos */}
@@ -47,7 +46,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card.jpg")}
+            source={require("../../../../assets/card.jpg")}  // ✅ 5 niveles
             style={styles.smallCard}
             imageStyle={styles.cardImage}
           >
@@ -64,7 +63,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card2.jpg")}
+            source={require("../../../../assets/card2.jpg")}  // ✅ 5 niveles
             style={styles.smallCard}
             imageStyle={styles.cardImage}
           >
@@ -81,7 +80,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card3.jpg")}
+            source={require("../../../../assets/card3.jpg")}  // ✅ 5 niveles
             style={styles.largeCard}
             imageStyle={styles.cardImage}
           >

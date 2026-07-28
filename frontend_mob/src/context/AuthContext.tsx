@@ -1,15 +1,15 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../utils/api';
 
-// Definimos el tipo de datos que va a tener el contexto
+// 📌 1. INTERFAZ ACTUALIZADA (Coincide exactamente con lo que devuelven las funciones)
 interface AuthContextType {
   user: any;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (userData: any, token: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string; data?: any }>;
   logout: () => Promise<void>;
-  register: (userData: any) => Promise<void>;
+  register: (userData: any) => Promise<{ success: boolean; message?: string; data?: any }>;
   updateUser: (userData: any) => Promise<void>;
 }
 
@@ -44,15 +44,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Iniciar sesión
-  const login = async (userData: any, token: string) => {
+  // ✅ LOGIN - LLAMADA REAL AL BACKEND
+  const login = async (email: string, password: string) => {
     try {
-      setUser(userData);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('token', token);
-    } catch (error) {
-      console.error('Error al guardar usuario:', error);
-      throw error;
+      const response = await api.post('/auth/login', { email, password });
+      
+      if (response.data.success) {
+        const { token, usuario } = response.data.data;
+        setUser(usuario);
+        await AsyncStorage.setItem('user', JSON.stringify(usuario));
+        await AsyncStorage.setItem('token', token);
+        return { success: true, data: response.data };
+      } else {
+        return { success: false, message: response.data.message || 'Credenciales incorrectas' };
+      }
+    } catch (error: any) {
+      console.error('Error en login:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error de conexión' 
+      };
     }
   };
 
@@ -67,17 +78,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Registrar usuario
+  // ✅ REGISTER - LLAMADA REAL AL BACKEND
   const register = async (userData: any) => {
     try {
-      // Aquí iría la llamada a tu API para registrar
-      // Por ahora solo simulamos
-      console.log('Registrando usuario:', userData);
-      // Si el registro es exitoso, podrías hacer login automático
-      // await login(userData, 'token_simulado');
-    } catch (error) {
+      const response = await api.post('/auth/register', userData);
+      
+      if (response.data.success) {
+        const { token, usuario } = response.data.data;
+        await AsyncStorage.setItem('token', token);
+        await AsyncStorage.setItem('user', JSON.stringify(usuario));
+        setUser(usuario);
+        return { success: true, data: response.data };
+      } else {
+        return { 
+          success: false, 
+          message: response.data.message || 'Error al registrar' 
+        };
+      }
+    } catch (error: any) {
       console.error('Error al registrar:', error);
-      throw error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error de conexión' 
+      };
     }
   };
 
@@ -103,8 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateUser,
   };
 
+  // 📌 2. AGREGAMOS 'as AuthContextType' PARA ELIMINAR LA LÍNEA ROJA DEL PROVIDER
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={value as AuthContextType}>
       {children}
     </AuthContext.Provider>
   );

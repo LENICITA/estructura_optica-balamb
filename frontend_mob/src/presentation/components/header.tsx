@@ -233,7 +233,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuPress }) => {
             <Ionicons name="search-outline" size={20} color="#fff" />
           </TouchableOpacity>
           <TextInput
-            ref={inputRef}
             placeholder="Buscar..."
             placeholderTextColor="#999"
             style={[styles.searchInput, searchActive ? styles.searchInputActive : styles.searchInputInactive]}
