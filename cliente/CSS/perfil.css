@@ -1,0 +1,500 @@
+/* ========== PERFIL.CSS - ÓPTICA BALAMB ========== */
+
+.perfil-main {
+    max-width: 1200px;
+    margin: 120px auto 60px;
+    padding: 0 20px;
+}
+
+.perfil-container {
+    width: 100%;
+}
+
+/* Header del perfil */
+.perfil-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.perfil-header h1 {
+    font-size: 32px;
+    color: var(--color-texto, #000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.perfil-header h1 i {
+    color: var(--color-primario, #B90F0F);
+}
+
+.perfil-header p {
+    color: #666;
+    font-size: 16px;
+}
+
+/* Grid principal */
+.perfil-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* ========== COLUMNA IZQUIERDA - AVATAR ========== */
+.perfil-avatar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.avatar-card {
+    background: var(--color-fondo, #fff);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.avatar-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+.avatar-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.avatar-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.avatar-container:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.btn-cambiar-foto {
+    background: var(--color-primario, #B90F0F);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-cambiar-foto:hover {
+    background: var(--color-secundario, #000);
+}
+
+.avatar-info h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: var(--color-texto, #000);
+}
+
+.avatar-info p {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Tarjeta de estadísticas */
+.stats-card {
+    background: linear-gradient(135deg, var(--color-primario, #B90F0F), #8a0b0b);
+    border-radius: 20px;
+    padding: 20px;
+    color: white;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-item i {
+    font-size: 32px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* ========== COLUMNA DERECHA - FORMULARIO ========== */
+.perfil-form-section {
+    background: var(--color-fondo, #fff);
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.form-card {
+    padding: 30px;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.form-header h3 {
+    font-size: 20px;
+    color: var(--color-texto, #000);
+}
+
+.form-header h3 i {
+    color: var(--color-primario, #B90F0F);
+    margin-right: 10px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-editar, .btn-guardar {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-editar {
+    background: var(--color-primario, #B90F0F);
+    color: white;
+}
+
+.btn-editar:hover {
+    background: var(--color-secundario, #000);
+    transform: translateY(-2px);
+}
+
+.btn-guardar {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-guardar:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+/* Formulario */
+.perfil-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label i {
+    color: var(--color-primario, #B90F0F);
+    width: 18px;
+}
+
+.form-group input {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+    background: #f9f9f9;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-primario, #B90F0F);
+    box-shadow: 0 0 0 3px rgba(185,15,15,0.1);
+}
+
+.form-group input:not([disabled]) {
+    background: white;
+    border-color: var(--color-primario, #B90F0F);
+}
+
+.password-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.password-wrapper input {
+    flex: 1;
+}
+
+.btn-ver-password {
+    padding: 0 15px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-ver-password:hover {
+    background: var(--color-primario, #B90F0F);
+    color: white;
+}
+
+.form-hint {
+    font-size: 11px;
+    color: #999;
+}
+
+/* Checkbox group */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primario, #B90F0F);
+}
+
+/* Footer del formulario */
+.form-footer {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    padding: 8px 15px;
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-link:hover {
+    background: #f5f5f5;
+    color: var(--color-primario, #B90F0F);
+}
+
+.cerrar-sesion {
+    color: #f44336;
+}
+
+.cerrar-sesion:hover {
+    background: #ffebee;
+}
+
+/* ========== PEDIDOS RECIENTES ========== */
+.pedidos-recientes {
+    background: var(--color-fondo, #fff);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+.section-header h3 {
+    font-size: 18px;
+    color: var(--color-texto, #000);
+}
+
+.section-header h3 i {
+    color: var(--color-primario, #B90F0F);
+    margin-right: 8px;
+}
+
+.ver-todos {
+    color: var(--color-primario, #B90F0F);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.ver-todos:hover {
+    text-decoration: underline;
+}
+
+.pedidos-lista {
+    min-height: 150px;
+}
+
+.pedido-placeholder {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.pedido-placeholder i {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.btn-comprar-ahora {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 25px;
+    background: var(--color-primario, #B90F0F);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.btn-comprar-ahora:hover {
+    background: var(--color-secundario, #000);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 992px) {
+    .perfil-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .perfil-avatar-section {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .perfil-main {
+        margin: 100px auto 40px;
+    }
+    
+    .perfil-header h1 {
+        font-size: 28px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .form-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .form-footer {
+        justify-content: center;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-card {
+        padding: 20px;
+    }
+    
+    .btn-editar, .btn-guardar {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+}

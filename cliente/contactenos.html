@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Óptica Balamb</title>
+        <link rel="stylesheet" href="CSS/contactenos.css">
+        <script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    </head>
+    <body>
+
+<!-- HEADER -->
+        <header class="header">
+            <div class="left">
+
+                <a href="principal.html" class="logo">
+                    <img src="img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="catalogo.html" >Productos</a>
+                <a href="contactenos.html">Acerca de</a>
+            </nav>
+
+            <div class="icons">
+                <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+            </button>
+                
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+    <button onclick="window.location.href='perfil.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+</div>
+        </header>
+
+
+
+        <!-- Sección Acerca de + Contacto (sin header/footer) -->
+<section class="about-contact-section">
+  <div class="container">
+    <div class="two-columns">
+      
+      <!-- Columna izquierda: Acerca de -->
+      <div class="about-card">
+        
+        <!-- SOLO LA IMAGEN DEL LOGO (contiene OPTICA-VIRTUAL + BalamB) -->
+        <img src="img/logo.png" alt="Óptica Virtual BalamB" class="logo-image">
+        
+        <div class="about-highlight">
+          Somos una óptica virtual que se preocupa por la experiencia del cliente
+        </div>
+        <p class="about-text">
+          En Óptica Virtual BalamB, combinamos tecnología y calidez humana para ofrecerte 
+          la mejor experiencia en la compra de tus gafas. Nos enfocamos en entender tus 
+          necesidades visuales y de estilo, brindando asesoría personalizada y productos 
+          de alta calidad. Tu satisfacción es nuestro mayor compromiso.
+        </p>
+        
+        <!-- Datos de contacto rápidos -->
+        <div class="contact-quick">
+          <div class="contact-item">
+            <i class="fa-regular fa-envelope contact-icon"></i>
+            <span>Opticavirtualbalamb@gmail.com</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-regular fa-comment contact-icon"></i>
+            <span>301 2092941</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-phone contact-icon"></i>
+            <span>(57) 301 2092941</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: Formulario de contacto PQRS -->
+      <div class="form-card">
+        <h2>Contáctenos</h2>
+        <p class="form-subtitle">
+          Por favor contáctenos a través del formulario para temas relacionados con PQRS.
+        </p>
+        
+        <form class="contact-form" id="pqrsForm">
+          <div class="form-group">
+            <label for="nombre">Nombre completo</label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre completo">
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="tucorreo@ejemplo.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" name="telefono" placeholder="Teléfono de contacto">
+          </div>
+          
+          <div class="form-group">
+            <label for="mensaje">Mensaje</label>
+            <textarea id="mensaje" name="mensaje" rows="4" required placeholder="Escribe aquí tu PQRS..."></textarea>
+          </div>
+          
+          <button type="submit" class="btn-submit">Enviar formulario</button>
+        </form>
+        
+        <div id="formFeedback" class="feedback-message"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                    <p>opticavirtualbalamb@gmail.com</p>
+                    <p>+57 300 237 4767</p>
+            </div>
+
+            <div class="footer-section">
+                <h3>Tienda</h3>
+                    <p>Acerca de</p>
+                    <p>Catálogo</p>
+            </div>
+
+        </footer>
+
+        <div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+ <!-- Chatbot -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header"><div class="chatbot-header-info"><i class="fa-solid fa-robot"></i><span>OptiBot - Asistente Virtual</span></div><button id="chatbot-cerrar" class="chatbot-cerrar"><i class="fa-solid fa-times"></i></button></div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes"><div class="mensaje bot"><div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div><div class="mensaje-hora">Ahora</div></div></div>
+        <div class="chatbot-input-area"><input type="text" id="chatbot-input" placeholder="Escribe tu mensaje..."><button id="chatbot-enviar"><i class="fa-solid fa-paper-plane"></i></button></div>
+        <div class="chatbot-opciones"><button class="opcion-btn" data-respuesta="precios">💰 Precios</button><button class="opcion-btn" data-respuesta="envio">📦 Envíos</button><button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button><button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button></div>
+    </div>
+</div>
+
+</div>
+
+        <div class="menu-hamburguesa" id="menu"></div>
+        <script src="js/script.js"></script>
+        <script src="js/app.js"></script>
+        <script src="js/hamburguesa.js"></script>
+        <script src="js/contactenos.js"></script>
+
+    </body>
+</html>

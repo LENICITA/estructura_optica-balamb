@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Óptica Balamb - Finalizar Compra</title>
+    <link rel="stylesheet" href="/cliente/CSS/catalogo.css">
+    <link rel="stylesheet" href="/cliente/CSS/checkout.css">
+    <script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Estilos adicionales específicos para checkout */
+        .small {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        .card-details {
+            display: none;
+        }
+        
+        .card-details.active {
+            display: block;
+        }
+        
+        .payment-method {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-method.active {
+            border-color: var(--color-primario);
+            background: #fdf2f2;
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER (MISMO QUE CATÁLOGO) -->
+<header class="header">
+    <div class="left">
+        <a href="principal.html" class="logo">
+            <img src="/img/logo 2.jpeg" alt="Óptica Balamb">
+        </a>
+
+        <div class="left-icons">
+            <button id="btn-menu" class="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <form id="search-form">
+                <button type="button" id="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <input type="text" id="search-input" placeholder="Buscar...">
+            </form>
+        </div>
+    </div>
+
+    <nav class="menu">
+        <a href="catalogo.html">Productos</a>
+        <a href="contactenos.html">Acerca de</a>
+    </nav>
+
+    <div class="icons">
+        <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+        </button>
+        <button id="btn-mensajes">
+            <i class="fa-regular fa-envelope"></i>
+        </button>
+        <button onclick="window.location.href='perfil.html'">
+            <i class="fa-solid fa-circle-user"></i>
+        </button>
+    </div>
+</header>
+
+<!-- SECCIÓN CHECKOUT -->
+<section class="checkout-container">
+    <h1 class="checkout-title">💳 Finalizar Compra</h1>
+    
+    <div class="checkout-grid">
+        <!-- FORMULARIO -->
+        <form id="checkout-form" class="checkout-form">
+            <!-- Información personal -->
+            <div class="form-section">
+                <h3>📋 Información personal</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre completo *</label>
+                        <input type="text" id="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono *</label>
+                        <input type="tel" id="telefono" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cédula *</label>
+                        <input type="text" id="cedula" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dirección de envío -->
+            <div class="form-section">
+                <h3>📍 Dirección de envío</h3>
+                <div class="form-group">
+                    <label>Dirección *</label>
+                    <input type="text" id="direccion" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ciudad *</label>
+                        <input type="text" id="ciudad" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas adicionales</label>
+                        <input type="text" id="notas" placeholder="Ej: Apartamento, casa, etc.">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métodos de pago -->
+            <div class="form-section">
+                <h3>💵 Método de pago</h3>
+                <div class="payment-methods">
+                    <div class="payment-method" data-method="tarjeta">
+                        <input type="radio" name="payment-method" value="tarjeta" id="tarjeta" checked>
+                        <span class="payment-icon">💳</span>
+                        <label for="tarjeta">Tarjeta de Crédito/Débito</label>
+                    </div>
+                    <div class="payment-method" data-method="nequi">
+                        <input type="radio" name="payment-method" value="nequi" id="nequi">
+                        <span class="payment-icon"></span>
+                        <label for="nequi">Nequi</label>
+                    </div>
+                    <div class="payment-method" data-method="pse">
+                        <input type="radio" name="payment-method" value="pse" id="pse">
+                        <span class="payment-icon"></span>
+                        <label for="pse">PSE</label>
+                    </div>
+                </div>
+
+                <!-- Detalles tarjeta de crédito -->
+                <div id="card-details" class="card-details active">
+                    <div class="form-group">
+                        <label>Número de tarjeta</label>
+                        <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha expiración</label>
+                            <input type="text" id="card-expiry" placeholder="MM/AA">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" id="card-cvv" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles Nequi -->
+                <div id="nequi-details" class="card-details">
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 10px;">
+                        <p><strong>📱 Pago con Nequi:</strong></p>
+                        <p>Ingresa tu número de Nequi para recibir la solicitud de pago:</p>
+                        <input type="tel" id="nequi-phone" placeholder="3001234567" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                        <p class="small">* Recibirás una notificación en tu app de Nequi para completar el pago</p>
+                    </div>
+                </div>
+
+                <!-- Detalles PSE -->
+                <div id="pse-details" class="card-details">
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 10px;">
+                        <p><strong>🏦 Pago por PSE:</strong></p>
+                        <select id="pse-bank" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                            <option value="">Selecciona tu banco</option>
+                            <option value="bancolombia">Bancolombia</option>
+                            <option value="davivienda">Davivienda</option>
+                            <option value="bbva">BBVA</option>
+                            <option value="occidente">Banco de Occidente</option>
+                            <option value="popular">Banco Popular</option>
+                            <option value="caja-social">Caja Social</option>
+                        </select>
+                        <p class="small">* Serás redirigido a tu banco para completar la transacción</p>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="confirm-btn">
+                <i class="fa-solid fa-check-circle"></i> Confirmar pedido
+            </button>
+        </form>
+
+        <!-- RESUMEN DEL PEDIDO -->
+        <div class="order-summary">
+            <h3>📦 Resumen del pedido</h3>
+            <div id="order-items" class="order-items">
+                <div style="text-align: center; padding: 20px; color: #999;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Cargando productos...
+                </div>
+            </div>
+            <div id="order-totals">
+                <!-- Totales se cargarán dinámicamente -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER (MISMO QUE CATÁLOGO) -->
+<footer class="footer">
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+</footer>
+
+<!-- CHATBOT -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono">
+        <i class="fa-solid fa-comment-dots"></i>
+    </div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <i class="fa-solid fa-robot"></i>
+                <span>OptiBot - Asistente Virtual</span>
+            </div>
+            <button id="chatbot-cerrar" class="chatbot-cerrar">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes">
+            <div class="mensaje bot">
+                <div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div>
+                <div class="mensaje-hora">Ahora</div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu mensaje...">
+            <button id="chatbot-enviar">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="chatbot-opciones">
+            <button class="opcion-btn" data-respuesta="precios">💰 Precios</button>
+            <button class="opcion-btn" data-respuesta="envio">📦 Envíos</button>
+            <button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button>
+            <button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button>
+        </div>
+    </div>
+</div>
+
+<!-- MENÚ HAMBURGUESA -->
+<div class="menu-hamburguesa" id="menu"></div>
+
+<!-- SCRIPTS -->
+<script src="/cliente/js/script.js"></script>
+<script src="/all/js/lupa.js"></script>
+<script src="/cliente/js/hamburguesa.js"></script>
+<script src="checkout.js"></script>
+
+</body>
+</html>
