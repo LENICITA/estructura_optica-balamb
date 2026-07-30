@@ -4,125 +4,174 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Image,
-  TextInput,
+  StyleSheet,
   Modal,
   ScrollView,
+  Dimensions,
+  SafeAreaView,
+  Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
-interface HeaderProps {
-  navigation: any;
-}
+const { width } = Dimensions.get('window');
 
-export const Header = ({ navigation }: HeaderProps) => {
+export const Header = () => {
+  const navigation = useNavigation();
   const { user, logout, isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchActive, setSearchActive] = useState(false);
-  const [searchText, setSearchText] = useState('');
 
-  const handleLogout = async () => {
-    await logout();
-    setSidebarOpen(false);
-    navigation.navigate('Login');
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            navigation.navigate('Login' as never);
+            setSidebarOpen(false);
+          }
+        }
+      ]
+    );
   };
 
+  // ✅ Función para obtener los items del menú según el rol
   const getMenuItems = () => {
-    if (!isAuthenticated || !user) {
-      return [
-        { path: 'Principal', label: 'Inicio', icon: 'home' },
-        { path: 'Catalogo', label: 'Productos', icon: 'glasses' },
-      ];
+    const items = [];
+
+    // Items públicos (siempre visibles)
+    items.push({
+      id: 'home',
+      label: 'Inicio',
+      icon: 'home-outline',
+      route: 'Home',
+    });
+
+    // Si está autenticado, mostrar más opciones
+    if (isAuthenticated && user) {
+      // Obtener roles de forma segura
+      let rolesArray: string[] = [];
+      if (Array.isArray(user.roles)) {
+        rolesArray = user.roles;
+      } else if (typeof user.roles === 'string') {
+        rolesArray = [user.roles];
+      } else if (user.rol) {
+        rolesArray = [user.rol];
+      }
+      rolesArray = rolesArray.map((r) => r.toUpperCase());
+
+      // Opciones según rol
+      if (rolesArray.includes('ADMIN') || rolesArray.includes('ADMINISTRADOR')) {
+        items.push({
+          id: 'admin-dashboard',
+          label: 'Dashboard',
+          icon: 'stats-chart-outline',
+          route: 'AdminDashboard',
+          admin: true,
+        });
+        items.push({
+          id: 'admin-inventario',
+          label: 'Inventario',
+          icon: 'cube-outline',
+          route: 'AdminInventario',
+          admin: true,
+        });
+        items.push({
+          id: 'admin-pedidos',
+          label: 'Pedidos',
+          icon: 'cart-outline',
+          route: 'AdminPedidos',
+          admin: true,
+        });
+        items.push({
+          id: 'admin-repartidores',
+          label: 'Repartidores',
+          icon: 'bicycle-outline',
+          route: 'AdminRepartidores',
+          admin: true,
+        });
+        items.push({
+          id: 'admin-reportes',
+          label: 'Reportes',
+          icon: 'pie-chart-outline',
+          route: 'AdminReportes',
+          admin: true,
+        });
+      } else if (rolesArray.includes('REPARTIDOR')) {
+        items.push({
+          id: 'repartidor-historial',
+          label: 'Historial',
+          icon: 'time-outline',
+          route: 'RepartidorHistorial',
+        });
+      } else if (rolesArray.includes('CLIENTE')) {
+        items.push({
+          id: 'catalogo',
+          label: 'Productos',
+          icon: 'eye-outline',
+          route: 'Catalogo',
+        });
+        items.push({
+          id: 'carrito',
+          label: 'Carrito',
+          icon: 'cart-outline',
+          route: 'Carrito',
+        });
+        items.push({
+          id: 'control-pedido',
+          label: 'Mis Pedidos',
+          icon: 'cube-outline',
+          route: 'ControlPedido',
+        });
+      }
+
+      // ✅ Opción "Mi Perfil" para TODOS los usuarios autenticados
+      items.push({
+        id: 'perfil',
+        label: 'Mi Perfil',
+        icon: 'person-outline',
+        route: 'PerfilCliente',
+      });
+
+      // ✅ Opción "Cerrar Sesión" (se maneja aparte)
     }
 
-    const userRoles = user.roles || [];
-
-    if (userRoles.includes('ADMIN')) {
-      return [
-        { path: 'AdminDashboard', label: 'Dashboard', icon: 'chart-bar' },
-        { path: 'AdminInventario', label: 'Inventario', icon: 'box' },
-        { path: 'AdminPedidos', label: 'Pedidos', icon: 'shopping-cart' },
-        { path: 'AdminRepartidores', label: 'Repartidores', icon: 'motorcycle' },
-        { path: 'AdminPerfil', label: 'Mi Perfil', icon: 'user' },
-      ];
-    }
-
-    if (userRoles.includes('REPARTIDOR')) {
-      return [
-        { path: 'InicioRepartidor', label: 'Inicio', icon: 'home' },
-        { path: 'HistorialRepartidor', label: 'Historial', icon: 'history' },
-        { path: 'PerfilRepartidor', label: 'Mi Perfil', icon: 'user' },
-      ];
-    }
-
-    return [
-      { path: 'PrincipalCliente', label: 'Inicio', icon: 'home' },
-      { path: 'Catalogo', label: 'Productos', icon: 'glasses' },
-      { path: 'Carrito', label: 'Carrito', icon: 'shopping-cart' },
-      { path: 'PerfilCliente', label: 'Mi Perfil', icon: 'user' },
-    ];
+    return items;
   };
 
   const menuItems = getMenuItems();
 
   return (
     <>
-      <View style={styles.header}>
-        <View style={styles.leftSection}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() => setSidebarOpen(true)}
-          >
-            <Ionicons name="menu" size={28} color="#fff" />
-          </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => setSidebarOpen(true)}>
+          <Ionicons name="menu-outline" size={28} color="#fff" />
+        </TouchableOpacity>
 
+        <TouchableOpacity onPress={() => navigation.navigate('Home' as never)}>
           <Image
             source={require('../../assets/img/logo2.jpeg')}
             style={styles.logo}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.rightSection}>
-          <View style={[styles.searchContainer, searchActive && styles.searchActive]}>
-            <TouchableOpacity onPress={() => setSearchActive(!searchActive)}>
-              <Ionicons name="search" size={20} color={searchActive ? '#000' : '#fff'} />
-            </TouchableOpacity>
-            {searchActive && (
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Buscar..."
-                placeholderTextColor="#999"
-                value={searchText}
-                onChangeText={setSearchText}
-                autoFocus
-              />
-            )}
-          </View>
-
-          {isAuthenticated && user?.roles?.includes('CLIENTE') && (
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="cart" size={22} color="#fff" />
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications" size={22} color="#fff" />
-          </TouchableOpacity>
-
+        <View style={styles.headerRight}>
           {isAuthenticated ? (
-            <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-              <Ionicons name="log-out" size={22} color="#fff" />
+            <TouchableOpacity onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={24} color="#fff" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Ionicons name="person" size={22} color="#fff" />
+            <TouchableOpacity onPress={() => navigation.navigate('Login' as never)}>
+              <Ionicons name="person-circle-outline" size={28} color="#fff" />
             </TouchableOpacity>
           )}
         </View>
@@ -130,444 +179,106 @@ export const Header = ({ navigation }: HeaderProps) => {
 
       {/* Sidebar */}
       <Modal
-        transparent
         visible={sidebarOpen}
+        transparent={true}
         animationType="slide"
         onRequestClose={() => setSidebarOpen(false)}
       >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setSidebarOpen(false)}
-        >
-          <View style={styles.sidebar}>
-            <View style={styles.sidebarHeader}>
-              <Image
-                source={require('../../assets/img/logo2.jpeg')}
-                style={styles.sidebarLogo}
-                resizeMode="contain"
-              />
-              <TouchableOpacity onPress={() => setSidebarOpen(false)}>
-                <Ionicons name="close" size={28} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
+        <SafeAreaView style={styles.sidebarOverlay}>
+          <TouchableOpacity
+            style={styles.sidebarBackdrop}
+            activeOpacity={1}
+            onPress={() => setSidebarOpen(false)}
+          />
+          <View style={styles.sidebarContainer}>
             <ScrollView>
-              {menuItems.map((item, idx) => (
+              {menuItems.map((item) => (
                 <TouchableOpacity
-                  key={idx}
+                  key={item.id}
                   style={styles.sidebarItem}
                   onPress={() => {
                     setSidebarOpen(false);
-                    navigation.navigate(item.path);
+                    navigation.navigate(item.route as never);
                   }}
                 >
-                  <FontAwesome5 name={item.icon} size={20} color={COLORS.primary} style={styles.sidebarIcon} />
-                  <Text style={styles.sidebarLabel}>{item.label}</Text>
+                  <Ionicons name={item.icon as any} size={20} color="#B90F0F" />
+                  <Text style={styles.sidebarItemText}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
 
+              {/* Separador y Cerrar Sesión */}
               {isAuthenticated && (
-                <TouchableOpacity
-                  style={[styles.sidebarItem, styles.logoutItem]}
-                  onPress={handleLogout}
-                >
-                  <Ionicons name="log-out" size={20} color={COLORS.primary} style={styles.sidebarIcon} />
-                  <Text style={[styles.sidebarLabel, styles.logoutLabel]}>
-                    Cerrar Sesión
-                  </Text>
-                </TouchableOpacity>
+                <>
+                  <View style={styles.sidebarDivider} />
+                  <TouchableOpacity
+                    style={[styles.sidebarItem, styles.sidebarItemLogout]}
+                    onPress={handleLogout}
+                  >
+                    <Ionicons name="log-out-outline" size={20} color="#B90F0F" />
+                    <Text style={styles.sidebarItemText}>Cerrar Sesión</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </SafeAreaView>
       </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
+  headerContainer: {
     backgroundColor: '#000',
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 48,
-  },
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  menuButton: {
-    padding: 4,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    minHeight: 60,
   },
   logo: {
     width: 50,
-    height: 40,
+    height: 50,
   },
-  rightSection: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minWidth: 40,
-  },
-  searchActive: {
-    backgroundColor: '#f0f3ff',
-    minWidth: 150,
-  },
-  searchInput: {
+  sidebarOverlay: {
     flex: 1,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    fontSize: 14,
-    color: '#000',
+    flexDirection: 'row',
   },
-  iconButton: {
-    padding: 6,
-  },
-  overlay: {
+  sidebarBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-start',
   },
-  sidebar: {
-    width: '75%',
-    maxWidth: 280,
-    height: '100%',
+  sidebarContainer: {
+    width: 280,
     backgroundColor: '#000',
-    paddingTop: 20,
-  },
-  sidebarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  sidebarLogo: {
-    width: 80,
-    height: 40,
+    paddingVertical: 10,
   },
   sidebarItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#222',
+    borderBottomColor: '#333',
   },
-  sidebarIcon: {
-    marginRight: 12,
+  sidebarItemLogout: {
+    borderBottomWidth: 0,
+    marginTop: 5,
   },
-  sidebarLabel: {
+  sidebarItemText: {
     color: '#fff',
     fontSize: 15,
+    marginLeft: 12,
   },
-  logoutItem: {
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-    marginTop: 8,
+  sidebarDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+    marginVertical: 10,
   },
-  logoutLabel: {
-    color: COLORS.primary,
-  },
-});// src/components/Header.tsx
-   import React, { useState } from 'react';
-   import {
-     View,
-     Text,
-     TouchableOpacity,
-     StyleSheet,
-     Image,
-     TextInput,
-     Modal,
-     ScrollView,
-   } from 'react-native';
-   import { useAuth } from '../contexts/AuthContext';
-   import { COLORS } from '../constants/colors';
-   import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-
-   interface HeaderProps {
-     navigation: any;
-   }
-
-   export const Header = ({ navigation }: HeaderProps) => {
-     const { user, logout, isAuthenticated } = useAuth();
-     const [sidebarOpen, setSidebarOpen] = useState(false);
-     const [searchActive, setSearchActive] = useState(false);
-     const [searchText, setSearchText] = useState('');
-
-     const handleLogout = async () => {
-       await logout();
-       setSidebarOpen(false);
-       navigation.navigate('Login');
-     };
-
-     const getMenuItems = () => {
-       if (!isAuthenticated || !user) {
-         return [
-           { path: 'Principal', label: 'Inicio', icon: 'home' },
-           { path: 'Catalogo', label: 'Productos', icon: 'glasses' },
-         ];
-       }
-
-       const userRoles = user.roles || [];
-
-       if (userRoles.includes('ADMIN')) {
-         return [
-           { path: 'AdminDashboard', label: 'Dashboard', icon: 'chart-bar' },
-           { path: 'AdminInventario', label: 'Inventario', icon: 'box' },
-           { path: 'AdminPedidos', label: 'Pedidos', icon: 'shopping-cart' },
-           { path: 'AdminRepartidores', label: 'Repartidores', icon: 'motorcycle' },
-           { path: 'AdminPerfil', label: 'Mi Perfil', icon: 'user' },
-         ];
-       }
-
-       if (userRoles.includes('REPARTIDOR')) {
-         return [
-           { path: 'InicioRepartidor', label: 'Inicio', icon: 'home' },
-           { path: 'HistorialRepartidor', label: 'Historial', icon: 'history' },
-           { path: 'PerfilRepartidor', label: 'Mi Perfil', icon: 'user' },
-         ];
-       }
-
-       return [
-         { path: 'PrincipalCliente', label: 'Inicio', icon: 'home' },
-         { path: 'Catalogo', label: 'Productos', icon: 'glasses' },
-         { path: 'Carrito', label: 'Carrito', icon: 'shopping-cart' },
-         { path: 'PerfilCliente', label: 'Mi Perfil', icon: 'user' },
-       ];
-     };
-
-     const menuItems = getMenuItems();
-
-     return (
-       <>
-         <View style={styles.header}>
-           <View style={styles.leftSection}>
-             <TouchableOpacity
-               style={styles.menuButton}
-               onPress={() => setSidebarOpen(true)}
-             >
-               <Ionicons name="menu" size={28} color="#fff" />
-             </TouchableOpacity>
-
-             <Image
-               source={require('../../assets/img/logo2.jpeg')}
-               style={styles.logo}
-               resizeMode="contain"
-             />
-           </View>
-
-           <View style={styles.rightSection}>
-             <View style={[styles.searchContainer, searchActive && styles.searchActive]}>
-               <TouchableOpacity onPress={() => setSearchActive(!searchActive)}>
-                 <Ionicons name="search" size={20} color={searchActive ? '#000' : '#fff'} />
-               </TouchableOpacity>
-               {searchActive && (
-                 <TextInput
-                   style={styles.searchInput}
-                   placeholder="Buscar..."
-                   placeholderTextColor="#999"
-                   value={searchText}
-                   onChangeText={setSearchText}
-                   autoFocus
-                 />
-               )}
-             </View>
-
-             {isAuthenticated && user?.roles?.includes('CLIENTE') && (
-               <TouchableOpacity style={styles.iconButton}>
-                 <Ionicons name="cart" size={22} color="#fff" />
-               </TouchableOpacity>
-             )}
-
-             <TouchableOpacity style={styles.iconButton}>
-               <Ionicons name="notifications" size={22} color="#fff" />
-             </TouchableOpacity>
-
-             {isAuthenticated ? (
-               <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-                 <Ionicons name="log-out" size={22} color="#fff" />
-               </TouchableOpacity>
-             ) : (
-               <TouchableOpacity
-                 style={styles.iconButton}
-                 onPress={() => navigation.navigate('Login')}
-               >
-                 <Ionicons name="person" size={22} color="#fff" />
-               </TouchableOpacity>
-             )}
-           </View>
-         </View>
-
-         {/* Sidebar */}
-         <Modal
-           transparent
-           visible={sidebarOpen}
-           animationType="slide"
-           onRequestClose={() => setSidebarOpen(false)}
-         >
-           <TouchableOpacity
-             style={styles.overlay}
-             activeOpacity={1}
-             onPress={() => setSidebarOpen(false)}
-           >
-             <View style={styles.sidebar}>
-               <View style={styles.sidebarHeader}>
-                 <Image
-                   source={require('../../assets/img/logo2.jpeg')}
-                   style={styles.sidebarLogo}
-                   resizeMode="contain"
-                 />
-                 <TouchableOpacity onPress={() => setSidebarOpen(false)}>
-                   <Ionicons name="close" size={28} color="#fff" />
-                 </TouchableOpacity>
-               </View>
-
-               <ScrollView>
-                 {menuItems.map((item, idx) => (
-                   <TouchableOpacity
-                     key={idx}
-                     style={styles.sidebarItem}
-                     onPress={() => {
-                       setSidebarOpen(false);
-                       navigation.navigate(item.path);
-                     }}
-                   >
-                     <FontAwesome5 name={item.icon} size={20} color={COLORS.primary} style={styles.sidebarIcon} />
-                     <Text style={styles.sidebarLabel}>{item.label}</Text>
-                   </TouchableOpacity>
-                 ))}
-
-                 {isAuthenticated && (
-                   <TouchableOpacity
-                     style={[styles.sidebarItem, styles.logoutItem]}
-                     onPress={handleLogout}
-                   >
-                     <Ionicons name="log-out" size={20} color={COLORS.primary} style={styles.sidebarIcon} />
-                     <Text style={[styles.sidebarLabel, styles.logoutLabel]}>
-                       Cerrar Sesión
-                     </Text>
-                   </TouchableOpacity>
-                 )}
-               </ScrollView>
-             </View>
-           </TouchableOpacity>
-         </Modal>
-       </>
-     );
-   };
-
-   const styles = StyleSheet.create({
-     header: {
-       backgroundColor: '#000',
-       flexDirection: 'row',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       paddingHorizontal: 16,
-       paddingVertical: 12,
-       paddingTop: 48,
-     },
-     leftSection: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       gap: 12,
-     },
-     menuButton: {
-       padding: 4,
-     },
-     logo: {
-       width: 50,
-       height: 40,
-     },
-     rightSection: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       gap: 8,
-     },
-     searchContainer: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       backgroundColor: 'rgba(255,255,255,0.1)',
-       borderRadius: 20,
-       paddingHorizontal: 10,
-       paddingVertical: 6,
-       minWidth: 40,
-     },
-     searchActive: {
-       backgroundColor: '#f0f3ff',
-       minWidth: 150,
-     },
-     searchInput: {
-       flex: 1,
-       paddingVertical: 4,
-       paddingHorizontal: 8,
-       fontSize: 14,
-       color: '#000',
-     },
-     iconButton: {
-       padding: 6,
-     },
-     overlay: {
-       flex: 1,
-       backgroundColor: 'rgba(0,0,0,0.5)',
-       justifyContent: 'flex-start',
-     },
-     sidebar: {
-       width: '75%',
-       maxWidth: 280,
-       height: '100%',
-       backgroundColor: '#000',
-       paddingTop: 20,
-     },
-     sidebarHeader: {
-       flexDirection: 'row',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       paddingHorizontal: 16,
-       paddingBottom: 16,
-       borderBottomWidth: 1,
-       borderBottomColor: '#333',
-     },
-     sidebarLogo: {
-       width: 80,
-       height: 40,
-     },
-     sidebarItem: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       paddingVertical: 14,
-       paddingHorizontal: 16,
-       borderBottomWidth: 1,
-       borderBottomColor: '#222',
-     },
-     sidebarIcon: {
-       marginRight: 12,
-     },
-     sidebarLabel: {
-       color: '#fff',
-       fontSize: 15,
-     },
-     logoutItem: {
-       borderTopWidth: 1,
-       borderTopColor: '#333',
-       marginTop: 8,
-     },
-     logoutLabel: {
-       color: COLORS.primary,
-     },
-   });
+});

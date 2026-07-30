@@ -4,7 +4,7 @@ import { getToken, getUser, saveToken, saveUser, removeToken, removeUser } from 
 import { login as loginService } from '../services/authService';
 import { getProfile } from '../services/userService';
 import { apiClient } from '../services/apiClient';
-import { Usuario } from '../types';
+import { Usuario } from '../types/index';
 
 interface AuthContextProps {
   user: Usuario | null;
