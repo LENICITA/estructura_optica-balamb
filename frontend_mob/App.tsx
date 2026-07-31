@@ -3,9 +3,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, StyleSheet, StatusBar, View } from 'react-native';
-import { AuthProvider } from './src/context/AuthContext'; // Si ya tienes AuthContext
+import { AuthProvider } from './src/context/AuthContext';
 
 // Importa tus pantallas
+import DetalleRepartidor from './src/presentation/views/admin/detalleRepartidor';
 import Repartidores from './src/presentation/views/admin/dashboardRepartidores';
 import Home from './src/presentation/views/home/Home';
 import { RegisterScreen } from './src/presentation/views/register/Register';
@@ -14,20 +15,33 @@ import { RegisterScreen } from './src/presentation/views/register/Register';
 import Header from './src/presentation/components/header';
 import Footer from './src/presentation/components/footer';
 
+// ====== DEFINICIÓN DE TIPOS DE RUTAS ======
 export type RootStackParamList = {
+  // Pantallas con Header y Footer
   Home: undefined;
-  RegisterScreen: undefined;
-  // Agrega aquí todas tus rutas
-  Login: undefined;
-  Catalogo: undefined;
-  Carrito: undefined;
   Repartidores: undefined;
-  // ... etc
+  detalleRepartidor: {
+    id: number;
+    nombre: string;
+    estado: string;
+    telefono?: string;
+    correo?: string;
+    ciudad?: string;
+    pedidos?: number;
+    fecha_registro: string;
+  };
+  Carrito: undefined;
+  Catalogo: undefined;
+  
+  // Pantallas sin Header y Footer
+  RegisterScreen: undefined;
+  Login: undefined;
 };
 
+// ====== CONFIGURACIÓN DEL STACK ======
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Componente Layout que envuelve las pantallas con Header y Footer
+// ====== COMPONENTE LAYOUT ======
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <View style={styles.layoutContainer}>
@@ -40,6 +54,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// ====== APP PRINCIPAL ======
 export default function App() {
   return (
     <SafeAreaView style={styles.container}>
@@ -54,6 +69,7 @@ export default function App() {
             }}
           >
             {/* ========== PANTALLAS CON HEADER Y FOOTER ========== */}
+            
             <Stack.Screen name="Home">
               {() => (
                 <Layout>
@@ -62,12 +78,18 @@ export default function App() {
               )}
             </Stack.Screen>
 
-            {/* Agrega aquí todas las pantallas que necesiten Header y Footer */}
-            <Stack.Screen name="Catalogo">
+            <Stack.Screen name="Repartidores">
               {() => (
                 <Layout>
-                  {/* <Catalogo /> */}
-                  <Home /> {/* Temporal para probar */}
+                  <Repartidores />
+                </Layout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="detalleRepartidor">
+              {() => (
+                <Layout>
+                  <DetalleRepartidor />
                 </Layout>
               )}
             </Stack.Screen>
@@ -75,27 +97,31 @@ export default function App() {
             <Stack.Screen name="Carrito">
               {() => (
                 <Layout>
-                  {/* <Carrito /> */}
-                  <Home /> {/* Temporal para probar */}
+                  <Home /> {/* Temporal - Reemplazar con Carrito */}
+                </Layout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="Catalogo">
+              {() => (
+                <Layout>
+                  <Home /> {/* Temporal - Reemplazar con Catalogo */}
                 </Layout>
               )}
             </Stack.Screen>
 
             {/* ========== PANTALLAS SIN HEADER Y FOOTER ========== */}
+            
             <Stack.Screen 
               name="RegisterScreen" 
               component={RegisterScreen} 
             />
 
-            <Stack.Screen name="Repartidores">
-                {() => (
-                    <Layout>
-                    <Repartidores />
-                    </Layout>
-                )}
-            </Stack.Screen>
+            <Stack.Screen 
+              name="Login" 
+              component={RegisterScreen} // Temporal - Reemplazar con Login
+            />
 
-            
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
