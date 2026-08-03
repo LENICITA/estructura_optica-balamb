@@ -7,11 +7,11 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { COLORS } from './src/constants/colors';
 
 // Importa tus pantallas
-import Home from './src/presentation/views/home/Home';
-import Login from './src/presentation/views/login/Login';
-import PrincipalCliente from './src/presentation/views/principal-cliente/PrincipalCliente';
-import RegisterScreen from './src/presentation/views/register/RegisterScreen';
-import PerfilCliente from './src/presentation/views/perfil-cliente/PerfilCliente'; // ✅ NUEVA IMPORTACIÓN
+import { Home } from './src/presentation/views/home/Home';
+import { Login } from './src/presentation/views/login/Login';
+import { PrincipalCliente } from './src/presentation/views/principal-cliente/PrincipalCliente';
+import { RegisterScreen } from './src/presentation/views/register/RegisterScreen';
+import { PerfilCliente } from './src/presentation/views/perfil-cliente/PerfilCliente';
 
 // Importa Header y Footer
 import { Header } from './src/components/Header';
@@ -35,7 +35,7 @@ export default function App() {
   return (
     <AuthProvider>
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#000" />
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
         <NavigationContainer>
           <Stack.Navigator
             initialRouteName="Home"
