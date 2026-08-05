@@ -3,10 +3,10 @@
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RegisterScreen } from './src/presentation/views/register/Register';
+import DashboardRepartidores from './src/presentation/views/admin/dashboardRepartidores';
 
 export type RootStackParamList = {
-  RegisterScreen: undefined;
+  DashboardRepartidores: undefined;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -17,8 +17,8 @@ const App = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
-          name="RegisterScreen"
-          component={RegisterScreen}
+          name="DashboardRepartidores"
+          component={DashboardRepartidores}
           options={{
             headerShown: true,
             title: "Registro",

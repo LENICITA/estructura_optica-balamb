@@ -38,7 +38,7 @@ interface Repartidor {
     fecha_registro: string;
 }
 
-export default function dashboardRepartidores() {
+export default function DashboardRepartidores() {
     const [repartidores, setRepartidores] = useState<Repartidor[]>([]);
     const [loading, setLoading] = useState(true);
     const [buscar, setBuscar] = useState("");

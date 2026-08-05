@@ -28,7 +28,7 @@ router.put('/perfil', authMiddleware, actualizarPerfil);
 
 // PANEL DE CONTROL DE ADMIN PARA REPARTIDORES
 // CREAR REPARTIDOR
-router.post('/repartidores', authMiddleware, adminMiddleware, registrarRepartidor);
+router.get('/repartidores', listarRepartidores);
 
 // LISTAR TODOS LOS REPARTIDORES
 router.get('/repartidores', authMiddleware, adminMiddleware, listarRepartidores);

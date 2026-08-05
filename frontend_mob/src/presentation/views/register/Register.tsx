@@ -5,7 +5,7 @@ import styles from './Styles';
 import { Text, View, Image, ScrollView } from 'react-native';
 import { CustomTextInput } from '../../components/CustomTextInput';
 import { RoundedButton } from '../../components/RoundedButton';
-import useViewModel from './viewModel';
+import useViewModel from './ViewModel';
 
 export const RegisterScreen = () => {
 
