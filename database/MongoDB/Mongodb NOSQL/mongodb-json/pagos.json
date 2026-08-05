@@ -1,0 +1,10 @@
+[{
+      "id": 1,
+      "id_pedido": 1,
+      "fecha_pago": "2024-01-20",
+      "eleccion_pago": "Tarjeta",
+      "canal_pago": "Online",
+      "monto": 270000,
+      "estado": "completado"
+    }
+]

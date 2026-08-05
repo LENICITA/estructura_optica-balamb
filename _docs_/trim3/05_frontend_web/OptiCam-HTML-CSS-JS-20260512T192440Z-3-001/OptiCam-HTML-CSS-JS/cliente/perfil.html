@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil</title>
+
+<link rel="stylesheet" href="/cliente/CSS/perfil.css">
+<script src="https://kit.fontawesome.com/TU_CODIGO.js" crossorigin="anonymous"></script>
+
+<!-- ICONOS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+<body>
+
+ <!-- HEADER -->
+        <header class="header">
+            <div class="left">
+
+                <a href="principal.html" class="logo">
+                    <img src="img/logo 2.jpeg" alt="Óptica Balamb">
+                </a>
+
+                <div class="left-icons">
+                    <button id="btn-menu" class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+                    <form id="search-form">
+                        <button type="button" id="search-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <input type="text" id="search-input" placeholder="Buscar...">
+                    </form>
+                </div>
+            </div>
+
+            <nav class="menu">
+                <a href="catalogo.html" >Productos</a>
+                <a href="contactenos.html">Acerca de</a>
+            </nav>
+
+            <div class="icons">
+                <button onclick="window.location.href='carrito.html'">
+            <i class="fa-solid fa-cart-shopping"></i>
+            </button>
+                
+            <button id="btn-mensajes"><i class="fa-regular fa-envelope"></i></button>
+    <button onclick="window.location.href='perfil.html'">
+        <i class="fa-solid fa-circle-user"></i></button>
+</div>
+        </header>
+
+
+<!-- PERFIL -->
+<div class="container">
+
+    <h2>GESTIÓN DE PERFIL</h2>
+
+    <div class="profile-box">
+
+        <!-- FOTO -->
+        <div class="avatar-container">
+            <img id="preview" src="https://via.placeholder.com/100" alt="Foto">
+            <input type="file" id="foto" accept="image/*" hidden>
+            <button onclick="subirFoto()">📷</button>
+        </div>
+
+        <!-- FORM -->
+        <form id="perfil-form">
+
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" value="Laura Cabrejo" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="direccion" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="correo" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="telefono" disabled>
+            </div>
+
+            <button type="button" class="btn primary" onclick="activarEdicion()">EDITAR PERFIL</button>
+            <button type="button" class="btn guardar" onclick="guardar()">GUARDAR</button>
+
+            <!-- NUEVO BOTÓN -->
+            <a href="formula.html" class="btn formula">FÓRMULA</a>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+
+    <div class="footer-section">
+        <h3>Contacto</h3>
+        <p>opticavirtualbalamb@gmail.com</p>
+        <p>+57 300 237 4767</p>
+    </div>
+
+    <div class="footer-section">
+        <h3>Tienda</h3>
+        <p>Acerca de</p>
+        <p>Catálogo</p>
+    </div>
+
+</footer>
+
+<div class="panel-mensajes" id="panel-mensajes">
+    <div class="panel-header">
+        <h4><i class="fa-solid fa-bell"></i> Notificaciones</h4>
+        <button id="cerrar-mensajes" class="cerrar-panel" onclick="document.getElementById('panel-mensajes').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="mensajes-lista" class="mensajes-lista">
+        <!-- Los mensajes se cargan con JavaScript -->
+    </div>
+</div>
+ <!-- Chatbot -->
+<div id="chatbot" class="chatbot">
+    <div class="chatbot-icono" id="chatbot-icono"><i class="fa-solid fa-comment-dots"></i></div>
+    <div class="chatbot-ventana" id="chatbot-ventana">
+        <div class="chatbot-header"><div class="chatbot-header-info"><i class="fa-solid fa-robot"></i><span>OptiBot - Asistente Virtual</span></div><button id="chatbot-cerrar" class="chatbot-cerrar"><i class="fa-solid fa-times"></i></button></div>
+        <div class="chatbot-mensajes" id="chatbot-mensajes"><div class="mensaje bot"><div class="mensaje-contenido">¡Hola! Soy OptiBot, tu asistente virtual. 😊<br>¿En qué puedo ayudarte hoy?</div><div class="mensaje-hora">Ahora</div></div></div>
+        <div class="chatbot-input-area"><input type="text" id="chatbot-input" placeholder="Escribe tu mensaje..."><button id="chatbot-enviar"><i class="fa-solid fa-paper-plane"></i></button></div>
+        <div class="chatbot-opciones"><button class="opcion-btn" data-respuesta="precios">💰 Precios</button><button class="opcion-btn" data-respuesta="envio">📦 Envíos</button><button class="opcion-btn" data-respuesta="garantia">🛡️ Garantía</button><button class="opcion-btn" data-respuesta="contacto">📞 Contacto</button></div>
+    </div>
+</div>
+
+</div>
+
+        <div class="menu-hamburguesa" id="menu"></div>
+        <script src="js/script.js"></script>
+        <script src="js/app.js"></script>
+        <script src="js/hamburguesa.js"></script>
+<script src="js/perfil.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+[
+    {
+      "id": 1,
+      "id_usuario": 1,
+      "id_formula": null,
+      "fecha_pedido": "2024-01-20",
+      "fecha_entrega": "2024-01-22",
+      "direccion_entrega": "Calle 123, Bogotá",
+      "estado": "pendiente",
+      "costo_envio": 20000,
+      "total": 270000
+    }
+]

@@ -1,0 +1,34 @@
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native (si se hace expo prebuild)
+ios/
+android/
+
+# Metro/Yarn/npm
+.metro-health-check*
+npm-debug.*
+yarn-error.*
+yarn-debug.*
+
+# Env / secretos
+.env
+.env.*.local
+
+# Credenciales de firma
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.orig.*

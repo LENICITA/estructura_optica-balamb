@@ -1,0 +1,41 @@
+# ÓpticaBalamb - Migración de MySQL a MongoDB
+
+## Descripción
+
+Este proyecto corresponde a la migración de una base de datos relacional (MySQL) a una base de datos NoSQL utilizando MongoDB.
+
+La base de datos pertenece a un sistema de gestión para una óptica, donde se administran usuarios, roles, productos, pedidos, fórmulas médicas, pagos y repartidores.
+
+---
+
+## Base de Datos
+
+**Nombre de la base de datos:**
+
+```text
+optica
+```
+
+## Colecciones
+
+La base de datos está compuesta por las siguientes colecciones:
+
+- roles
+- usuarios
+- roles_usuarios
+- categorias
+- productos
+- formulas
+- pedidos
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+PARA IMPORTAR ARCHIVOS A LA BASE DE DATOS SE UTILIZA 
+mongoimport --uri "mongodb://localhost:27017" --db optica --collection usuarios --file usuarios.json --jsonArray
+
+Esto te creará algo así:
+
+backup/
+└── optica/
+    ├── usuarios.bson
+    ├── productos.bson
+    ├── categorias.bson
+    └── ...

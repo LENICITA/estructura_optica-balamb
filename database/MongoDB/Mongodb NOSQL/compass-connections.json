@@ -1,0 +1,24 @@
+{
+  "type": "Compass Connections",
+  "version": {
+    "$numberInt": "1"
+  },
+  "connections": [
+    {
+      "id": "66b73ab5-f7a7-4b4a-b297-d0c4e5e93a45",
+      "lastUsed": {
+        "$date": {
+          "$numberLong": "1781572833025"
+        }
+      },
+      "favorite": {
+        "name": "optica"
+      },
+      "savedConnectionType": "recent",
+      "connectionOptions": {
+        "connectionString": "mongodb://localhost:27017/",
+        "oidc": {}
+      }
+    }
+  ]
+}

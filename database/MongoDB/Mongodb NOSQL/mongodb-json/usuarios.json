@@ -1,0 +1,93 @@
+[
+  {
+      "id": 1,
+      "name": "John Doe",
+      "telefono": "123456789",
+      "fecha_nacimiento": "1990-01-01",
+      "documento": "123456789",
+      "ciudad": "Ciudad 1",
+      "direccion": "Direccion 1",
+      "fecha_registro": "2020-01-01",
+      "email": "john.doe@example.com",
+      "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "estado": "activo"
+    },
+    {
+      "id": 2,
+      "name": "Administrador",
+      "telefono": "3001234567",
+      "fecha_nacimiento": "1990-01-01",
+      "documento": "987654321",
+      "ciudad": "Bogotá",
+      "direccion": "Calle Principal 123",
+      "fecha_registro": "2024-01-01",
+      "email": "admin@gmail.com",
+      "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+      "estado": "activo"
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "luisa@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2007-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3052449629",
+      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:18:26.292Z",
+      "id": 3
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "repa1@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2008-08-09",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "12345677",
+      "password": "8bb0cf6eb9b17d0f7d22b456f121257dc1254e1f01665370476383ea776df414",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:34:48.797Z",
+      "id": 4
+    },
+    {
+      "name": "Shariht",
+      "email": "shariht@gmail.com",
+      "documento": "123456234",
+      "fecha_nacimiento": "2005-06-24",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "24356431",
+      "password": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:41:25.286Z",
+      "id": 5
+    },
+    {
+      "name": "Saida",
+      "email": "Saida@gmail.com",
+      "documento": "1234555467",
+      "fecha_nacimiento": "2007-03-07",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "3245675431",
+      "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T14:49:07.402Z",
+      "id": 6
+    },
+    {
+      "name": "VALENTINA RAMIREZ BERNAL",
+      "email": "Juan@gmail.com",
+      "documento": "1024494393",
+      "fecha_nacimiento": "2005-06-05",
+      "ciudad": "Bogotá",
+      "direccion": "Cl. 45a Sur #89b 42",
+      "telefono": "21345456",
+      "password": "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225",
+      "estado": "activo",
+      "fecha_registro": "2026-04-11T15:26:02.280Z",
+      "id": 7
+    }
+]
