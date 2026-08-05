@@ -41,3 +41,33 @@ export interface RegisterResponse {
     token: string;
   };
 }
+
+export interface ProfileResponse {
+  success: boolean;
+  data: {
+    id_usuario: number;
+    nombre_completo: string;
+    email: string;
+    telefono: string;
+    direccion: string;
+    ciudad: string;
+    documento: number;
+    fecha_nacimiento: string;
+    estado: string;
+    roles: string[];
+  };
+}
+
+export interface UpdateProfileRequest {
+  nombre_completo?: string;
+  telefono?: string;
+  direccion?: string;
+  ciudad?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data: any;
+}

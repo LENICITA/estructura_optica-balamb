@@ -35,7 +35,7 @@ export const Header = () => {
           style: 'destructive',
           onPress: () => {
             logout();
-            navigation.navigate('Login' as never);
+            navigation.navigate('Iniciosesion' as never); // ← CAMBIADO
             setSidebarOpen(false);
           }
         }
@@ -43,7 +43,6 @@ export const Header = () => {
     );
   };
 
-  // ✅ Función para obtener los items del menú según el rol
   const getMenuItems = () => {
     const items = [];
 
@@ -52,12 +51,11 @@ export const Header = () => {
       id: 'home',
       label: 'Inicio',
       icon: 'home-outline',
-      route: 'Home',
+      route: 'Principal', // ← CAMBIADO
     });
 
     // Si está autenticado, mostrar más opciones
     if (isAuthenticated && user) {
-      // Obtener roles de forma segura
       let rolesArray: string[] = [];
       if (Array.isArray(user.roles)) {
         rolesArray = user.roles;
@@ -68,13 +66,12 @@ export const Header = () => {
       }
       rolesArray = rolesArray.map((r) => r.toUpperCase());
 
-      // Opciones según rol
       if (rolesArray.includes('ADMIN') || rolesArray.includes('ADMINISTRADOR')) {
         items.push({
           id: 'admin-dashboard',
           label: 'Dashboard',
           icon: 'stats-chart-outline',
-          route: 'AdminDashboard',
+          route: 'PrincipalAdmin', // ← CAMBIADO
           admin: true,
         });
         items.push({
@@ -110,7 +107,7 @@ export const Header = () => {
           id: 'repartidor-historial',
           label: 'Historial',
           icon: 'time-outline',
-          route: 'RepartidorHistorial',
+          route: 'PrincipalRepartidor', // ← CAMBIADO
         });
       } else if (rolesArray.includes('CLIENTE')) {
         items.push({
@@ -133,15 +130,12 @@ export const Header = () => {
         });
       }
 
-      // ✅ Opción "Mi Perfil" para TODOS los usuarios autenticados
       items.push({
         id: 'perfil',
         label: 'Mi Perfil',
         icon: 'person-outline',
-        route: 'PerfilCliente',
+        route: 'PerfilTodos',
       });
-
-      // ✅ Opción "Cerrar Sesión" (se maneja aparte)
     }
 
     return items;
@@ -156,7 +150,7 @@ export const Header = () => {
           <Ionicons name="menu-outline" size={28} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Home' as never)}>
+        <TouchableOpacity onPress={() => navigation.navigate('Principal' as never)}> {/* ← CAMBIADO */}
           <Image
             source={require('../../assets/img/logo2.jpeg')}
             style={styles.logo}
@@ -170,7 +164,7 @@ export const Header = () => {
               <Ionicons name="log-out-outline" size={24} color="#fff" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => navigation.navigate('Login' as never)}>
+            <TouchableOpacity onPress={() => navigation.navigate('Iniciosesion' as never)}> {/* ← CAMBIADO */}
               <Ionicons name="person-circle-outline" size={28} color="#fff" />
             </TouchableOpacity>
           )}
@@ -201,12 +195,11 @@ export const Header = () => {
                     navigation.navigate(item.route as never);
                   }}
                 >
-                  <Ionicons name={item.icon as any} size={20} color="#B90F0F" />
+                  <Ionicons name={item.icon as any} size={20} color={COLORS.primary} />
                   <Text style={styles.sidebarItemText}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
 
-              {/* Separador y Cerrar Sesión */}
               {isAuthenticated && (
                 <>
                   <View style={styles.sidebarDivider} />
@@ -214,7 +207,7 @@ export const Header = () => {
                     style={[styles.sidebarItem, styles.sidebarItemLogout]}
                     onPress={handleLogout}
                   >
-                    <Ionicons name="log-out-outline" size={20} color="#B90F0F" />
+                    <Ionicons name="log-out-outline" size={20} color={COLORS.primary} />
                     <Text style={styles.sidebarItemText}>Cerrar Sesión</Text>
                   </TouchableOpacity>
                 </>

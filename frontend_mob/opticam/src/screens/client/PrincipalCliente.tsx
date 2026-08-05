@@ -1,4 +1,4 @@
-// src/presentation/views/principal-cliente/PrincipalCliente.tsx
+// PrincipalCliente.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -9,52 +9,32 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
-  TextInput,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../../contexts/AuthContext'; // ← contexts (plural)
-import { apiClient } from '../../../services/apiClient'; // ← usar apiClient
-import { COLORS } from '../../../constants/colors'; // ← usar COLORS de constants
+import { useAuth } from '../../contexts/AuthContext';
+import { apiClient } from '../../services/apiClient';
+import { COLORS } from '../../constants/colors';
 
 interface Props {
   navigation: any;
 }
 
-export const PrincipalCliente = ({ navigation }: Props) => { // ← export const + props
+export const PrincipalCliente = ({ navigation }: Props) => {
   const { user } = useAuth();
 
-  // Estados
   const [nombreUsuario, setNombreUsuario] = useState('Cliente');
   const [productosDestacados, setProductosDestacados] = useState<any[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [panelMensajesAbierto, setPanelMensajesAbierto] = useState(false);
-  const [chatbotAbierto, setChatbotAbierto] = useState(false);
-  const [mensajesChat, setMensajesChat] = useState([
-    { tipo: 'bot', texto: '¡Hola! Soy OptiBot, tu asistente virtual. \n¿En qué puedo ayudarte hoy?', hora: 'Ahora' }
-  ]);
-  const [inputChat, setInputChat] = useState('');
-  const [notificaciones, setNotificaciones] = useState([
-    { titulo: "¡Bienvenido!", mensaje: "Gracias por ser parte de Óptica Balamb", tiempo: "Ahora" },
-    { titulo: "Oferta especial", mensaje: "15% OFF en monturas seleccionadas", tiempo: "Hoy" }
-  ]);
 
   const cargadoInicial = useRef(false);
 
-  // Cargar datos al montar
   useEffect(() => {
     if (cargadoInicial.current) return;
     cargadoInicial.current = true;
     cargarDatosCliente();
-    actualizarContadorCarrito();
   }, []);
 
-  // Cargar datos del cliente y productos
   const cargarDatosCliente = async () => {
     try {
       setLoading(true);
@@ -65,6 +45,7 @@ export const PrincipalCliente = ({ navigation }: Props) => { // ← export const
       }
 
       try {
+        // ✅ LLAMADA REAL AL BACKEND
         const productosResponse = await apiClient.get('/inventario/productos/destacados');
         let productosData = productosResponse.data;
         if (productosResponse.data?.data) productosData = productosResponse.data.data;
@@ -77,13 +58,14 @@ export const PrincipalCliente = ({ navigation }: Props) => { // ← export const
             precio: p.precio || 0,
             imagen: p.imagen || p.imagen_url || 'https://via.placeholder.com/150',
             vendidos: p.vendidos || 0,
-            ...p
           }));
           setProductosDestacados(productosMapeados);
         } else {
+          // ⚠️ Si el backend devuelve array vacío, usar ejemplo
           usarProductosEjemplo();
         }
       } catch (err) {
+        // ⚠️ Si el endpoint falla, usar ejemplo
         console.warn('No se pudieron cargar productos destacados:', err);
         usarProductosEjemplo();
       }
@@ -103,47 +85,6 @@ export const PrincipalCliente = ({ navigation }: Props) => { // ← export const
       { id: 3, nombre: "Titanium Pro", precio: 350000, imagen: "https://via.placeholder.com/150", vendidos: 45 },
       { id: 4, nombre: "Gafas Ámbar", precio: 250000, imagen: "https://via.placeholder.com/150", vendidos: 200 }
     ]);
-  };
-
-  const actualizarContadorCarrito = async () => {
-    try {
-      setTotalItems(0);
-    } catch (error) {
-      console.error('Error al actualizar carrito:', error);
-    }
-  };
-
-  const enviarMensajeChat = () => {
-    if (!inputChat.trim()) return;
-    setMensajesChat(prev => [...prev, {
-      tipo: 'usuario',
-      texto: inputChat,
-      hora: new Date().toLocaleTimeString()
-    }]);
-    setInputChat('');
-    setTimeout(() => {
-      setMensajesChat(prev => [...prev, {
-        tipo: 'bot',
-        texto: 'Gracias por tu mensaje. Un asesor te contactará pronto.',
-        hora: new Date().toLocaleTimeString()
-      }]);
-    }, 500);
-  };
-
-  const respuestaRapida = (respuesta: string) => {
-    let mensaje = '';
-    switch(respuesta) {
-      case 'precios': mensaje = 'Nuestros precios van desde $50.000 hasta $350.000'; break;
-      case 'envio': mensaje = 'El envío es gratis en compras mayores a $200.000'; break;
-      case 'garantia': mensaje = 'Todos nuestros productos tienen 30 días de garantía'; break;
-      case 'contacto': mensaje = 'Puedes contactarnos al +57 300 237 4767'; break;
-      default: mensaje = '¿En qué más puedo ayudarte?';
-    }
-    setMensajesChat(prev => [...prev, {
-      tipo: 'bot',
-      texto: mensaje,
-      hora: new Date().toLocaleTimeString()
-    }]);
   };
 
   const irProducto = (id: number) => {
@@ -251,10 +192,10 @@ export const PrincipalCliente = ({ navigation }: Props) => { // ← export const
         {/* BENEFICIOS */}
         <View style={styles.beneficiosContainer}>
           {[
-            { icon: 'truck-outline', title: 'Envío gratis', desc: 'En compras > $200.000' },
-            { icon: 'shield-checkmark-outline', title: 'Garantía', desc: '30 días de garantía' },
-            { icon: 'refresh-outline', title: 'Devoluciones', desc: 'Hasta 15 días' },
-            { icon: 'headset-outline', title: 'Soporte 24/7', desc: 'Atención al cliente' }
+              { icon: 'car-outline', title: 'Envío gratis', desc: 'En compras > $200.000' },
+              { icon: 'shield-checkmark-outline', title: 'Garantía', desc: '30 días de garantía' },
+              { icon: 'refresh-outline', title: 'Devoluciones', desc: 'Hasta 15 días' },
+              { icon: 'headset-outline', title: 'Soporte 24/7', desc: 'Atención al cliente' }
           ].map((item: any, idx: number) => (
             <View key={String(idx)} style={styles.beneficioCard}>
               <Ionicons name={item.icon} size={32} color={COLORS.primary} />
@@ -263,113 +204,12 @@ export const PrincipalCliente = ({ navigation }: Props) => { // ← export const
             </View>
           ))}
         </View>
+
       </ScrollView>
-
-      {/* PANEL DE NOTIFICACIONES */}
-      <Modal
-        visible={panelMensajesAbierto}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setPanelMensajesAbierto(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setPanelMensajesAbierto(false)}
-        />
-        <View style={styles.notificacionesPanel}>
-          <View style={styles.notificacionesHeader}>
-            <Ionicons name="notifications" size={20} color="#fff" />
-            <Text style={styles.notificacionesTitle}>Notificaciones</Text>
-            <TouchableOpacity onPress={() => setPanelMensajesAbierto(false)}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.notificacionesList}>
-            {notificaciones.map((noti, idx) => (
-              <View key={idx} style={styles.notificacionItem}>
-                <Ionicons name="notifications" size={20} color={COLORS.primary} />
-                <View style={styles.notificacionContent}>
-                  <Text style={styles.notificacionTitulo}>{noti.titulo}</Text>
-                  <Text style={styles.notificacionMensaje}>{noti.mensaje}</Text>
-                  <Text style={styles.notificacionTiempo}>{noti.tiempo}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* CHATBOT FLOTANTE */}
-      <View style={styles.chatbotFloating}>
-        <TouchableOpacity
-          style={styles.chatbotToggle}
-          onPress={() => setChatbotAbierto(!chatbotAbierto)}
-        >
-          <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
-        </TouchableOpacity>
-
-        {chatbotAbierto && (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.chatbotContainer}
-          >
-            <View style={styles.chatbotHeader}>
-              <View style={styles.chatbotHeaderLeft}>
-                <Ionicons name="bug" size={20} color="#fff" />
-                <Text style={styles.chatbotTitle}>OptiBot</Text>
-              </View>
-              <TouchableOpacity onPress={() => setChatbotAbierto(false)}>
-                <Ionicons name="close" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.chatbotMessages}>
-              {mensajesChat.map((msg, idx) => (
-                <View key={idx} style={[styles.chatMessage, msg.tipo === 'bot' ? styles.chatBot : styles.chatUser]}>
-                  <Text style={msg.tipo === 'bot' ? styles.chatBotText : styles.chatUserText}>
-                    {msg.texto}
-                  </Text>
-                  <Text style={styles.chatTime}>{msg.hora}</Text>
-                </View>
-              ))}
-            </ScrollView>
-
-            <View style={styles.chatbotInputContainer}>
-              <TextInput
-                style={styles.chatbotInput}
-                placeholder="Escribe tu mensaje..."
-                value={inputChat}
-                onChangeText={setInputChat}
-                onSubmitEditing={enviarMensajeChat}
-              />
-              <TouchableOpacity style={styles.chatbotSend} onPress={enviarMensajeChat}>
-                <Ionicons name="send" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.chatbotQuickActions}>
-              {['Precios', 'Envíos', 'Garantía', 'Contacto'].map((label, idx) => {
-                const acciones = ['precios', 'envio', 'garantia', 'contacto'];
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.chatbotQuickBtn}
-                    onPress={() => respuestaRapida(acciones[idx])}
-                  >
-                    <Text style={styles.chatbotQuickBtnText}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </KeyboardAvoidingView>
-        )}
-      </View>
     </SafeAreaView>
   );
 };
 
-// ================= ESTILOS =================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -585,191 +425,5 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  notificacionesPanel: {
-    position: 'absolute',
-    top: 60,
-    right: 16,
-    width: '90%',
-    maxWidth: 350,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  notificacionesHeader: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  notificacionesTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    flex: 1,
-    marginLeft: 8,
-  },
-  notificacionesList: {
-    maxHeight: 400,
-    padding: 16,
-  },
-  notificacionItem: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  notificacionContent: {
-    flex: 1,
-  },
-  notificacionTitulo: {
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  notificacionMensaje: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  notificacionTiempo: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  chatbotFloating: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    zIndex: 999,
-    alignItems: 'flex-end',
-  },
-  chatbotToggle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  chatbotContainer: {
-    position: 'absolute',
-    bottom: 80,
-    right: 0,
-    width: 320,
-    maxHeight: 480,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-    overflow: 'hidden',
-  },
-  chatbotHeader: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  chatbotHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  chatbotTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  chatbotMessages: {
-    maxHeight: 280,
-    padding: 16,
-  },
-  chatMessage: {
-    marginBottom: 12,
-    maxWidth: '85%',
-    padding: 12,
-    borderRadius: 12,
-  },
-  chatBot: {
-    backgroundColor: '#f0f0f0',
-    alignSelf: 'flex-start',
-  },
-  chatUser: {
-    backgroundColor: COLORS.primary,
-    alignSelf: 'flex-end',
-  },
-  chatBotText: {
-    color: '#000',
-    fontSize: 14,
-  },
-  chatUserText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  chatTime: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
-  },
-  chatbotInputContainer: {
-    flexDirection: 'row',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    gap: 8,
-  },
-  chatbotInput: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    fontSize: 14,
-  },
-  chatbotSend: {
-    backgroundColor: COLORS.primary,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chatbotQuickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    gap: 8,
-  },
-  chatbotQuickBtn: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  chatbotQuickBtnText: {
-    fontSize: 12,
-    color: '#666',
   },
 });

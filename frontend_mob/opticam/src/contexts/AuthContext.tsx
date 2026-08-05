@@ -75,7 +75,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.success) {
         const { token, usuario } = response.data;
-        await saveToken(token);
+
+        const rolesArray = usuario.roles
+                  ? (Array.isArray(usuario.roles)
+                      ? usuario.roles.map((r: any) => typeof r === 'string' ? r : r.nombre || r.rol || r)
+                      : [usuario.roles])
+                  : (usuario.rol ? [usuario.rol] : ['CLIENTE']); // ← si no tiene rol, asignar CLIENTE por defecto
+
+                const usuarioNormalizado = {
+                  ...usuario,
+                  roles: rolesArray
+                };
+
+                console.log('🔍 Usuario normalizado:', JSON.stringify(usuarioNormalizado, null, 2));
+
+        const tokenString = typeof token === 'string' ? token : JSON.stringify(token);
+        await saveToken(tokenString);
         await saveUser(usuario);
         setUser(usuario as any);
         setIsAuthenticated(true);
@@ -109,7 +124,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.data?.success && response.data?.data) {
         const { token, usuario } = response.data.data;
 
-        await saveToken(token);
+        const rolesArray = usuario.roles
+                  ? (Array.isArray(usuario.roles)
+                      ? usuario.roles.map((r: any) => typeof r === 'string' ? r : r.nombre || r.rol || r)
+                      : [usuario.roles])
+                  : (usuario.rol ? [usuario.rol] : ['CLIENTE']);
+
+                const usuarioNormalizado = {
+                  ...usuario,
+                  roles: rolesArray
+                };
+
+                console.log('🔍 Usuario normalizado (register):', JSON.stringify(usuarioNormalizado, null, 2));
+        const tokenString = typeof token === 'string' ? token : JSON.stringify(token);
+        await saveToken(tokenString);
         await saveUser(usuario);
         setUser(usuario);
         setIsAuthenticated(true);
