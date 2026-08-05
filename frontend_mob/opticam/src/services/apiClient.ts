@@ -1,6 +1,6 @@
 // src/services/apiClient.ts
 import axios from 'axios';
-import { API_URL } from '../services/api';
+import { API_URL } from '../constants/api';
 import { getToken } from '../utils/storage';
 
 export const apiClient = axios.create({

@@ -1,6 +1,6 @@
 // src/services/userService.ts
 import { apiClient } from './apiClient';
-import { ProfileResponse } from '../types';
+import { ProfileResponse, UpdateProfileRequest, UpdateProfileResponse } from '../types';
 
 // USUARIOS
 
@@ -11,13 +11,9 @@ export const getProfile = async (): Promise<ProfileResponse> => {
 };
 
 // Actualizar perfil
-export const updateProfile = async (data: {
-  nombre_completo?: string;
-  telefono?: string;
-  direccion?: string;
-  ciudad?: string;
-  email?: string;
-}): Promise<{ success: boolean; message: string; data: any }> => {
-  const response = await apiClient.put('/usuarios/perfil', data);
+export const updateProfile = async (
+  data: UpdateProfileRequest
+): Promise<UpdateProfileResponse> => {
+  const response = await apiClient.put<UpdateProfileResponse>('/usuarios/perfil', data);
   return response.data;
 };

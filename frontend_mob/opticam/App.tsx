@@ -6,12 +6,16 @@ import { SafeAreaView, StyleSheet, StatusBar, View } from 'react-native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { COLORS } from './src/constants/colors';
 
-// Importa tus pantallas
-import { Home } from './src/presentation/views/home/Home';
-import { Login } from './src/presentation/views/login/Login';
-import { PrincipalCliente } from './src/presentation/views/principal-cliente/PrincipalCliente';
-import { RegisterScreen } from './src/presentation/views/register/RegisterScreen';
-import { PerfilCliente } from './src/presentation/views/perfil-cliente/PerfilCliente';
+// Pantallas desde screens/all/
+import { Principal } from './src/screens/all/Principal';
+import { Iniciosesion } from './src/screens/all/Iniciosesion';
+import { PerfilTodos } from './src/screens/all/PerfilTodos';
+import { RecuperarContraseña } from './src/screens/all/RecuperarContraseña';
+import { RestablecerContraseña } from './src/screens/all/RestablecerContraseña';
+
+// Pantallas desde screens/client/
+import { AutoRegistro } from './src/screens/client/AutoRegistro';
+import { PrincipalCliente } from './src/screens/client/PrincipalCliente';
 
 // Importa Header y Footer
 import { Header } from './src/components/Header';
@@ -38,15 +42,15 @@ export default function App() {
         <StatusBar barStyle="light-content" backgroundColor="#000" />
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName="Home"
+            initialRouteName="Principal"
             screenOptions={{ headerShown: false }}
           >
 
             {/* Pantallas con Layout (Header + Footer) */}
-            <Stack.Screen name="Home">
+            <Stack.Screen name="Principal">
               {() => (
                 <Layout>
-                  <Home />
+                  <Principal />
                 </Layout>
               )}
             </Stack.Screen>
@@ -59,17 +63,19 @@ export default function App() {
               )}
             </Stack.Screen>
 
-            <Stack.Screen name="PerfilCliente">
+            <Stack.Screen name="PerfilTodos">
               {() => (
                 <Layout>
-                  <PerfilCliente />
+                  <PerfilTodos />
                 </Layout>
               )}
             </Stack.Screen>
 
             {/* Pantallas SIN Layout (sin Header ni Footer) */}
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
+            <Stack.Screen name="Iniciosesion" component={Iniciosesion} />
+            <Stack.Screen name="AutoRegistro" component={AutoRegistro} />
+            <Stack.Screen name="RecuperarContraseña" component={RecuperarContraseña} />
+            <Stack.Screen name="RestablecerContraseña" component={RestablecerContraseña} />
 
           </Stack.Navigator>
         </NavigationContainer>
