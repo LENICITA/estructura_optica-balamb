@@ -1,11 +1,7 @@
-// models/Distribucion.js
 import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
-import Pedido from './pedidos.js';
-import Usuario from './User.js';
-// ============================================
+
 // MODELO DISTRIBUCIONES
-// ============================================
 const Distribucion = sequelize.define('Distribucion', {
   id_distribucion: {
     type: DataTypes.INTEGER,
@@ -64,29 +60,10 @@ const Distribucion = sequelize.define('Distribucion', {
   }
 });
 
-// ============================================
-// RELACIONES (se definen aquí)
-// ============================================
-// Relación con PEDIDOS
-Distribucion.belongsTo(sequelize.models.Pedido, {
-  foreignKey: 'id_pedido',
-  as: 'pedido'
-});
-
-// Relación con USUARIOS (repartidor)
-Distribucion.belongsTo(sequelize.models.Usuario, {
-  foreignKey: 'id_usuario',
-  as: 'repartidor'
-});
-
-// ============================================
 // MÉTODOS DEL MODELO
-// ============================================
 const DistribucionModelo = {
 
-  /**
-   * Crear una nueva distribución (admin asigna pedido a repartidor)
-   */
+  // Crear una nueva distribución (admin asigna pedido a repartidor)
   crear: async (data) => {
     const distribucion = await Distribucion.create({
       id_pedido: data.id_pedido,
@@ -97,19 +74,17 @@ const DistribucionModelo = {
     return distribucion;
   },
 
-  /**
-   * Obtener distribución por ID (con datos del pedido)
-   */
+  // Obtener distribución por ID (con datos del pedido)
   obtenerPorId: async (id_distribucion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion, {
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
-          model: Usuario,
+          model: sequelize.models.Usuario,
           as: 'repartidor',
           attributes: ['id_usuario', 'nombre_completo', 'email', 'telefono']
         }
@@ -118,19 +93,17 @@ const DistribucionModelo = {
     return distribucion;
   },
 
-  /**
-   * Obtener todas las distribuciones (admin)
-   */
+  // Obtener todas las distribuciones (admin)
   obtenerTodas: async () => {
     const distribuciones = await Distribucion.findAll({
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
-          model: Usuario,
+          model: sequelize.models.Usuario,
           as: 'repartidor',
           attributes: ['id_usuario', 'nombre_completo']
         }
@@ -140,41 +113,16 @@ const DistribucionModelo = {
     return distribuciones;
   },
 
-  /**
-   * Obtener distribuciones pendientes de un repartidor (con dirección del pedido)
-   */
-  obtenerPendientes: async (id_usuario) => {
-    const distribuciones = await Distribucion.findAll({
-      where: {
-        id_usuario,
-        estado: 'PENDIENTE'
-      },
-      include: [
-        {
-          model: Pedido,
-          as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
-        }
-      ],
-      order: [['fecha_asignacion', 'ASC']]
-    });
-    return distribuciones;
-  },
 
-  /**
-   * Obtener distribuciones en entrega de un repartidor (con dirección del pedido)
-   */
-  obtenerEnEntrega: async (id_usuario) => {
+  //Obtener distribuciones de un usuario específico (admin o repartidor)
+  obtenerPorUsuario: async (id_usuario) => {
     const distribuciones = await Distribucion.findAll({
-      where: {
-        id_usuario,
-        estado: 'EN_ENTREGA'
-      },
+      where: { id_usuario },
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada', 'id_usuario']
         }
       ],
       order: [['fecha_asignacion', 'DESC']]
@@ -182,9 +130,68 @@ const DistribucionModelo = {
     return distribuciones;
   },
 
-  /**
-   * Obtener historial de entregas de un repartidor (con dirección del pedido)
-   */
+
+  // Obtener distribuciones pendientes de un repartidor (con dirección del pedido)
+  obtenerPendientes: async (id_usuario) => {
+    try {
+      console.log(`Buscando pedidos pendientes para repartidor ${id_usuario}`);
+    
+      const distribuciones = await Distribucion.findAll({
+        where: {
+          id_usuario,
+          estado: 'PENDIENTE'
+        },
+        include: [
+          {
+            model: sequelize.models.Pedido,
+            as: 'pedido',
+            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+          }
+        ],
+        order: [['fecha_asignacion', 'ASC']]
+      });
+    
+      console.log(`${distribuciones.length} pedidos pendientes encontrados`);
+      return distribuciones;
+    
+    } catch (error) {
+      console.error('Error en obtenerPendientes:', error);
+      throw error;
+    }
+  },
+
+
+  // Obtener distribuciones en entrega de un repartidor (con dirección del pedido)
+  obtenerEnEntrega: async (id_usuario) => {
+    try {
+      console.log(`Buscando pedidos en entrega para repartidor ${id_usuario}`);
+    
+      const distribuciones = await Distribucion.findAll({
+        where: {
+          id_usuario,
+          estado: 'EN_ENTREGA'
+        },
+        include: [
+          {
+            model: sequelize.models.Pedido,
+            as: 'pedido',
+            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+          }
+        ],
+        order: [['fecha_asignacion', 'DESC']]
+      });
+    
+      console.log(`${distribuciones.length} pedidos en entrega encontrados`);
+      return distribuciones;
+    
+    } catch (error) {
+      console.error('Error en obtenerEnEntrega:', error);
+      throw error;
+    }
+  },
+
+
+  // Obtener historial de entregas de un repartidor (con dirección del pedido)
   obtenerHistorial: async (id_usuario) => {
     const distribuciones = await Distribucion.findAll({
       where: {
@@ -193,9 +200,9 @@ const DistribucionModelo = {
       },
       include: [
         {
-          model: Pedido,
+          model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
         }
       ],
       order: [['fecha_entrega', 'DESC']]
@@ -203,9 +210,8 @@ const DistribucionModelo = {
     return distribuciones;
   },
 
-  /**
-   * Iniciar entrega (repartidor)
-   */
+
+  // Iniciar entrega (repartidor)
   iniciarEntrega: async (id_distribucion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion);
     if (!distribucion) return null;
@@ -218,9 +224,8 @@ const DistribucionModelo = {
     return distribucion;
   },
 
-  /**
-   * Marcar como entregado (repartidor) y actualizar estado del pedido
-   */
+  // Marcar como entregado (repartidor) y actualizar estado del pedido
+
   marcarEntregado: async (id_distribucion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion);
     if (!distribucion) return null;
@@ -243,9 +248,7 @@ const DistribucionModelo = {
     return distribucion;
   },
 
-  /**
-   * Cancelar entrega (admin)
-   */
+  // Cancelar entrega (admin)
   cancelarEntrega: async (id_distribucion, observacion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion);
     if (!distribucion) return null;
@@ -257,16 +260,15 @@ const DistribucionModelo = {
     
     // Actualizar estado del pedido a 'Pendiente'
     await sequelize.query(
-      'UPDATE PEDIDOS SET estado = "Pendiente" WHERE id_pedido = ?',
+      'UPDATE PEDIDOS SET estado = "Pagado" WHERE id_pedido = ?',
       { replacements: [distribucion.id_pedido] }
     );
     
     return distribucion;
   },
 
-  /**
-   * Verificar si un pedido ya tiene distribución activa
-   */
+
+  // Verificar si un pedido ya tiene distribución activa
   pedidoTieneDistribucionActiva: async (id_pedido) => {
     const distribucion = await Distribucion.findOne({
       where: {
@@ -280,4 +282,5 @@ const DistribucionModelo = {
   }
 };
 
-export default DistribucionModelo;
+export { Distribucion }; 
+export default DistribucionModelo; 

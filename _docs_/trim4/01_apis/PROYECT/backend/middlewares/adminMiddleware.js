@@ -1,19 +1,19 @@
-import Usuario from '../models/User.js';
-import Role from '../models/Role.js';
+import { Usuario, Role } from '../models/relaciones.js';
 
 export const adminMiddleware = async (req, res, next) => {
     try {
-        if (!req.usuario) {
+        if (!req.user) {
             return res.status(401).json({
                 success: false,
                 message: 'No autenticado'
             });
         }
 
-        const usuario = await Usuario.findByPk(req.usuario.id_usuario, {
+        const usuario = await Usuario.findByPk(req.user.id, {
             include: [{
                 model: Role,
-                as: 'roles'
+                as: 'roles',
+                through: { attributes: [] }
             }]
         });
 
@@ -24,7 +24,8 @@ export const adminMiddleware = async (req, res, next) => {
             });
         }
 
-        const esAdmin = usuario.roles.some(role => role.nombre === 'ADMIN');
+        // Verificar si tiene rol ADMIN
+        const esAdmin = usuario.roles?.some(role => role.nombre === 'ADMIN') || false;
 
         if (!esAdmin) {
             return res.status(403).json({
@@ -33,6 +34,7 @@ export const adminMiddleware = async (req, res, next) => {
             });
         }
 
+        console.log('Admin autorizado:', usuario.nombre_completo);
         next();
 
     } catch (error) {
@@ -43,4 +45,3 @@ export const adminMiddleware = async (req, res, next) => {
         });
     }
 };
-

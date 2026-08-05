@@ -39,52 +39,29 @@ export const enviarMensaje = (req, res) => {
   }
 };
 
-// ========== FAQ ==========
-
-// 2. Obtener todas las preguntas frecuentes
-export const getFaqs = (req, res) => {
+export const getBotones = (req, res) => {
   try {
-    const faqs = ChatBot.getFaqs();
+    const botones = [
+      { id: 1, label: 'Precios', value: 'precios' },
+      { id: 2, label: 'Envíos', value: 'envio' },
+      { id: 3, label: 'Garantía', value: 'garantia' },
+      { id: 4, label: 'Contacto', value: 'contacto' },
+      { id: 5, label: 'Productos', value: 'productos' },
+      { id: 6, label: 'Horario', value: 'horario' },
+      { id: 7, label: 'Pagos', value: 'pago' },
+      { id: 8, label: 'Devoluciones', value: 'devolucion' },
+    ];
 
     res.json({
       success: true,
-      count: faqs.length,
-      faqs: faqs
+      count: botones.length,
+      botones: botones
     });
   } catch (error) {
-    console.error("Error al obtener FAQ:", error);
+    console.error("Error al obtener botones:", error);
     res.status(500).json({
       success: false,
-      message: "Error al obtener preguntas frecuentes"
-    });
-  }
-};
-
-// 3. Buscar FAQ por texto
-export const searchFaqs = (req, res) => {
-  try {
-    const { q } = req.query;
-
-    if (!q || q.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Debes proporcionar un término de búsqueda"
-      });
-    }
-
-    const results = ChatBot.searchFaqs(q);
-
-    res.json({
-      success: true,
-      query: q,
-      count: results.length,
-      resultados: results
-    });
-  } catch (error) {
-    console.error("Error al buscar FAQ:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al buscar preguntas frecuentes"
+      message: "Error al obtener los botones"
     });
   }
 };

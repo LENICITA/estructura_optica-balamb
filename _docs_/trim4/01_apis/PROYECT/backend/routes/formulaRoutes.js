@@ -1,17 +1,19 @@
-// routes/formulaRoutes.js
 import express from 'express';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { adminMiddleware } from '../middlewares/adminMiddleware.js';
+import upload from '../middlewares/upload.js';
 import * as formulaController from '../controllers/formulaController.js';
 
 const router = express.Router();
 
-// ============================================
 // RUTAS PARA CLIENTE (requieren token)
-// ============================================
 
 // Subir fórmula (cliente)
-router.post('/', authMiddleware, formulaController.subirFormula);
+router.post('/', authMiddleware,upload.single('imagen'), formulaController.subirFormula);
+
+//Eliminar fórmula (cliente dueño)
+
+router.delete('/:id', authMiddleware, formulaController.eliminarFormula);
 
 // Ver mis fórmulas (cliente)
 router.get('/mis-formulas', authMiddleware, formulaController.obtenerMisFormulas);
@@ -22,9 +24,7 @@ router.get('/:id', authMiddleware, formulaController.obtenerFormulaPorId);
 // Verificar si fórmula está aprobada (cliente dueño)
 router.get('/:id/verificar', authMiddleware, formulaController.verificarFormulaAprobada);
 
-// ============================================
 // RUTAS PARA ADMIN (requieren token + admin)
-// ============================================
 
 // Ver todas las fórmulas (admin)
 router.get('/admin/todas', authMiddleware, adminMiddleware, formulaController.obtenerTodasLasFormulas);

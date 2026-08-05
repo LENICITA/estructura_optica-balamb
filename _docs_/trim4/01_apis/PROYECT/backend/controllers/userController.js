@@ -1,9 +1,12 @@
-import Usuario from "../models/User.js";
-import Vehiculo from "../models/Vehiculo.js";
-import Role from "../models/Role.js";
-import RolUsuario from "../models/RolUsuario.js";
+import { 
+    Usuario, 
+    Vehiculo, 
+    Role, 
+    RolUsuario 
+} from "../models/relaciones.js";
 import sequelize from "../config/database.js";
 import { generateToken } from "../utils/generadorToken.js";
+import { Op } from "sequelize";
 
 // Registrar cliente
 export const registrarCliente = async (req, res) => {
@@ -601,6 +604,166 @@ export const buscarRepartidores = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'
+        });
+    }
+};
+
+// Obtener perfil del usuario autenticado
+export const obtenerPerfil = async (req, res) => {
+    try {
+        const usuarioId = req.user.id;
+
+        console.log(`Obteniendo perfil del usuario ${usuarioId}`);
+
+        const usuario = await Usuario.findByPk(usuarioId, {
+            attributes: { exclude: ['contrasena'] },
+            include: [
+                {
+                    model: Role,
+                    as: 'roles',
+                    through: { attributes: [] },
+                    attributes: ['nombre']
+                }
+            ]
+        });
+
+        if (!usuario) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        console.log('Perfil obtenido:', usuario.nombre_completo);
+
+        res.json({
+            success: true,
+            data: {
+                id_usuario: usuario.id_usuario,
+                nombre_completo: usuario.nombre_completo,
+                email: usuario.email,
+                telefono: usuario.telefono,
+                direccion: usuario.direccion,
+                ciudad: usuario.ciudad,
+                documento: usuario.documento,
+                fecha_nacimiento: usuario.fecha_nacimiento,
+                estado: usuario.estado,
+                roles: usuario.roles?.map(r => r.nombre) || []
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al obtener perfil:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// Actualizar perfil del usuario autenticado
+export const actualizarPerfil = async (req, res) => {
+    try {
+        const usuarioId = req.user.id;
+        const { nombre_completo, telefono, direccion, ciudad, email } = req.body;
+
+        console.log(` Actualizando perfil del usuario ${usuarioId}`);
+
+        const usuario = await Usuario.findByPk(usuarioId, {
+            include: [{
+                model: Role,
+                as: 'roles',
+                through: { attributes: [] },
+                attributes: ['nombre']
+            }]
+        });
+
+        if (!usuario) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        const roles = usuario.roles?.map(r => r.nombre) || [];
+
+        // REPARTIDOR NO PUEDE EDITAR SU PERFIL
+        if (roles.includes('REPARTIDOR')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Los repartidores no pueden editar su perfil. Contacta al administrador.'
+            });
+        }
+
+        // Verificar si el email ya existe en otro usuario
+        if (email && email !== usuario.email) {
+            const emailExistente = await Usuario.findOne({
+                where: {
+                    email: email,
+                    id_usuario: { [Op.ne]: usuarioId }
+                }
+            });
+
+            if (emailExistente) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El email ya está registrado por otro usuario'
+                });
+            }
+        }
+
+        // Actualizar solo los campos permitidos
+        await usuario.update({
+            nombre_completo: nombre_completo || usuario.nombre_completo,
+            telefono: telefono || usuario.telefono,
+            direccion: direccion !== undefined ? direccion : usuario.direccion,
+            ciudad: ciudad || usuario.ciudad,
+            email: email || usuario.email
+        });
+
+        console.log('Perfil actualizado');
+
+        res.json({
+            success: true,
+            message: 'Perfil actualizado correctamente',
+            data: {
+                id_usuario: usuario.id_usuario,
+                nombre_completo: usuario.nombre_completo,
+                email: usuario.email,
+                telefono: usuario.telefono,
+                direccion: usuario.direccion
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al actualizar perfil:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+export const contarClientes = async (req, res) => {
+    try {
+        const count = await Usuario.count({
+            include: [{
+                model: Role,
+                as: 'roles',
+                where: { nombre: 'CLIENTE' }
+            }]
+        });
+
+        res.json({
+            success: true,
+            data: { total: count }
+        });
+    } catch (error) {
+        console.error('Error al contar clientes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al contar clientes'
         });
     }
 };

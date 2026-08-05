@@ -2,7 +2,7 @@
 -- -----------------------------------------------------
 -- Schema Opticamdb
 -- -----------------------------------------------------
-DROP DATABASE opticamdb;
+DROP DATABASE IF EXISTS opticamdb;
 CREATE DATABASE opticamdb DEFAULT CHARACTER SET utf8 ;
 USE opticamdb; 
 
@@ -29,8 +29,10 @@ CREATE TABLE USUARIOS (
   direccion VARCHAR(45) NOT NULL,
   fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   email VARCHAR(100) NOT NULL,
-  contrasena VARCHAR(200) NOT NULL,
+  contrasena VARCHAR(255) NOT NULL,
   estado ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') NOT NULL DEFAULT 'ACTIVO',
+  reset_token VARCHAR(255) NULL,
+  reset_token_expiry DATETIME NULL,
   PRIMARY KEY (id_usuario))
 ENGINE = InnoDB;
 
@@ -100,6 +102,7 @@ CREATE TABLE PEDIDOS (
   fecha_pedido DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_estimada DATE NOT NULL,
   direccion_entrega VARCHAR(45) NOT NULL,
+  ciudad_envio VARCHAR(45) NOT NULL,
   estado ENUM('Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
   costo_envio FLOAT NOT NULL DEFAULT 0,
   total FLOAT NOT NULL,
@@ -145,7 +148,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 -- Tabla PEDIDOS_PRODUCTOS
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS PEDIDOS_PRODUCTOS (
+CREATE TABLE PEDIDOS_PRODUCTOS (
   id_pedido INT NOT NULL,
   id_producto INT NOT NULL,
   cant_productos INT NOT NULL,
@@ -197,6 +200,9 @@ CREATE TABLE PAGOS (
   canal_pago ENUM('Bold') NOT NULL,
   monto FLOAT NOT NULL,
   estado ENUM('Pendiente', 'Confirmado', 'Rechazado') NOT NULL DEFAULT 'Pendiente',
+  bold_reference VARCHAR(300) NULL COMMENT 'Referencia LNK_xxx que devuelve Bold al crear el link',
+  bold_payment_id VARCHAR(300) NULL COMMENT 'ID del pago que Bold envía en el webhook (PAY_xxx)',
+  bold_link VARCHAR(300) NULL COMMENT 'URL completa de Bold a la que redirigir al cliente',
   PRIMARY KEY (id_pago),
   INDEX ind_pagos_pedidos (id_pedido ASC),
   CONSTRAINT fk_pagos_pedidos
@@ -215,7 +221,7 @@ CREATE TABLE DISTRIBUCIONES (
   id_usuario INT NOT NULL,
   id_pedido INT NOT NULL,
   fecha_asignacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  fecha_entrega DATETIME NOT NULL,
+  fecha_entrega DATETIME NULL,
   estado ENUM('PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
   observaciones TEXT NULL,
   PRIMARY KEY (id_distribucion),

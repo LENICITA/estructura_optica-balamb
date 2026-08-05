@@ -1,6 +1,6 @@
-// controllers/inventarioController.js
 import Inventario from '../models/inventario.js';
 import { obtenerUrlImagen, obtenerThumbnail } from '../utils/imageUtils.js';
+import cloudinary from '../config/cloudinary.js';
 
 // ========== PRODUCTOS ==========
 
@@ -215,11 +215,10 @@ export const getProductosByMarca = async (req, res) => {
 export const getMarcas = async (req, res) => {
   try {
     const results = await Inventario.getMarcas();
-    const marcas = results.map(item => item.marca);
     res.json({
       success: true,
-      count: marcas.length,
-      marcas: marcas
+      count: results.length,
+      marcas: results
     });
   } catch (error) {
     console.error("Error al obtener marcas:", error);
@@ -234,11 +233,10 @@ export const getMarcas = async (req, res) => {
 export const getColores = async (req, res) => {
   try {
     const results = await Inventario.getColores();
-    const colores = results.map(item => item.color);
     res.json({
       success: true,
-      count: colores.length,
-      colores: colores
+      count: results.length,
+      colores: results
     });
   } catch (error) {
     console.error("Error al obtener colores:", error);
@@ -252,7 +250,7 @@ export const getColores = async (req, res) => {
 // Crear producto (solo admin)
 export const createProducto = async (req, res) => {
   try {
-    const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
+    const { id_categoria, nombre, descripcion, marca, precio, material, color } = req.body;
 
     if (!id_categoria) {
       return res.status(400).json({
@@ -273,13 +271,20 @@ export const createProducto = async (req, res) => {
       });
     }
 
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "La imagen es requerida"
+      });
+    }
+
     const result = await Inventario.create({
       id_categoria,
       nombre,
       descripcion: descripcion || "",
       marca: marca || "",
       precio,
-      imagen: imagen || "",
+      imagen: req.file.path,
       material: material || "",
       color: color || ""
     });
@@ -287,7 +292,8 @@ export const createProducto = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Producto creado exitosamente",
-      id_producto: result.insertId
+      id_producto: result.insertId,
+      imagen_cloudinary: req.file.path
     });
   } catch (error) {
     console.error("Error al crear producto:", error);
@@ -302,7 +308,7 @@ export const createProducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { id_categoria, nombre, descripcion, marca, precio, imagen, material, color } = req.body;
+    const { id_categoria, nombre, descripcion, marca, precio, material, color } = req.body;
 
     const productoActual = await Inventario.findById(id);
 
@@ -313,13 +319,33 @@ export const updateProducto = async (req, res) => {
       });
     }
 
+    // SI HAY NUEVA IMAGEN, SUBIR AUTOMÁTICAMENTE
+
+    let imagenFinal = productoActual.imagen;
+
+    if (req.file) {
+      imagenFinal = req.file.path;
+
+      // 2. Eliminar imagen anterior de Cloudinary
+      if (productoActual.imagen) {
+        try {
+          const urlParts = productoActual.imagen.split('/');
+          const publicIdWithExt = urlParts[urlParts.length - 1];
+          const publicId = publicIdWithExt.split('.')[0];
+          await cloudinary.uploader.destroy(`opticam/productos/${publicId}`);
+        } catch (error) {
+          console.log('Error al eliminar imagen anterior:', error);
+        }
+      }
+    }
+
     await Inventario.update(id, {
       id_categoria: id_categoria || productoActual.id_categoria,
       nombre: nombre || productoActual.nombre,
       descripcion: descripcion !== undefined ? descripcion : productoActual.descripcion,
       marca: marca !== undefined ? marca : productoActual.marca,
       precio: precio !== undefined ? precio : productoActual.precio,
-      imagen: imagen !== undefined ? imagen : productoActual.imagen,
+      imagen: imagenFinal,
       material: material !== undefined ? material : productoActual.material,
       color: color !== undefined ? color : productoActual.color
     });
@@ -357,6 +383,19 @@ export const deleteProducto = async (req, res) => {
         success: false,
         message: "Producto no encontrado"
       });
+    }
+
+    // ELIMINAR IMAGEN DE CLOUDINARY
+  
+    if (producto.imagen) {
+      try {
+        const urlParts = producto.imagen.split('/');
+        const publicIdWithExt = urlParts[urlParts.length - 1];
+        const publicId = publicIdWithExt.split('.')[0];
+        await cloudinary.uploader.destroy(`opticam/productos/${publicId}`);
+      } catch (error) {
+        console.log('Error al eliminar imagen de Cloudinary:', error);
+      }
     }
 
     await Inventario.delete(id);

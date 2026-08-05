@@ -1,8 +1,8 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { hashSHA256 } from '../utils/encryption';
+// src/context/AuthContext.jsx
+import React, { createContext, useState, useContext, useEffect } from "react";
+import api from '../utils/api';
 
 const AuthContext = createContext();
-const API_URL = 'http://localhost:3001';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -17,133 +17,140 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
+    
+    
     if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Asegurar que el usuario tenga roles como array
+        if (!parsedUser.roles || !Array.isArray(parsedUser.roles)) {
+          parsedUser.roles = [];
+        }
+        
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error al restaurar sesion: ', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    } else {
     }
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, contrasena) => {
     try {
-      console.log('1. Intentando login con:', email);
-      const hashedPassword = await hashSHA256(password);
-      console.log('2. Contraseña hasheada:', hashedPassword);
       
-      const response = await fetch(`${API_URL}/usuarios?email=${email}&password=${hashedPassword}`);
-      const users = await response.json();
-      console.log('3. Usuarios encontrados:', users);
+      const response = await api.post('/auth/login', { email, contrasena });
       
-      if (users.length === 1) {
-        const userData = users[0];
-        console.log('4. Usuario encontrado:', userData);
+      if (response.data?.success && response.data?.data) {
+        const { token, usuario } = response.data.data;
         
-        // Obtener el rol del usuario desde roles_usuarios
-        let rol = 'cliente';
-        try {
-          const rolesResponse = await fetch(`${API_URL}/roles_usuarios?id_usuario=${userData.id}`);
-          const userRoles = await rolesResponse.json();
-          console.log('5. Roles del usuario:', userRoles);
-          
-          if (userRoles.length > 0) {
-            const rolResponse = await fetch(`${API_URL}/roles/${userRoles[0].id_rol}`);
-            const rolData = await rolResponse.json();
-            rol = rolData.name.toLowerCase();
-            console.log('6. Rol asignado:', rol);
-          }
-        } catch (rolError) {
-          console.warn('Error obteniendo rol:', rolError);
+        const tokenString = typeof token === 'string' ? token : token.token || JSON.stringify(token);
+        
+        // Asegurar que roles sea un array
+        if (!usuario.roles || !Array.isArray(usuario.roles)) {
+          usuario.roles = [];
         }
         
-        // Forzar admin por email (por si acaso)
-        if (email === 'admin@gmail.com') {
-          rol = 'admin';
-          console.log('7. Rol forzado a admin por email');
-        }
+        localStorage.setItem('token', tokenString);
+        localStorage.setItem('user', JSON.stringify(usuario));
         
-        const userWithRole = { 
-          id: userData.id, 
-          name: userData.name, 
-          email: userData.email, 
-          rol: rol,
-          telefono: userData.telefono,
-          direccion: userData.direccion
+        setUser(usuario);
+                
+        return {
+          success: true,
+          user: usuario,
+          roles: usuario.roles || []
         };
-        
-        const token = btoa(JSON.stringify({ 
-          userId: userData.id, 
-          email, 
-          rol, 
-          exp: Date.now() + 86400000 
-        }));
-        
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userWithRole));
-        setUser(userWithRole);
-        
-        console.log('8. Login exitoso - Usuario:', userWithRole);
-        return { success: true, user: userWithRole, rol };
+      } else {
+        console.error('Estructura de respuesta inesperada:', response.data);
+        return {
+          success: false,
+          message: response.data?.message || 'Error en la respuesta del servidor'
+        };
       }
-      
-      console.log('9. No se encontraron usuarios con esas credenciales');
-      return { success: false, message: 'Correo o contraseña incorrectos' };
     } catch (error) {
-      console.error('10. Error en login:', error);
-      return { success: false, message: 'Error de conexión con el servidor' };
+      console.error('Error en login:', error);
+      
+      if (error.response) {
+        console.error('Error del servidor:', error.response.data);
+        return {
+          success: false,
+          message: error.response.data?.message || 'Credenciales incorrectas'
+        };
+      } else if (error.request) {
+        console.error('No hay respuesta del servidor');
+        return {
+          success: false,
+          message: 'Error de conexión con el servidor'
+        };
+      } else {
+        console.error('Error en la petición:', error.message);
+        return {
+          success: false,
+          message: 'Error al intentar iniciar sesión'
+        };
+      }
     }
   };
 
   const register = async (userData) => {
     try {
-      console.log('Registrando usuario:', userData.email);
-      
-      // Verificar si el email ya existe
-      const checkResponse = await fetch(`${API_URL}/usuarios?email=${userData.email}`);
-      const existing = await checkResponse.json();
-      if (existing.length > 0) {
-        return { success: false, message: 'El email ya está registrado' };
-      }
-      
-      // Encriptar contraseña
-      const hashedPassword = await hashSHA256(userData.password);
-      
-      // Crear nuevo usuario
-      const newUser = {
-        name: userData.name,
-        email: userData.email,
+
+      const response = await api.post('/auth/register', {
+        nombre_completo: userData.nombre_completo || userData.name,
         telefono: userData.telefono || '',
-        fecha_nacimiento: userData.fechaNacimiento || '',
+        fecha_nacimiento: userData.fecha_nacimiento || '',
         documento: userData.documento || '',
         ciudad: userData.ciudad || '',
         direccion: userData.direccion || '',
-        fecha_registro: new Date().toISOString(),
-        password: hashedPassword,
-        estado: 'activo'
-      };
-      
-      const response = await fetch(`${API_URL}/usuarios`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
+        email: userData.email,
+        contrasena: userData.password || userData.contrasena,
+        rol: userData.rol || 'CLIENTE'
       });
-      
-      if (!response.ok) {
-        throw new Error('Error al crear usuario');
+
+      if (response.data?.success && response.data?.data) {
+        const { token, usuario } = response.data.data;
+        
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(usuario));
+        setUser(usuario);
+        
+        return {
+          success: true,
+          message: 'Usuario registrado exitosamente',
+          user: usuario
+        };
       }
-      
-      const createdUser = await response.json();
-      
-      // Asignar rol de cliente (id_rol = 2)
-      await fetch(`${API_URL}/roles_usuarios`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_rol: 2, id_usuario: createdUser.id })
-      });
-      
-      console.log('Usuario registrado exitosamente:', createdUser);
-      return { success: true, message: 'Usuario registrado exitosamente' };
+
+      return {
+        success: true,
+        message: 'Usuario registrado exitosamente. Por favor, inicia sesión.'
+      };
+
     } catch (error) {
       console.error('Error en register:', error);
-      return { success: false, message: 'Error al registrar usuario' };
+
+      if (error.response?.status === 409) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'El email o documento ya está registrado'
+        };
+      }
+
+      if (error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response?.data?.message || 'Datos inválidos'
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Error al registrar usuario. Intenta nuevamente.'
+      };
     }
   };
 
@@ -151,17 +158,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    console.log('Sesión cerrada');
   };
 
+  const getUserRole = () => {
+    if (!user) return null;
+    if (user.roles?.includes('ADMIN')) return 'ADMIN';
+    if (user.roles?.includes('REPARTIDOR')) return 'REPARTIDOR';
+    if (user.roles?.includes('CLIENTE')) return 'CLIENTE';
+    return null;
+  };
+
+  const isAdmin = () => user?.roles?.includes('ADMIN') || false;
+  const isRepartidor = () => user?.roles?.includes('REPARTIDOR') || false;
+  const isCliente = () => user?.roles?.includes('CLIENTE') || false;
+  const hasRole = (role) => user?.roles?.includes(role) || false;
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      login, 
-      register, 
-      logout, 
-      isAuthenticated: !!user 
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      getUserRole,
+      isAdmin,
+      isRepartidor,
+      isCliente,
+      hasRole,
+      isAuthenticated: !!user,
+      token: localStorage.getItem('token')
     }}>
       {children}
     </AuthContext.Provider>

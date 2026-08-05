@@ -1,9 +1,9 @@
 import sequelize from "../config/database.js";
 import { Op } from 'sequelize';
+import PDFDocument from 'pdfkit';
+import Inventario from '../models/inventario.js';
 
-// ============================================
 // REPORTE 1: Ventas por período
-// ============================================
 export const reporteVentasPorPeriodo = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -29,12 +29,11 @@ export const reporteVentasPorPeriodo = async (req, res) => {
             ORDER BY fecha DESC
         `;
 
-        const [results] = await sequelize.query(query, {
+        const results = await sequelize.query(query, {
             replacements: { fecha_inicio, fecha_fin },
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Resumen general
         const queryResumen = `
             SELECT 
                 COUNT(DISTINCT id_pedido) as total_pedidos,
@@ -70,9 +69,7 @@ export const reporteVentasPorPeriodo = async (req, res) => {
     }
 };
 
-// ============================================
 // REPORTE 2: Productos más vendidos
-// ============================================
 export const reporteProductosMasVendidos = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
@@ -125,9 +122,7 @@ export const reporteProductosMasVendidos = async (req, res) => {
     }
 };
 
-// ============================================
-// REPORTE 3: Desempeño de repartidores
-// ============================================
+// REPORTE 3: Desempeño de repartidores (CORREGIDO)
 export const reporteDesempenoRepartidores = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -136,13 +131,11 @@ export const reporteDesempenoRepartidores = async (req, res) => {
         const replacements = {};
 
         if (fecha_inicio && fecha_fin) {
-            whereClause = 'AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin';
+            whereClause = 'AND d.fecha_entrega BETWEEN :fecha_inicio AND :fecha_fin';
             replacements.fecha_inicio = fecha_inicio;
             replacements.fecha_fin = fecha_fin;
         }
 
-        // Nota: Asumiendo que los repartidores están asociados a pedidos
-        // Si no tienes esa relación, ajusta la consulta
         const query = `
             SELECT 
                 u.id_usuario,
@@ -151,19 +144,21 @@ export const reporteDesempenoRepartidores = async (req, res) => {
                 u.ciudad,
                 v.tipo as tipo_vehiculo,
                 v.placa,
-                COUNT(DISTINCT p.id_pedido) as pedidos_asignados,
-                SUM(p.total) as valor_total_entregas,
-                AVG(p.total) as promedio_venta
+                COUNT(DISTINCT d.id_pedido) as pedidos_asignados,
+                SUM(CASE WHEN d.estado = 'ENTREGADO' THEN 1 ELSE 0 END) as pedidos_entregados,
+                SUM(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE 0 END) as valor_total_entregas,
+                AVG(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE NULL END) as promedio_venta,
+                u.estado as usuario_estado
             FROM USUARIOS u
             INNER JOIN VEHICULOS v ON u.id_usuario = v.id_usuario
             INNER JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
             INNER JOIN ROLES r ON ru.id_rol = r.id_rol
-            LEFT JOIN PEDIDOS p ON u.id_usuario = p.id_usuario
-                AND p.estado = 'ENTREGADO'
-                ${whereClause}
+            INNER JOIN DISTRIBUCIONES d ON u.id_usuario = d.id_usuario
+            LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
             WHERE r.nombre = 'REPARTIDOR'
-            GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.placa
-            ORDER BY pedidos_asignados DESC
+            ${whereClause}
+            GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.placa, u.estado
+            ORDER BY pedidos_entregados DESC, pedidos_asignados DESC
         `;
 
         const results = await sequelize.query(query, {
@@ -185,9 +180,7 @@ export const reporteDesempenoRepartidores = async (req, res) => {
     }
 };
 
-// ============================================
 // REPORTE 4: Estado de pedidos
-// ============================================
 export const reporteEstadoPedidos = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -214,12 +207,15 @@ export const reporteEstadoPedidos = async (req, res) => {
             GROUP BY estado
             ORDER BY 
                 CASE estado
-                    WHEN 'PENDIENTE' THEN 1
-                    WHEN 'EN_PROCESO' THEN 2
-                    WHEN 'ENVIADO' THEN 3
-                    WHEN 'ENTREGADO' THEN 4
-                    WHEN 'CANCELADO' THEN 5
-                    ELSE 6
+                    WHEN 'Pendiente' THEN 1
+                    WHEN 'Abonado' THEN 2
+                    WHEN 'Listo' THEN 3
+                    WHEN 'Pagado' THEN 4
+                    WHEN 'En Proceso' THEN 5
+                    WHEN 'Enviado' THEN 6
+                    WHEN 'Entregado' THEN 7
+                    WHEN 'Cancelado' THEN 8
+                    ELSE 9
                 END
         `;
 
@@ -228,7 +224,6 @@ export const reporteEstadoPedidos = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Calcular totales
         const totales = results.reduce((acc, item) => {
             acc.total_pedidos += parseInt(item.cantidad);
             acc.monto_total += parseFloat(item.monto_total);
@@ -252,9 +247,7 @@ export const reporteEstadoPedidos = async (req, res) => {
     }
 };
 
-// ============================================
 // REPORTE 5: Clientes frecuentes
-// ============================================
 export const reporteClientesFrecuentes = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
@@ -312,9 +305,7 @@ export const reporteClientesFrecuentes = async (req, res) => {
     }
 };
 
-// ============================================
-// REPORTE 6: Resumen general del negocio
-// ============================================
+// REPORTE 6: Resumen general del negocio (CORREGIDO)
 export const reporteResumenGeneral = async (req, res) => {
     try {
         const queries = {
@@ -338,18 +329,23 @@ export const reporteResumenGeneral = async (req, res) => {
             total_pedidos: `
                 SELECT COUNT(*) as total, SUM(total) as monto_total 
                 FROM PEDIDOS 
-                WHERE estado != 'CANCELADO'
+                WHERE estado != 'Cancelado'
             `,
             pedidos_ultimo_mes: `
                 SELECT COUNT(*) as total, SUM(total) as monto_total 
                 FROM PEDIDOS 
                 WHERE fecha_pedido >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                AND estado != 'CANCELADO'
+                AND estado != 'Cancelado'
             `,
-            formulas_activas: `
+            formulas_aprobadas: `
                 SELECT COUNT(*) as total 
                 FROM FORMULAS 
-                WHERE estado = 'ACTIVO'
+                WHERE estado = 'Aprobado'
+            `,
+            formulas_pendientes: `
+                SELECT COUNT(*) as total 
+                FROM FORMULAS 
+                WHERE estado = 'Pendiente'
             `,
             ingresos_por_mes: `
                 SELECT 
@@ -358,7 +354,7 @@ export const reporteResumenGeneral = async (req, res) => {
                     SUM(total) as ingresos,
                     SUM(costo_envio) as envios
                 FROM PEDIDOS 
-                WHERE estado != 'CANCELADO'
+                WHERE estado != 'Cancelado'
                 AND fecha_pedido >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
                 GROUP BY DATE_FORMAT(fecha_pedido, '%Y-%m')
                 ORDER BY mes DESC
@@ -385,7 +381,8 @@ export const reporteResumenGeneral = async (req, res) => {
                 ingresos_totales: results.total_pedidos?.monto_total || 0,
                 pedidos_ultimo_mes: results.pedidos_ultimo_mes?.total || 0,
                 ingresos_ultimo_mes: results.pedidos_ultimo_mes?.monto_total || 0,
-                formulas_activas: results.formulas_activas?.total || 0,
+                formulas_aprobadas: results.formulas_aprobadas?.total || 0,
+                formulas_pendientes: results.formulas_pendientes?.total || 0,
                 ingresos_por_mes: results.ingresos_por_mes || []
             }
         });
@@ -399,9 +396,7 @@ export const reporteResumenGeneral = async (req, res) => {
     }
 };
 
-// ============================================
 // REPORTE 7: Ventas por categoría
-// ============================================
 export const reporteVentasPorCategoria = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -426,7 +421,7 @@ export const reporteVentasPorCategoria = async (req, res) => {
             INNER JOIN PRODUCTOS pr ON c.id_categoria = pr.id_categoria
             INNER JOIN PEDIDOS_PRODUCTOS pp ON pr.id_producto = pp.id_producto
             INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
-            WHERE p.estado != 'CANCELADO'
+            WHERE p.estado != 'Cancelado'
             ${whereClause}
             GROUP BY c.id_categoria, c.tipo_categoria
             ORDER BY ingresos DESC
@@ -437,7 +432,6 @@ export const reporteVentasPorCategoria = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Calcular totales
         const totales = results.reduce((acc, item) => {
             acc.total_unidades += parseInt(item.unidades_vendidas || 0);
             acc.total_ingresos += parseFloat(item.ingresos || 0);
@@ -461,9 +455,7 @@ export const reporteVentasPorCategoria = async (req, res) => {
     }
 };
 
-// ============================================
-// REPORTE 8: Análisis de fórmulas
-// ============================================
+// REPORTE 8: Análisis de fórmulas (CORREGIDO)
 export const reporteAnalisisFormulas = async (req, res) => {
     try {
         const query = `
@@ -474,7 +466,7 @@ export const reporteAnalisisFormulas = async (req, res) => {
                 SUM(f.costo) as costo_total,
                 COUNT(DISTINCT f.id_usuario) as clientes_unicos
             FROM FORMULAS f
-            WHERE f.estado = 'ACTIVO'
+            WHERE f.estado = 'Aprobado'
             GROUP BY f.condicion
             ORDER BY cantidad DESC
         `;
@@ -483,19 +475,33 @@ export const reporteAnalisisFormulas = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Obtener tendencia mensual
         const queryTendencia = `
             SELECT 
-                DATE_FORMAT(fecha_creacion, '%Y-%m') as mes,
+                DATE_FORMAT(f.fecha_creacion, '%Y-%m') as mes,
                 COUNT(*) as nuevas_formulas,
-                AVG(costo) as costo_promedio
-            FROM FORMULAS
-            WHERE fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-            GROUP BY DATE_FORMAT(fecha_creacion, '%Y-%m')
+                AVG(f.costo) as costo_promedio,
+                SUM(CASE WHEN f.estado = 'Aprobado' THEN 1 ELSE 0 END) as aprobadas
+            FROM FORMULAS f
+            WHERE f.fecha_creacion >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(f.fecha_creacion, '%Y-%m')
             ORDER BY mes DESC
         `;
 
         const tendencia = await sequelize.query(queryTendencia, {
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Estadísticas adicionales de fórmulas
+        const queryEstadisticas = `
+            SELECT 
+                estado,
+                COUNT(*) as total,
+                AVG(costo) as costo_promedio
+            FROM FORMULAS
+            GROUP BY estado
+        `;
+
+        const estadisticas = await sequelize.query(queryEstadisticas, {
             type: sequelize.QueryTypes.SELECT
         });
 
@@ -504,7 +510,8 @@ export const reporteAnalisisFormulas = async (req, res) => {
             data: {
                 distribucion_condiciones: results,
                 tendencia_mensual: tendencia,
-                total_formulas: results.reduce((acc, item) => acc + parseInt(item.cantidad), 0)
+                estadisticas_estado: estadisticas,
+                total_formulas_aprobadas: results.reduce((acc, item) => acc + parseInt(item.cantidad), 0)
             }
         });
 
@@ -515,4 +522,528 @@ export const reporteAnalisisFormulas = async (req, res) => {
             message: 'Error interno del servidor'
         });
     }
+};
+
+// REPORTE 9: Generar PDF (CORREGIDO)
+export const generarReportePDF = async (req, res) => {
+    try {
+        const { tipo, periodo, fecha_inicio, fecha_fin } = req.body;
+
+        console.log(`📡 Generando PDF: ${tipo} - ${periodo}`);
+
+        let datos = await obtenerDatosParaPDF(tipo, periodo, fecha_inicio, fecha_fin);
+
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50,
+            info: {
+                Title: `Reporte de ${tipo}`,
+                Author: 'Óptica Balamb',
+                Subject: `Reporte generado el ${new Date().toLocaleDateString('es-CO')}`
+            }
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Reporte_${tipo}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+        doc.pipe(res);
+        await dibujarReportePDF(doc, datos, tipo, periodo);
+        doc.end();
+
+    } catch (error) {
+        console.error('❌ Error al generar PDF:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al generar el reporte',
+            error: error.message
+        });
+    }
+};
+
+// ==================== FUNCIONES DE OBTENCIÓN DE DATOS PARA PDF (CORREGIDAS) ====================
+
+const obtenerDatosParaPDF = async (tipo, periodo, fechaInicio, fechaFin) => {
+    const hoy = new Date();
+    let fechaDesde = new Date();
+    let fechaHasta = new Date();
+
+    switch (periodo) {
+        case 'diario':
+            fechaDesde.setHours(0, 0, 0, 0);
+            fechaHasta.setHours(23, 59, 59, 999);
+            break;
+        case 'semanal':
+            fechaDesde.setDate(hoy.getDate() - 7);
+            fechaDesde.setHours(0, 0, 0, 0);
+            break;
+        case 'mensual':
+            fechaDesde.setMonth(hoy.getMonth() - 1);
+            fechaDesde.setHours(0, 0, 0, 0);
+            break;
+        case 'anual':
+            fechaDesde.setFullYear(hoy.getFullYear() - 1);
+            fechaDesde.setHours(0, 0, 0, 0);
+            break;
+        default:
+            fechaDesde.setDate(hoy.getDate() - 30);
+            fechaDesde.setHours(0, 0, 0, 0);
+    }
+
+    if (fechaInicio && fechaFin) {
+        fechaDesde = new Date(fechaInicio);
+        fechaHasta = new Date(fechaFin);
+    }
+
+    const replacements = {
+        fecha_inicio: fechaDesde.toISOString().split('T')[0],
+        fecha_fin: fechaHasta.toISOString().split('T')[0]
+    };
+
+    let datos = {};
+
+    switch (tipo) {
+        case 'ventas':
+            datos = await obtenerDatosVentasSQL(replacements);
+            break;
+        case 'inventario':
+            datos = await obtenerDatosInventarioSQL();
+            break;
+        case 'repartidores':
+            datos = await obtenerDatosRepartidoresSQL(replacements);
+            break;
+        case 'clientes':
+            datos = await obtenerDatosClientesSQL(replacements);
+            break;
+        case 'productos-mas-vendidos':
+            datos = await obtenerProductosMasVendidosSQL(replacements);
+            break;
+        case 'estado-pedidos':
+            datos = await obtenerEstadoPedidosSQL(replacements);
+            break;
+        case 'ventas-categoria':
+            datos = await obtenerVentasCategoriaSQL(replacements);
+            break;
+        default:
+            throw new Error('Tipo de reporte no válido');
+    }
+
+    return {
+        ...datos,
+        fechaGeneracion: new Date().toLocaleString('es-CO'),
+        periodo: periodo,
+        tipo: tipo,
+        fechaInicio: fechaDesde.toISOString().split('T')[0],
+        fechaFin: fechaHasta.toISOString().split('T')[0]
+    };
+};
+
+const obtenerDatosVentasSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            DATE(p.fecha_pedido) as fecha,
+            COUNT(DISTINCT p.id_pedido) as total_pedidos,
+            SUM(p.total) as ventas_totales,
+            AVG(p.total) as promedio_venta,
+            COUNT(DISTINCT p.id_usuario) as clientes_unicos
+        FROM PEDIDOS p
+        WHERE p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        AND p.estado != 'Cancelado'
+        GROUP BY DATE(p.fecha_pedido)
+        ORDER BY fecha DESC
+    `;
+
+    const detalle = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    const resumenQuery = `
+        SELECT 
+            COUNT(DISTINCT id_pedido) as total_pedidos,
+            SUM(total) as ventas_totales,
+            AVG(total) as promedio_venta,
+            COUNT(DISTINCT id_usuario) as clientes_unicos
+        FROM PEDIDOS
+        WHERE fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        AND estado != 'Cancelado'
+    `;
+
+    const [resumen] = await sequelize.query(resumenQuery, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    return {
+        titulo: 'Reporte de Ventas',
+        resumen: resumen,
+        detalle: detalle
+    };
+};
+
+const obtenerDatosInventarioSQL = async () => {
+    const productos = await Inventario.getAll();
+    
+    const totalProductos = productos.length;
+    const valorTotal = productos.reduce((sum, p) => sum + (parseFloat(p.precio) || 0), 0);
+
+    const porCategoria = {};
+    productos.forEach(p => {
+        const cat = p.tipo_categoria || 'Sin categoría';
+        if (!porCategoria[cat]) {
+            porCategoria[cat] = { cantidad: 0, valor: 0 };
+        }
+        porCategoria[cat].cantidad++;
+        porCategoria[cat].valor += parseFloat(p.precio) || 0;
+    });
+
+    return {
+        titulo: 'Reporte de Inventario',
+        totalProductos,
+        valorTotal,
+        porCategoria,
+        productos: productos.slice(0, 20)
+    };
+};
+
+const obtenerDatosRepartidoresSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            u.id_usuario,
+            u.nombre_completo as repartidor,
+            u.telefono,
+            u.ciudad,
+            v.tipo as tipo_vehiculo,
+            v.modelo,
+            v.placa,
+            COUNT(DISTINCT d.id_pedido) as pedidos_asignados,
+            SUM(CASE WHEN d.estado = 'ENTREGADO' THEN 1 ELSE 0 END) as pedidos_entregados,
+            SUM(CASE WHEN d.estado = 'ENTREGADO' THEN p.total ELSE 0 END) as valor_entregas,
+            u.estado as usuario_estado
+        FROM USUARIOS u
+        INNER JOIN VEHICULOS v ON u.id_usuario = v.id_usuario
+        INNER JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+        INNER JOIN ROLES r ON ru.id_rol = r.id_rol
+        INNER JOIN DISTRIBUCIONES d ON u.id_usuario = d.id_usuario
+        LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
+        WHERE r.nombre = 'REPARTIDOR'
+        AND d.fecha_entrega BETWEEN :fecha_inicio AND :fecha_fin
+        GROUP BY u.id_usuario, u.nombre_completo, u.telefono, u.ciudad, v.tipo, v.modelo, v.placa, u.estado
+        ORDER BY pedidos_entregados DESC, pedidos_asignados DESC
+    `;
+
+    const repartidores = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    return {
+        titulo: 'Reporte de Repartidores',
+        totalRepartidores: repartidores.length,
+        repartidores
+    };
+};
+
+const obtenerDatosClientesSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            u.id_usuario,
+            u.nombre_completo as cliente,
+            u.email,
+            u.telefono,
+            u.ciudad,
+            COUNT(p.id_pedido) as total_pedidos,
+            SUM(p.total) as total_gastado,
+            AVG(p.total) as promedio_gasto
+        FROM USUARIOS u
+        INNER JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+        INNER JOIN ROLES r ON ru.id_rol = r.id_rol
+        INNER JOIN PEDIDOS p ON u.id_usuario = p.id_usuario
+        WHERE r.nombre = 'CLIENTE'
+        AND p.estado != 'Cancelado'
+        AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        GROUP BY u.id_usuario, u.nombre_completo, u.email, u.telefono, u.ciudad
+        HAVING total_pedidos > 0
+        ORDER BY total_gastado DESC
+        LIMIT 20
+    `;
+
+    const clientes = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    const totalQuery = `
+        SELECT COUNT(DISTINCT id_usuario) as total
+        FROM PEDIDOS
+        WHERE fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        AND estado != 'Cancelado'
+    `;
+
+    const [total] = await sequelize.query(totalQuery, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    return {
+        titulo: 'Reporte de Clientes',
+        totalClientes: total?.total || 0,
+        clientes
+    };
+};
+
+const obtenerProductosMasVendidosSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            pr.id_producto,
+            pr.nombre as producto,
+            pr.marca,
+            pr.precio,
+            c.tipo_categoria as categoria,
+            SUM(pp.cant_productos) as total_vendidos,
+            SUM(pp.cant_productos * pr.precio) as ingreso_total
+        FROM PEDIDOS_PRODUCTOS pp
+        INNER JOIN PRODUCTOS pr ON pp.id_producto = pr.id_producto
+        INNER JOIN CATEGORIAS c ON pr.id_categoria = c.id_categoria
+        INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
+        WHERE p.estado != 'Cancelado'
+        AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        GROUP BY pr.id_producto, pr.nombre, pr.marca, pr.precio, c.tipo_categoria
+        ORDER BY total_vendidos DESC
+        LIMIT 10
+    `;
+
+    const productos = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    return {
+        titulo: 'Productos Más Vendidos',
+        productos
+    };
+};
+
+const obtenerEstadoPedidosSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            estado,
+            COUNT(*) as cantidad,
+            SUM(total) as monto_total,
+            AVG(total) as promedio
+        FROM PEDIDOS
+        WHERE fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        GROUP BY estado
+        ORDER BY 
+            CASE estado
+                WHEN 'Pendiente' THEN 1
+                WHEN 'Abonado' THEN 2
+                WHEN 'Listo' THEN 3
+                WHEN 'Pagado' THEN 4
+                WHEN 'En Proceso' THEN 5
+                WHEN 'Enviado' THEN 6
+                WHEN 'Entregado' THEN 7
+                WHEN 'Cancelado' THEN 8
+                ELSE 9
+            END
+    `;
+
+    const detalle = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    const totales = detalle.reduce((acc, item) => {
+        acc.total_pedidos += parseInt(item.cantidad);
+        acc.monto_total += parseFloat(item.monto_total);
+        return acc;
+    }, { total_pedidos: 0, monto_total: 0 });
+
+    return {
+        titulo: 'Estado de Pedidos',
+        resumen: totales,
+        detalle
+    };
+};
+
+const obtenerVentasCategoriaSQL = async (replacements) => {
+    const query = `
+        SELECT 
+            c.tipo_categoria as categoria,
+            COUNT(DISTINCT p.id_pedido) as pedidos,
+            SUM(pp.cant_productos) as unidades_vendidas,
+            SUM(pp.cant_productos * pr.precio) as ingresos
+        FROM CATEGORIAS c
+        INNER JOIN PRODUCTOS pr ON c.id_categoria = pr.id_categoria
+        INNER JOIN PEDIDOS_PRODUCTOS pp ON pr.id_producto = pp.id_producto
+        INNER JOIN PEDIDOS p ON pp.id_pedido = p.id_pedido
+        WHERE p.estado != 'Cancelado'
+        AND p.fecha_pedido BETWEEN :fecha_inicio AND :fecha_fin
+        GROUP BY c.id_categoria, c.tipo_categoria
+        ORDER BY ingresos DESC
+    `;
+
+    const detalle = await sequelize.query(query, {
+        replacements,
+        type: sequelize.QueryTypes.SELECT
+    });
+
+    const totales = detalle.reduce((acc, item) => {
+        acc.total_unidades += parseInt(item.unidades_vendidas || 0);
+        acc.total_ingresos += parseFloat(item.ingresos || 0);
+        return acc;
+    }, { total_unidades: 0, total_ingresos: 0 });
+
+    return {
+        titulo: 'Ventas por Categoría',
+        resumen: totales,
+        detalle
+    };
+};
+
+// FUNCIÓN PARA DIBUJAR EL PDF
+const dibujarReportePDF = async (doc, datos, tipo, periodo) => {
+    // Logo y título
+    doc.fontSize(24)
+       .fillColor('#B90F0F')
+       .text('ÓPTICA BALAMB', { align: 'center' })
+       .moveDown();
+
+    doc.fontSize(18)
+       .fillColor('#333333')
+       .text(datos.titulo || `Reporte de ${tipo}`, { align: 'center' })
+       .moveDown();
+
+    // Información del reporte
+    doc.fontSize(10)
+       .fillColor('#666666')
+       .text(`Generado: ${datos.fechaGeneracion}`, { align: 'right' })
+       .text(`Período: ${periodo}`, { align: 'right' })
+       .text(`Fecha Inicio: ${datos.fechaInicio || 'N/A'}`, { align: 'right' })
+       .text(`Fecha Fin: ${datos.fechaFin || 'N/A'}`, { align: 'right' })
+       .moveDown(2);
+
+    // Línea separadora
+    doc.strokeColor('#CCCCCC')
+       .lineWidth(1)
+       .moveTo(50, doc.y)
+       .lineTo(550, doc.y)
+       .stroke()
+       .moveDown();
+
+    // SECCIÓN: Resumen
+    doc.fontSize(14)
+       .fillColor('#B90F0F')
+       .text('📊 RESUMEN', { underline: true })
+       .moveDown(0.5);
+
+    doc.fontSize(11)
+       .fillColor('#333333');
+
+    if (datos.resumen) {
+        const resumen = datos.resumen;
+        Object.entries(resumen).forEach(([key, value]) => {
+            const label = {
+                total_pedidos: 'Total Pedidos',
+                ventas_totales: 'Ventas Totales',
+                promedio_venta: 'Promedio Venta',
+                clientes_unicos: 'Clientes Únicos',
+                monto_total: 'Monto Total',
+                total_unidades: 'Unidades Vendidas',
+                total_ingresos: 'Ingresos Totales'
+            }[key] || key;
+
+            let formattedValue = value;
+            if (key.includes('total') || key.includes('ventas') || key.includes('ingresos') || key.includes('monto')) {
+                formattedValue = `$${parseFloat(value || 0).toLocaleString('es-CO')}`;
+            }
+
+            doc.text(`  • ${label}: ${formattedValue}`);
+        });
+    } else if (tipo === 'repartidores') {
+        doc.text(`  • Total Repartidores: ${datos.totalRepartidores || 0}`);
+    } else if (tipo === 'inventario') {
+        doc.text(`  • Total Productos: ${datos.totalProductos || 0}`);
+        doc.text(`  • Valor Total: $${(datos.valorTotal || 0).toLocaleString('es-CO')}`);
+    }
+
+    doc.moveDown(2);
+
+    // SECCIÓN: Detalle
+    doc.fontSize(14)
+       .fillColor('#B90F0F')
+       .text('📋 DETALLE', { underline: true })
+       .moveDown(0.5);
+
+    doc.fontSize(9)
+       .fillColor('#333333');
+
+    if (tipo === 'ventas' && datos.detalle) {
+        doc.text('Ventas por día:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.slice(0, 15).forEach((item) => {
+            doc.text(
+                `  ${item.fecha} - Pedidos: ${item.total_pedidos} - Ventas: $${(item.ventas_totales || 0).toLocaleString('es-CO')} - Promedio: $${(item.promedio_venta || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'inventario' && datos.porCategoria) {
+        doc.text('Productos por categoría:', { underline: true });
+        doc.moveDown(0.3);
+        Object.entries(datos.porCategoria).forEach(([categoria, data]) => {
+            doc.text(`  ${categoria}: ${data.cantidad} productos ($${data.valor.toLocaleString('es-CO')})`);
+        });
+        if (datos.productos) {
+            doc.moveDown().text('Top productos:', { underline: true });
+            doc.moveDown(0.3);
+            datos.productos.slice(0, 10).forEach((p, i) => {
+                doc.text(`  ${i+1}. ${p.nombre} - $${(p.precio || 0).toLocaleString('es-CO')}`);
+            });
+        }
+    } else if (tipo === 'repartidores' && datos.repartidores) {
+        doc.text('Repartidores:', { underline: true });
+        doc.moveDown(0.3);
+        datos.repartidores.forEach((r) => {
+            doc.text(
+                `  ${r.repartidor} - ${r.tipo_vehiculo || 'Sin vehículo'} - ${r.pedidos_asignados || 0} entregas - Estado: ${r.estado || 'N/A'}`
+            );
+        });
+    } else if (tipo === 'clientes' && datos.clientes) {
+        doc.text('Top clientes:', { underline: true });
+        doc.moveDown(0.3);
+        datos.clientes.slice(0, 10).forEach((c, i) => {
+            doc.text(
+                `  ${i+1}. ${c.cliente} - ${c.total_pedidos} pedidos - $${(c.total_gastado || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'productos-mas-vendidos' && datos.productos) {
+        doc.text('Top productos:', { underline: true });
+        doc.moveDown(0.3);
+        datos.productos.forEach((p, i) => {
+            doc.text(
+                `  ${i+1}. ${p.producto} - ${p.total_vendidos} vendidos - $${(p.ingreso_total || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'estado-pedidos' && datos.detalle) {
+        doc.text('Distribución de pedidos:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.forEach((item) => {
+            doc.text(
+                `  ${item.estado}: ${item.cantidad} pedidos - $${(item.monto_total || 0).toLocaleString('es-CO')}`
+            );
+        });
+    } else if (tipo === 'ventas-categoria' && datos.detalle) {
+        doc.text('Ventas por categoría:', { underline: true });
+        doc.moveDown(0.3);
+        datos.detalle.forEach((item) => {
+            doc.text(
+                `  ${item.categoria}: ${item.unidades_vendidas || 0} unidades - $${(item.ingresos || 0).toLocaleString('es-CO')}`
+            );
+        });
+    }
+
+    // Pie de página
+    doc.moveDown(3)
+       .fontSize(8)
+       .fillColor('#999999')
+       .text('Reporte generado automáticamente por el sistema de Óptica Balamb', { align: 'center' })
+       .text(`Página ${doc.pageNumber}`, { align: 'center' });
 };

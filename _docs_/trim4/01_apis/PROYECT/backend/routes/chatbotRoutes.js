@@ -38,7 +38,7 @@ const router = express.Router();
  *                   type: string
  *                 intencion:
  *                   type: string
- *                   enum: [saludo, productos, horario, envio, formulamedica, pago, devolucion, despedida, ayuda, default]
+ *                   enum: [saludo, productos, horario, envio, formulamedica, pago, devolucion, despedida, ayuda, default, precios, contacto, garantia]
  *                 timestamp:
  *                   type: string
  *                   format: date-time
@@ -51,13 +51,13 @@ router.post("/mensaje", chatbotController.enviarMensaje);
 
 /**
  * @swagger
- * /api/chatbot/faq:
+ * /api/chatbot/botones:
  *   get:
- *     summary: Obtener todas las preguntas frecuentes
+ *     summary: Obtener botones rápidos disponibles
  *     tags: [ChatBot]
  *     responses:
  *       200:
- *         description: Lista de preguntas frecuentes
+ *         description: Lista de botones
  *         content:
  *           application/json:
  *             schema:
@@ -67,65 +67,20 @@ router.post("/mensaje", chatbotController.enviarMensaje);
  *                   type: boolean
  *                 count:
  *                   type: integer
- *                 faqs:
+ *                 botones:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
  *                       id:
  *                         type: integer
- *                       pregunta:
+ *                       label:
  *                         type: string
- *                       respuesta:
+ *                       value:
  *                         type: string
  *       500:
- *         description: Error al obtener preguntas frecuentes
+ *         description: Error al obtener botones
  */
-router.get("/faq", chatbotController.getFaqs);
-
-/**
- * @swagger
- * /api/chatbot/faq/buscar:
- *   get:
- *     summary: Buscar preguntas frecuentes por texto
- *     tags: [ChatBot]
- *     parameters:
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *         required: true
- *         description: Termino de busqueda
- *     responses:
- *       200:
- *         description: Resultados de la busqueda
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 query:
- *                   type: string
- *                 count:
- *                   type: integer
- *                 resultados:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       pregunta:
- *                         type: string
- *                       respuesta:
- *                         type: string
- *       400:
- *         description: Falta el termino de busqueda
- *       500:
- *         description: Error al buscar preguntas frecuentes
- */
-router.get("/faq/buscar", chatbotController.searchFaqs);
+router.get("/botones", chatbotController.getBotones);
 
 export default router;

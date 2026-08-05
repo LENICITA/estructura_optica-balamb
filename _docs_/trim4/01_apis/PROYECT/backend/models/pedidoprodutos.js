@@ -1,4 +1,3 @@
-// models/PedidoProducto.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -140,4 +139,5 @@ const PedidoProductoModelo  = {
   }
 };
 
+export { PedidoProducto }; 
 export default PedidoProductoModelo;

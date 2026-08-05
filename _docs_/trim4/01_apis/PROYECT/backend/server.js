@@ -1,4 +1,3 @@
-// server.js (versión ES Modules)
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -11,9 +10,9 @@ import distribucionRoutes from './routes/distribucionRoutes.js';
 import pagosRoutes from './routes/PagosRoutes.js';
 import formulaRoutes from './routes/formulaRoutes.js';
 import pedidoRoutes from './routes/pedidoRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
 import sequelize from './config/database.js';
-import { Usuario, Vehiculo, Role, RolUsuario } from './models/relaciones.js';
+import { Usuario, Vehiculo, Role, RolUsuario, Pedido, Distribucion } from './models/relaciones.js';
+import contactoRoutes from './routes/contactoRoutes.js';
 
 dotenv.config();
 
@@ -36,7 +35,7 @@ app.use('/api/distribucion', distribucionRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/formulas', formulaRoutes);
 app.use('/api/pedidos', pedidoRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/contacto', contactoRoutes);
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
     res.json({

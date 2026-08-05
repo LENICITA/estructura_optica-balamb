@@ -16,6 +16,9 @@ router.post('/', authMiddleware, adminMiddleware, distribucionController.asignar
 // Obtener todas las distribuciones
 router.get('/admin/todas', authMiddleware, adminMiddleware, distribucionController.obtenerTodas);
 
+// Obtener distribuciones externas (fuera de Bogotá)
+router.get('/admin/externas', authMiddleware, adminMiddleware, distribucionController.obtenerDistribucionesExternas);
+
 // Cancelar entrega
 router.put('/admin/:id/cancelar', authMiddleware, adminMiddleware, distribucionController.cancelarEntrega);
 

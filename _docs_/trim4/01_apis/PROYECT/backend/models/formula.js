@@ -1,4 +1,3 @@
-// models/Formula.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -51,9 +50,7 @@ const Formulas = sequelize.define('Formulas', {
 // ========== MÉTODOS DEL MODELO ==========
 const Formula = {
 
-  // ============================================
   // CLIENTE
-  // ============================================
 
   // Crear una nueva fórmula (cliente sube)
   crear: async (data) => {
@@ -65,6 +62,15 @@ const Formula = {
       estado: 'Pendiente'
     });
     return formula.id_formula;
+  },
+  
+
+  eliminar: async (id_formula) => {
+    const formula = await Formulas.findByPk(id_formula);
+    if (!formula) return false;
+    
+    await formula.destroy();
+    return true;
   },
 
   // Obtener fórmulas de un cliente específico
@@ -82,9 +88,7 @@ const Formula = {
     return formula;
   },
 
-  // ============================================
   // ADMIN
-  // ============================================
 
   // Obtener todas las fórmulas (admin ve todas)
   obtenerTodas: async () => {
@@ -132,9 +136,7 @@ const Formula = {
     return true;
   },
 
-  // ============================================
   // UTILIDADES
-  // ============================================
 
   // Verificar si una fórmula pertenece a un usuario
   perteneceAUsuario: async (id_formula, id_usuario) => {
@@ -163,5 +165,7 @@ const Formula = {
     return formulas;
   }
 };
+
+export { Formulas };
 
 export default Formula;
