@@ -1,7 +1,7 @@
 //Boton de envio 
 import React from 'react'
 import { TouchableOpacity, Text, StyleSheet } from 'react-native'
-import { MyColors } from '../theme/AppTheme';
+import { MyColors } from '../constants/AppTheme';
 
 interface Props {
     text: string;

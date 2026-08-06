@@ -14,12 +14,12 @@ export const RegisterScreen = () => {
     return (
         <View style={styles.container}>
             <Image
-                source={require('../../../../assets/chef.jpg')}
+                source={require('../../../assets/img/chef.jpg')}
                 style={styles.imageBackground}
             />
             <View style={styles.logoContainer}>
                 <Image
-                    source={require('../../../../assets/logo.png')}
+                    source={require('../../../assets/img/logo.png')}
                     style={styles.logoImage}
                 />
                 <Text style={styles.logoText}>FOOD APP</Text>
@@ -28,7 +28,7 @@ export const RegisterScreen = () => {
                 <ScrollView>
                     <Text style={styles.formText}>REGÍSTRATE</Text>
                     <CustomTextInput
-                     image={require('../../../../assets/user.png')}
+                     image={require('../../../assets/img/user.png')}
                      placeholder='Nombres'
                      keyboardType='default'
                      property='name'
@@ -36,7 +36,7 @@ export const RegisterScreen = () => {
                      value={name}
                      />
                     <CustomTextInput
-                     image={require('../../../../assets/my_user.png')}
+                     image={require('../../../assets/img/my_user.png')}
                      placeholder='Apellidos'
                      keyboardType='default'
                      property='lastname'
@@ -44,7 +44,7 @@ export const RegisterScreen = () => {
                      value={lastname}
                      />
                     <CustomTextInput
-                     image={require('../../../../assets/email.png')}
+                     image={require('../../../assets/img/email.png')}
                      placeholder='Correo Electrónico'
                      keyboardType='email-address'
                      property='email'
@@ -52,7 +52,7 @@ export const RegisterScreen = () => {
                      value={email}
                      />
                     <CustomTextInput
-                     image={require('../../../../assets/phone.png')}
+                     image={require('../../../assets/img/phone.png')}
                      placeholder='Teléfono'
                      keyboardType='numeric'
                      property='phone'
@@ -60,7 +60,7 @@ export const RegisterScreen = () => {
                      value={phone}
                      />
                     <CustomTextInput
-                     image={require('../../../../assets/password.png')}
+                     image={require('../../../assets/img/password.png')}
                      placeholder='Contraseña'
                      keyboardType='default'
                      property='password'
@@ -69,7 +69,7 @@ export const RegisterScreen = () => {
                      secureTextEntry={true}
                     />
                     <CustomTextInput
-                     image={require('../../../../assets/confirm_password.png')}
+                     image={require('../../../assets/img/confirm_password.png')}
                      placeholder='Confirmar Contraseña'
                      keyboardType='default'
                      property='confirmPassword'

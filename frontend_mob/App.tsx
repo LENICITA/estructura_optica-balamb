@@ -3,17 +3,18 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, StyleSheet, StatusBar, View } from 'react-native';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider } from './src/contexts/AuthContext';
 
 // Importa tus pantallas
-import DetalleRepartidor from './src/presentation/views/admin/detalleRepartidor';
-import Repartidores from './src/presentation/views/admin/dashboardRepartidores';
-import Home from './src/presentation/views/home/Home';
-import { RegisterScreen } from './src/presentation/views/register/Register';
+import DetalleRepartidor from './src/screens/admin/detalleRepartidor';
+import Repartidores from './src/screens/admin/dashboardRepartidores';
+import Home from './src/screens/home/Home';
+import { RegisterScreen } from './src/screens/register/Register';
+import PrincipalAdmin from './src/screens/admin/principalAdmin';
 
 // Importa Header y Footer
-import Header from './src/presentation/components/header';
-import Footer from './src/presentation/components/footer';
+import Header from './src/components/header';
+import Footer from './src/components/footer';
 
 // ====== DEFINICIÓN DE TIPOS DE RUTAS ======
 export type RootStackParamList = {
@@ -32,6 +33,8 @@ export type RootStackParamList = {
   };
   Carrito: undefined;
   Catalogo: undefined;
+  PrincipalAdmin: undefined;
+  
   
   // Pantallas sin Header y Footer
   RegisterScreen: undefined;
@@ -62,7 +65,7 @@ export default function App() {
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName="Repartidores"
+            initialRouteName="PrincipalAdmin"
             screenOptions={{
               headerShown: false,
               animation: 'slide_from_right',
@@ -74,6 +77,13 @@ export default function App() {
               {() => (
                 <Layout>
                   <Home />
+                </Layout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name='PrincipalAdmin'>
+              {() => (
+                <Layout>
+                  <PrincipalAdmin />
                 </Layout>
               )}
             </Stack.Screen>

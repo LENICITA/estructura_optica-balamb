@@ -24,7 +24,7 @@ export default function Home() {
     >
       {/* ===== BANNER HERO ===== */}
       <ImageBackground
-        source={require("../../../../assets/imagen-bg.jpeg")}
+        source={require("../../../assets/img/imagen-bg.jpeg")}
         style={[styles.hero, { height: height * 0.4 }]}
         resizeMode="cover"
       >
@@ -47,7 +47,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card.jpg")}
+            source={require("../../../assets/img/card.jpg")}
             style={styles.smallCard}
             imageStyle={styles.cardImage}
           >
@@ -64,7 +64,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card2.jpg")}
+            source={require("../../../assets/img/card2.jpg")}
             style={styles.smallCard}
             imageStyle={styles.cardImage}
           >
@@ -81,7 +81,7 @@ export default function Home() {
           activeOpacity={0.8}
         >
           <ImageBackground
-            source={require("../../../../assets/card3.jpg")}
+            source={require("../../../assets/img/card3.jpg")}
             style={styles.largeCard}
             imageStyle={styles.cardImage}
           >

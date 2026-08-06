@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
@@ -212,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuPress }) => {
             style={styles.logoContainer}
           >
             <Image 
-              source={require('../../../assets/logo2.jpeg')} 
+              source={require('../../assets/img/logo2.jpeg')} 
               style={styles.logo}
               resizeMode="contain"
             />
