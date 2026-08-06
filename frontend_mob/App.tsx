@@ -3,10 +3,10 @@
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DashboardRepartidores from './src/presentation/views/admin/dashboardRepartidores';
+import EditarRepartidor from './src/presentation/views/admin/EditarRepartidor';
 
 export type RootStackParamList = {
-  DashboardRepartidores: undefined;
+  EditarRepartidor: undefined;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -17,11 +17,11 @@ const App = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
-          name="DashboardRepartidores"
-          component={DashboardRepartidores}
+          name="EditarRepartidor"
+          component={EditarRepartidor}
           options={{
             headerShown: true,
-            title: "Registro",
+            title: "Editar Repartidor",
           }}
         />
       </Stack.Navigator>
