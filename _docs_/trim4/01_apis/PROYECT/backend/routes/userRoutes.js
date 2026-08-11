@@ -26,12 +26,8 @@ router.get('/clientes/count', authMiddleware, adminMiddleware, contarClientes);
 router.get('/perfil', authMiddleware, obtenerPerfil);
 router.put('/perfil', authMiddleware, actualizarPerfil);
 
-// PANEL DE CONTROL DE ADMIN PARA REPARTIDORES
-// CREAR REPARTIDOR
-router.get('/repartidores', listarRepartidores);
-
 // LISTAR TODOS LOS REPARTIDORES
-router.get('/repartidores', authMiddleware, adminMiddleware, listarRepartidores);
+router.get('/repartidores', listarRepartidores); // cambiar y poner auth y admin middleware
 
 // BUSCAR REPARTIDORES CON FILTROS
 router.get('/repartidores/buscar', authMiddleware, adminMiddleware, buscarRepartidores);

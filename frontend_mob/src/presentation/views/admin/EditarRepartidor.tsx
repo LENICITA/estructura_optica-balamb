@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,47 +13,110 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-/**
- * =============================================
- * 🎨 COMPONENTE: FormularioEditarRepartidor
- * 
- * VERSIÓN: SOLO CONTENIDO - SIN HEADER/FOOTER
- * 
- * USO: Este componente va dentro de tu vista
- * principal que ya tiene header y footer
- * =============================================
- */
+import api from "../../../services/api";
 
 function FormularioEditarRepartidor({ navigation, route }: { navigation: any; route?: any }) {
-  // =============================================
-  // 📌 DATOS DE PRUEBA (MOCK)
-  // =============================================
+
+  const repartidor = route?.params?.repartidorData;
+  const repartidorId = route?.params?.repartidorId;
+  
   const [formData, setFormData] = useState({
     datosPersonales: {
-      nombre_completo: 'Saida Rozo',
-      telefono: '3123456789',
-      email: 'saidarozo@email.com',
-      documento: '1234567890',
-      ciudad: 'Bogotá',
-      direccion: 'Calle 123 # 45-67',
-      fecha_nacimiento: '1990-01-15',
-      estado: 'ACTIVO',
+        nombre_completo: '',
+        telefono: '',
+        email: '',
+        documento: '',
+        ciudad: '',
+        direccion: '',
+        fecha_nacimiento: '',
+        estado: 'ACTIVO',
     },
     datosVehiculo: {
-      tipo: 'MOTO',
-      modelo: 'Yamaha XTZ 150',
-      placa: 'ABC-123',
-      color: 'Rojo',
+        tipo: '',
+        modelo: '',
+        placa: '',
+        color: '',
     }
-  });
+});
 
-  // =============================================
-  // 📌 ESTADOS DE UI
-  // =============================================
-  const [errores, setErrores] = useState<Record<string, string | null>>({});
-  const [formModificado, setFormModificado] = useState(false);
-  const [loading, setLoading] = useState(false);
+const [errores, setErrores] = useState<Record<string, string | null>>({});
+const [formModificado, setFormModificado] = useState(false);
+const [loading, setLoading] = useState(false);
+ 
+useEffect(() => {
+    const cargarRepartidor = async () => {
+        if (!repartidorId) {
+            Alert.alert(
+                'Error',
+                'No se encontró el ID del repartidor.'
+            );
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            console.log(
+                'Cargando repartidor:',
+                repartidorId
+            );
+
+            const response = await api.get(
+                `/usuarios/repartidores/${repartidorId}`
+            );
+
+            console.log(
+                'RESPUESTA REPARTIDOR:',
+                JSON.stringify(response.data, null, 2)
+            );
+
+            const r = response.data.data;
+
+            setFormData({
+                datosPersonales: {
+                    nombre_completo: r.nombre_completo || '',
+                    telefono: r.telefono || '',
+                    email: r.email || '',
+                    documento: r.documento
+                        ? String(r.documento)
+                        : '',
+                    ciudad: r.ciudad || '',
+                    direccion: r.direccion || '',
+                    fecha_nacimiento: r.fecha_nacimiento || '',
+                    estado: r.estado || 'ACTIVO',
+                },
+
+                datosVehiculo: {
+                    tipo: r.vehiculo?.tipo || '',
+                    modelo: r.vehiculo?.modelo || '',
+                    placa: r.vehiculo?.placa || '',
+                    color: r.vehiculo?.color || '',
+                }
+            });
+
+            setFormModificado(false);
+
+        } catch (error: any) {
+
+            console.error(
+                'Error al cargar repartidor:',
+                error.response?.data || error.message
+            );
+
+            Alert.alert(
+                'Error',
+                error.response?.data?.message ||
+                'No se pudieron cargar los datos del repartidor.'
+            );
+
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    cargarRepartidor();
+
+}, [repartidorId]);
 
   // =============================================
   // 📌 DATOS ESTÁTICOS (UI)
@@ -133,35 +196,30 @@ function FormularioEditarRepartidor({ navigation, route }: { navigation: any; ro
   };
 
   const handleSubmit = () => {
+
     if (!validarFormulario()) {
-      Alert.alert('Validación', 'Por favor, completa todos los campos obligatorios');
-      return;
+        Alert.alert(
+            'Validación',
+            'Por favor, completa todos los campos obligatorios'
+        );
+        return;
     }
 
     Alert.alert(
-      'Confirmar actualización',
-      `¿Estás seguro de actualizar los datos de "${formData.datosPersonales.nombre_completo}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Actualizar',
-          onPress: () => {
-            setLoading(true);
-            // Simular guardado
-            setTimeout(() => {
-              setLoading(false);
-              Alert.alert(
-                '¡Éxito! 🎉',
-                'Los datos se actualizaron correctamente',
-                [{ text: 'OK', onPress: () => navigation?.goBack() }]
-              );
-              setFormModificado(false);
-            }, 1500);
-          }
-        }
-      ]
+        'Confirmar actualización',
+        `¿Estás seguro de actualizar los datos de "${formData.datosPersonales.nombre_completo}"?`,
+        [
+            {
+                text: 'Cancelar',
+                style: 'cancel'
+            },
+            {
+                text: 'Actualizar',
+                onPress: actualizarRepartidor
+            }
+        ]
     );
-  };
+};
 
   const handleCancel = () => {
     if (formModificado) {
@@ -177,6 +235,78 @@ function FormularioEditarRepartidor({ navigation, route }: { navigation: any; ro
       navigation?.goBack();
     }
   };
+
+  const actualizarRepartidor = async () => {
+
+    try {
+
+        setLoading(true);
+
+        const datos = {
+            nombre_completo: formData.datosPersonales.nombre_completo,
+            telefono: formData.datosPersonales.telefono,
+            email: formData.datosPersonales.email,
+            documento: formData.datosPersonales.documento,
+            ciudad: formData.datosPersonales.ciudad,
+            direccion: formData.datosPersonales.direccion,
+            fecha_nacimiento: formData.datosPersonales.fecha_nacimiento,
+            estado: formData.datosPersonales.estado,
+
+            vehiculo: {
+                tipo: formData.datosVehiculo.tipo,
+                modelo: formData.datosVehiculo.modelo,
+                placa: formData.datosVehiculo.placa,
+                color: formData.datosVehiculo.color
+            }
+        };
+
+        console.log(
+            'ENVIANDO ACTUALIZACIÓN:',
+            JSON.stringify(datos, null, 2)
+        );
+
+        const response = await api.put(
+            `/usuarios/repartidores/${repartidorId}`,
+            datos
+        );
+
+        console.log(
+            'RESPUESTA ACTUALIZACIÓN:',
+            JSON.stringify(response.data, null, 2)
+        );
+
+        setFormModificado(false);
+
+        Alert.alert(
+            '✅ Éxito',
+            'Los datos del repartidor se actualizaron correctamente.',
+            [
+                {
+                    text: 'OK',
+                    onPress: () => navigation?.goBack()
+                }
+            ]
+        );
+
+    } catch (error: any) {
+
+        console.error(
+            'Error al actualizar repartidor:',
+            error.response?.data || error.message
+        );
+
+        Alert.alert(
+            '❌ Error',
+            error.response?.data?.message ||
+            'No se pudo actualizar el repartidor.'
+        );
+
+    } finally {
+
+        setLoading(false);
+
+    }
+};
 
   // =============================================
   // 📌 RENDER

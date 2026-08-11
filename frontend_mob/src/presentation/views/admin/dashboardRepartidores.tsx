@@ -8,14 +8,15 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../../services/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect, useRoute } from '@react-navigation/native';
 
 type RootStackParamList = {
-    detalleRepartidor: {
+    DetalleRepartidor: {
         id: number;
         nombre: string;
         estado: string;
@@ -24,6 +25,10 @@ type RootStackParamList = {
         ciudad?: string;
         pedidos?: number;
         fecha_registro: string;
+    };
+    EditarRepartidor: {
+        repartidorId: number;
+        repartidorData: Repartidor;
     };
 };
 
@@ -46,11 +51,20 @@ export default function DashboardRepartidores() {
     const [seleccionado, setSeleccionado] = useState<Repartidor | null>(null);
     const [filtro, setFiltro] = useState("todos");
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const route = useRoute(); 
 
-    useEffect(() => {
+    useFocusEffect(
+    React.useCallback(() => {
         const cargarRepartidores = async () => {
             try {
+                setLoading(true);
+
                 const response = await api.get('/usuarios/repartidores');
+
+                console.log(
+                    "RESPUESTA REPARTIDORES:",
+                    JSON.stringify(response.data, null, 2)
+                );
 
                 const repartidores = response.data.data.map((r: any) => ({
                     id: r.id_usuario,
@@ -59,19 +73,77 @@ export default function DashboardRepartidores() {
                     correo: r.email,
                     telefono: r.telefono,
                     ciudad: r.ciudad,
-                    pedidos: r.pedidos_count,
+                    pedidos: 0,
                     fecha_registro: r.fecha_registro,
                 }));
 
                 setRepartidores(repartidores);
-            } catch (error) {
-                console.error("Error al cargar repartidores:", error);
+
+            } catch (error: any) {
+                console.error(
+                    'Error al cargar repartidores:',
+                    error.response?.data || error.message
+                );
+
+                Alert.alert(
+                    'Error',
+                    'No se pudieron cargar los repartidores.'
+                );
+
             } finally {
                 setLoading(false);
             }
         };
+
         cargarRepartidores();
-    }, []);
+    }, [])
+);
+
+    const eliminarRepartidor = (item: Repartidor) => {
+    Alert.alert(
+        'Eliminar Repartidor',
+        `¿Estás seguro de eliminar a "${item.nombre}"?\n\nEsta acción no se puede deshacer.`,
+        [
+            {
+                text: 'Cancelar',
+                style: 'cancel'
+            },
+            {
+                text: 'Eliminar',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await api.delete(
+                            `/usuarios/repartidores/${item.id}`
+                        );
+
+                        setRepartidores(prev =>
+                            prev.filter(r => r.id !== item.id)
+                        );
+
+                        Alert.alert(
+                            '✅ Eliminado',
+                            `El repartidor "${item.nombre}" fue eliminado correctamente.`
+                        );
+
+                    } catch (error: any) {
+                        console.error(
+                            'Error al eliminar:',
+                            error.response?.data || error.message
+                        );
+
+                        Alert.alert(
+                            '❌ Error',
+                            error.response?.data?.message ||
+                            'No se pudo eliminar el repartidor.'
+                        );
+                    }
+                }
+            }
+        ],
+        { cancelable: false }
+    );
+};
 
     const filtrarRepartidores = repartidores.filter((repartidor) => {
         const cumpleFiltro = filtro === "todos" || repartidor.estado === filtro;
@@ -260,11 +332,29 @@ export default function DashboardRepartidores() {
                                         </View>
                                     </View>
 
-                                    {/* MENÚ */}
+                                    {/* MENÚ DE TRES PUNTOS - CON OPCIÓN ELIMINAR */}
                                     <TouchableOpacity
                                         style={styles.menuButton}
                                         onPress={() => {
-                                            console.log('Menú de:', item.nombre);
+                                            Alert.alert(
+                                                'Opciones',
+                                                `¿Qué deseas hacer con ${item.nombre}?`,
+                                                [
+                                                    { 
+                                                        text: '✏️ Editar', 
+                                                        onPress: () => navigation.navigate('EditarRepartidor', {
+                                                            repartidorId: item.id,
+                                                            repartidorData: item
+                                                        })
+                                                    },
+                                                    { 
+                                                        text: '🗑️ Eliminar', 
+                                                        style: 'destructive',
+                                                        onPress: () => eliminarRepartidor(item)
+                                                    },
+                                                    { text: 'Cancelar', style: 'cancel' }
+                                                ]
+                                            );
                                         }}
                                     >
                                         <Ionicons
@@ -306,7 +396,7 @@ export default function DashboardRepartidores() {
                                 <TouchableOpacity 
                                     style={styles.detalles}
                                     onPress={() => {
-                                        navigation.navigate('detalleRepartidor', {
+                                        navigation.navigate('DetalleRepartidor', {
                                             id: item.id,
                                             nombre: item.nombre,
                                             estado: item.estado,
@@ -360,7 +450,6 @@ const styles = StyleSheet.create({
         color: "#666",
         marginBottom: 15,
     },
-    // ===== CARDS DE ESTADISTICAS =====
     cardContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -437,7 +526,6 @@ const styles = StyleSheet.create({
         height: 12,
         backgroundColor: "#666",
     },
-    // ===== BUSCADOR =====
     searchContainer: {
         height: 45,
         borderWidth: 1,
@@ -455,7 +543,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#1A1A1A",
     },
-    // ===== FILTROS =====
     filtroContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -491,7 +578,6 @@ const styles = StyleSheet.create({
     textoSeleccionado: {
         color: "#FFF",
     },
-    // ===== CARD DE REPARTIDOR =====
     card: {
         backgroundColor: "#FFFFFF",
         borderRadius: 16,
@@ -620,7 +706,6 @@ const styles = StyleSheet.create({
         color: "#B90F0F",
         letterSpacing: 0.3,
     },
-    // ===== BOTÓN FLOTANTE =====
     containerFlotante: {
         position: "absolute",
         right: 20,
