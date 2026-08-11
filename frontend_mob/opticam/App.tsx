@@ -9,17 +9,25 @@ import { COLORS } from './src/constants/colors';
 // Pantallas desde screens/all/
 import { Principal } from './src/screens/all/Principal';
 import { Iniciosesion } from './src/screens/all/Iniciosesion';
-import { PerfilTodos } from './src/screens/all/PerfilTodos';
 import { RecuperarContraseña } from './src/screens/all/RecuperarContraseña';
 import { RestablecerContraseña } from './src/screens/all/RestablecerContraseña';
 
 // Pantallas desde screens/client/
 import { AutoRegistro } from './src/screens/client/AutoRegistro';
 import { PrincipalCliente } from './src/screens/client/PrincipalCliente';
+import { PerfilCliente } from './src/screens/client/PerfilCliente';
+
+// Pantallas desde screens/admin/
+import { RegistrarRepartidor } from './src/screens/admin/RegistrarRepartidor';
+import { PerfilAdmin } from './src/screens/admin/PerfilAdmin';
+
+// Pantallas desde screens/repa/
+import { PerfilRepartidor } from './src/screens/repa/PerfilRepartidor';
 
 // Importa Header y Footer
 import { Header } from './src/components/Header';
 import { Footer } from './src/components/Footer';
+import { BottomNavigation } from './src/components/BottomNavigation';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +39,32 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         {children}
       </View>
       <Footer />
+    </View>
+  );
+};
+
+const UserLayout = ({
+  children
+}: {
+  children: React.ReactNode
+}) => {
+  return (
+    <View style={styles.layoutContainer}>
+
+      {/* HEADER */}
+      <Header />
+
+      {/* CONTENIDO */}
+      <View style={styles.contentContainer}>
+        {children}
+      </View>
+
+      {/* NAVEGACIÓN SEGÚN EL ROL */}
+      <BottomNavigation />
+
+      {/* FOOTER */}
+      <Footer />
+
     </View>
   );
 };
@@ -55,27 +89,70 @@ export default function App() {
               )}
             </Stack.Screen>
 
+            <Stack.Screen name="RegistrarRepartidor">
+              {({ navigation }) => (
+                  <UserLayout>
+                <RegistrarRepartidor navigation={navigation} />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="PerfilAdmin">
+               {({ navigation }) => (
+                   <UserLayout>
+                 <PerfilAdmin navigation={navigation} />
+                   </UserLayout>
+               )}
+           </Stack.Screen>
+
             <Stack.Screen name="PrincipalCliente">
-              {() => (
-                <Layout>
-                  <PrincipalCliente />
-                </Layout>
+              {({ navigation }) => (
+                  <UserLayout>
+                  <PrincipalCliente navigation={navigation} />
+                  </UserLayout>
               )}
             </Stack.Screen>
 
-            <Stack.Screen name="PerfilTodos">
-              {() => (
-                <Layout>
-                  <PerfilTodos />
-                </Layout>
+            <Stack.Screen name="PerfilCliente">
+              {({ navigation }) => (
+                <UserLayout>
+                  <PerfilCliente navigation={navigation} />
+                </UserLayout>
               )}
             </Stack.Screen>
 
-            {/* Pantallas SIN Layout (sin Header ni Footer) */}
-            <Stack.Screen name="Iniciosesion" component={Iniciosesion} />
-            <Stack.Screen name="AutoRegistro" component={AutoRegistro} />
-            <Stack.Screen name="RecuperarContraseña" component={RecuperarContraseña} />
-            <Stack.Screen name="RestablecerContraseña" component={RestablecerContraseña} />
+            <Stack.Screen name="PerfilRepartidor">
+               {({ navigation }) => (
+                   <UserLayout>
+                 <PerfilRepartidor navigation={navigation} />
+                 </UserLayout>
+               )}
+           </Stack.Screen>
+
+            {/* Pantallas sin Layout */}
+            <Stack.Screen name="Iniciosesion">
+              {({ navigation }) => (
+                <Iniciosesion navigation={navigation} />
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="AutoRegistro">
+              {({ navigation }) => (
+                <AutoRegistro navigation={navigation} />
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="RecuperarContraseña">
+              {({ navigation }) => (
+                <RecuperarContraseña navigation={navigation} />
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="RestablecerContraseña">
+              {({ navigation }) => (
+                <RestablecerContraseña navigation={navigation} />
+              )}
+            </Stack.Screen>
 
           </Stack.Navigator>
         </NavigationContainer>
@@ -87,11 +164,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.black,
   },
   layoutContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.background,
   },
   contentContainer: {
     flex: 1,

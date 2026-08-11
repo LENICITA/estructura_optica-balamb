@@ -35,10 +35,21 @@ export const RecuperarContraseña = ({ navigation }: Props) => {
       const response = await apiClient.post('/auth/recuperar-password', { email });
 
       if (response.data.success) {
+        //  OBTENER EL TOKEN DE LA RESPUESTA
+        const token = response.data.token || response.data.resetToken || 'token-de-prueba-12345';
+
         Alert.alert(
           'Éxito',
-          `Se ha enviado un enlace de recuperación a ${email}`,
-          [{ text: 'OK', onPress: () => navigation.navigate('Iniciosesion') }]
+          `Se ha enviado un enlace de recuperación a ${email}. Revisa tu correo.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                //  REDIRIGIR CON EL TOKEN
+                navigation.navigate('RestablecerContraseña', { token });
+              }
+            }
+          ]
         );
         setEmail('');
       } else {
