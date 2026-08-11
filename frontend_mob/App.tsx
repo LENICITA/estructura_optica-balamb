@@ -6,11 +6,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DashboardRepartidores from './src/presentation/views/admin/DashboardRepartidores';
 import EditarRepartidor from './src/presentation/views/admin/EditarRepartidor';
 import DetalleRepartidor from './src/presentation/views/admin/DetalleRepartidor';
+import GestionarFormulas from './src/presentation/views/admin/GestionarFormulas';
 
 export type RootStackParamList = {
   DashboardRepartidores: undefined;
   EditarRepartidor: undefined;
   DetalleRepartidor: undefined;
+  GestionarFormulas: undefined;
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,10 +24,10 @@ const App = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
           name="DashboardRepartidores"
-          component={DashboardRepartidores}
+          component={DashboardRepartidores}  // ← Tu componente real
           options={{
             headerShown: true,
-            title: "Dashboard Repartidores",
+            title: "Papoi",
           }}
         />
 

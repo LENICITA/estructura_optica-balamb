@@ -341,14 +341,14 @@ export default function DashboardRepartidores() {
                                                 `¿Qué deseas hacer con ${item.nombre}?`,
                                                 [
                                                     { 
-                                                        text: '✏️ Editar', 
+                                                        text: 'Editar', 
                                                         onPress: () => navigation.navigate('EditarRepartidor', {
                                                             repartidorId: item.id,
                                                             repartidorData: item
                                                         })
                                                     },
                                                     { 
-                                                        text: '🗑️ Eliminar', 
+                                                        text: 'Eliminar', 
                                                         style: 'destructive',
                                                         onPress: () => eliminarRepartidor(item)
                                                     },
