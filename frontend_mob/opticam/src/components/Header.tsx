@@ -1,4 +1,5 @@
 // src/components/Header.tsx
+
 import React, { useState } from 'react';
 import {
   View,
@@ -19,61 +20,217 @@ import { COLORS } from '../constants/colors';
 
 const { width } = Dimensions.get('window');
 
+// TIPOS
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: string;
+  route: string;
+  admin?: boolean;
+}
+
+// HEADER
 export const Header = () => {
+
   const navigation = useNavigation();
-  const { user, logout, isAuthenticated } = useAuth();
+
+  const {
+    user,
+    logout,
+    isAuthenticated,
+  } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que quieres cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar Sesión',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            navigation.navigate('Iniciosesion' as never); // ← CAMBIADO
-            setSidebarOpen(false);
-          }
+  // OBTENER ROL DEL USUARIO
+
+  const getRoles = (): string[] => {
+
+    if (!user) {
+      return [];
+    }
+
+    let rolesArray: string[] = [];
+    if (Array.isArray(user.roles)) {
+      rolesArray = user.roles.map((role: any) => {
+        if (typeof role === 'string') {
+          return role;
         }
+        return (
+          role?.nombre ||
+          role?.rol ||
+          role?.name ||
+          ''
+        );
+      });
+
+    }
+    else if (typeof user.roles === 'string') {
+      rolesArray = [user.roles];
+    }
+    else if ((user as any).rol) {
+      rolesArray = [(user as any).rol];
+    }
+    return rolesArray
+      .filter(Boolean)
+      .map((role) => role.toUpperCase());
+  };
+  // OBTENER ROL PRINCIPAL
+
+  const getMainRole = (): string => {
+
+    const roles = getRoles();
+
+    if (
+      roles.includes('ADMIN') ||
+      roles.includes('ADMINISTRADOR')
+    ) {
+      return 'ADMIN';
+    }
+
+    if (roles.includes('REPARTIDOR')) {
+      return 'REPARTIDOR';
+    }
+
+    if (roles.includes('CLIENTE')) {
+      return 'CLIENTE';
+    }
+
+    return '';
+  };
+  // IR AL INICIO SEGÚN ROL
+
+  const goToHome = () => {
+
+    setSidebarOpen(false);
+
+    const role = getMainRole();
+
+    // Usuario no autenticado
+    if (!isAuthenticated || !user) {
+
+      navigation.navigate(
+        'Principal' as never
+      );
+
+      return;
+    }
+
+    // Administrador
+    if (role === 'ADMIN') {
+
+      navigation.navigate(
+        'PrincipalAdmin' as never
+      );
+
+      return;
+    }
+
+    // Repartidor
+    if (role === 'REPARTIDOR') {
+
+      navigation.navigate(
+        'PrincipalRepartidor' as never
+      );
+
+      return;
+    }
+
+    // Cliente
+    if (role === 'CLIENTE') {
+
+      navigation.navigate(
+        'PrincipalCliente' as never
+      );
+
+      return;
+    }
+
+    // no tiene rol
+    navigation.navigate(
+      'Principal' as never
+    );
+  };
+
+  // CERRAR SESIÓN
+
+  const handleLogout = () => {
+
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+
+        {
+          text: 'Cerrar sesión',
+          style: 'destructive',
+
+          onPress: async () => {
+
+            try {
+
+              await logout();
+
+              setSidebarOpen(false);
+
+              navigation.navigate(
+                'Iniciosesion' as never
+              );
+
+            } catch (error) {
+
+              console.error(
+                'Error al cerrar sesión:',
+                error
+              );
+
+            }
+
+          },
+        },
       ]
     );
   };
 
-  const getMenuItems = () => {
-    const items = [];
+  // MENÚ
 
-    // Items públicos (siempre visibles)
+  const getMenuItems = (): MenuItem[] => {
+
+    const items: MenuItem[] = [];
+
+    // INICIO
+
     items.push({
       id: 'home',
       label: 'Inicio',
       icon: 'home-outline',
-      route: 'Principal', // ← CAMBIADO
+      route: 'Principal',
     });
 
-    // Si está autenticado, mostrar más opciones
-    if (isAuthenticated && user) {
-      let rolesArray: string[] = [];
-      if (Array.isArray(user.roles)) {
-        rolesArray = user.roles;
-      } else if (typeof user.roles === 'string') {
-        rolesArray = [user.roles];
-      } else if (user.rol) {
-        rolesArray = [user.rol];
-      }
-      rolesArray = rolesArray.map((r) => r.toUpperCase());
+    // SI ESTÁ AUTENTICADO
 
-      if (rolesArray.includes('ADMIN') || rolesArray.includes('ADMINISTRADOR')) {
+    if (isAuthenticated && user) {
+
+      const role = getMainRole();
+
+      // ADMINISTRADOR
+
+      if (role === 'ADMIN') {
+
         items.push({
           id: 'admin-dashboard',
           label: 'Dashboard',
           icon: 'stats-chart-outline',
-          route: 'PrincipalAdmin', // ← CAMBIADO
+          route: 'PrincipalAdmin',
           admin: true,
         });
+
+
         items.push({
           id: 'admin-inventario',
           label: 'Inventario',
@@ -81,6 +238,8 @@ export const Header = () => {
           route: 'AdminInventario',
           admin: true,
         });
+
+
         items.push({
           id: 'admin-pedidos',
           label: 'Pedidos',
@@ -88,6 +247,8 @@ export const Header = () => {
           route: 'AdminPedidos',
           admin: true,
         });
+
+
         items.push({
           id: 'admin-repartidores',
           label: 'Repartidores',
@@ -95,6 +256,8 @@ export const Header = () => {
           route: 'AdminRepartidores',
           admin: true,
         });
+
+
         items.push({
           id: 'admin-reportes',
           label: 'Reportes',
@@ -102,176 +265,521 @@ export const Header = () => {
           route: 'AdminReportes',
           admin: true,
         });
-      } else if (rolesArray.includes('REPARTIDOR')) {
+
+      }
+
+      // REPARTIDOR
+
+      else if (role === 'REPARTIDOR') {
+
         items.push({
           id: 'repartidor-historial',
           label: 'Historial',
           icon: 'time-outline',
-          route: 'PrincipalRepartidor', // ← CAMBIADO
+          route: 'PrincipalRepartidor',
         });
-      } else if (rolesArray.includes('CLIENTE')) {
+
+      }
+
+      // CLIENTE
+
+      else if (role === 'CLIENTE') {
+
         items.push({
           id: 'catalogo',
           label: 'Productos',
           icon: 'eye-outline',
           route: 'Catalogo',
         });
+
+
         items.push({
           id: 'carrito',
           label: 'Carrito',
           icon: 'cart-outline',
           route: 'Carrito',
         });
+
+
         items.push({
           id: 'control-pedido',
           label: 'Mis Pedidos',
           icon: 'cube-outline',
           route: 'ControlPedido',
         });
+
       }
 
       items.push({
         id: 'perfil',
         label: 'Mi Perfil',
         icon: 'person-outline',
-        route: 'PerfilTodos',
+        route: 'PerfilCliente',
       });
-    }
 
+    }
     return items;
   };
 
+
   const menuItems = getMenuItems();
+
+  const handleMenuNavigation = (route: string) => {
+
+    setSidebarOpen(false);
+
+    if (route === 'Principal') {
+
+      goToHome();
+
+      return;
+    }
+
+
+    navigation.navigate(
+      route as never
+    );
+  };
 
   return (
     <>
+      {/* ===============================================
+          HEADER
+      =============================================== */}
+
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => setSidebarOpen(true)}>
-          <Ionicons name="menu-outline" size={28} color="#fff" />
+
+        {/* MENÚ */}
+
+        <TouchableOpacity
+          onPress={() => setSidebarOpen(true)}
+          style={styles.headerButton}
+          activeOpacity={0.7}
+        >
+
+          <Ionicons
+            name="menu-outline"
+            size={28}
+            color={COLORS.white}
+          />
+
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Principal' as never)}> {/* ← CAMBIADO */}
+
+        {/* LOGO */}
+
+        <TouchableOpacity
+          onPress={goToHome}
+          activeOpacity={0.8}
+          style={styles.logoContainer}
+        >
+
           <Image
             source={require('../../assets/img/logo2.jpeg')}
             style={styles.logo}
             resizeMode="contain"
           />
+
         </TouchableOpacity>
 
+
+        {/* DERECHA */}
+
         <View style={styles.headerRight}>
+
           {isAuthenticated ? (
-            <TouchableOpacity onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={24} color="#fff" />
+
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={styles.headerButton}
+              activeOpacity={0.7}
+            >
+
+              <Ionicons
+                name="log-out-outline"
+                size={25}
+                color={COLORS.white}
+              />
+
             </TouchableOpacity>
+
           ) : (
-            <TouchableOpacity onPress={() => navigation.navigate('Iniciosesion' as never)}> {/* ← CAMBIADO */}
-              <Ionicons name="person-circle-outline" size={28} color="#fff" />
+
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate(
+                  'Iniciosesion' as never
+                )
+              }
+              style={styles.headerButton}
+              activeOpacity={0.7}
+            >
+
+              <Ionicons
+                name="person-circle-outline"
+                size={28}
+                color={COLORS.white}
+              />
+
             </TouchableOpacity>
+
           )}
+
         </View>
+
       </View>
 
-      {/* Sidebar */}
+
+      {/* ===============================================
+          SIDEBAR
+      =============================================== */}
+
       <Modal
         visible={sidebarOpen}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setSidebarOpen(false)}
+        onRequestClose={() =>
+          setSidebarOpen(false)
+        }
       >
-        <SafeAreaView style={styles.sidebarOverlay}>
+
+        <SafeAreaView
+          style={styles.sidebarOverlay}
+        >
+
+          {/* FONDO OSCURO */}
+
           <TouchableOpacity
             style={styles.sidebarBackdrop}
             activeOpacity={1}
-            onPress={() => setSidebarOpen(false)}
+            onPress={() =>
+              setSidebarOpen(false)
+            }
           />
+
+
+          {/* MENÚ */}
+
           <View style={styles.sidebarContainer}>
-            <ScrollView>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+            >
+
+              {/* =====================================
+                  ENCABEZADO DEL MENÚ
+              ===================================== */}
+
+              <View style={styles.sidebarHeader}>
+
+                <Image
+                  source={require('../../assets/img/logo2.jpeg')}
+                  style={styles.sidebarLogo}
+                  resizeMode="contain"
+                />
+
+                {isAuthenticated && user && (
+
+                  <View style={styles.userInfo}>
+
+                    <Text
+                      style={styles.userName}
+                      numberOfLines={1}
+                    >
+                      {user.nombre_completo}
+                    </Text>
+
+                    <Text style={styles.userRole}>
+                      {getMainRole() === 'ADMIN'
+                        ? 'Administrador'
+                        : getMainRole() === 'REPARTIDOR'
+                        ? 'Repartidor'
+                        : 'Cliente'}
+                    </Text>
+
+                  </View>
+
+                )}
+
+              </View>
+
+
+              {/* =====================================
+                  OPCIONES
+              ===================================== */}
+
               {menuItems.map((item) => (
+
                 <TouchableOpacity
                   key={item.id}
                   style={styles.sidebarItem}
-                  onPress={() => {
-                    setSidebarOpen(false);
-                    navigation.navigate(item.route as never);
-                  }}
+                  onPress={() =>
+                    handleMenuNavigation(
+                      item.route
+                    )
+                  }
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name={item.icon as any} size={20} color={COLORS.primary} />
-                  <Text style={styles.sidebarItemText}>{item.label}</Text>
+
+                  <Ionicons
+                    name={item.icon as any}
+                    size={21}
+                    color={COLORS.primary}
+                  />
+
+                  <Text
+                    style={styles.sidebarItemText}
+                  >
+                    {item.label}
+                  </Text>
+
                 </TouchableOpacity>
+
               ))}
 
+
+              {/* =====================================
+                  CERRAR SESIÓN
+              ===================================== */}
+
               {isAuthenticated && (
+
                 <>
-                  <View style={styles.sidebarDivider} />
+
+                  <View
+                    style={styles.sidebarDivider}
+                  />
+
                   <TouchableOpacity
-                    style={[styles.sidebarItem, styles.sidebarItemLogout]}
+                    style={[
+                      styles.sidebarItem,
+                      styles.sidebarItemLogout,
+                    ]}
                     onPress={handleLogout}
+                    activeOpacity={0.7}
                   >
-                    <Ionicons name="log-out-outline" size={20} color={COLORS.primary} />
-                    <Text style={styles.sidebarItemText}>Cerrar Sesión</Text>
+
+                    <Ionicons
+                      name="log-out-outline"
+                      size={21}
+                      color={COLORS.primary}
+                    />
+
+                    <Text
+                      style={styles.sidebarItemText}
+                    >
+                      Cerrar sesión
+                    </Text>
+
                   </TouchableOpacity>
+
                 </>
+
               )}
+
             </ScrollView>
+
           </View>
+
         </SafeAreaView>
+
       </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
+
   headerContainer: {
-    backgroundColor: '#000',
+
+    backgroundColor: COLORS.black,
+
     flexDirection: 'row',
+
     alignItems: 'center',
+
     justifyContent: 'space-between',
+
     paddingHorizontal: 15,
+
     paddingVertical: 10,
+
     minHeight: 60,
+
   },
+
+
+  headerButton: {
+
+    width: 40,
+
+    height: 40,
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+
+  },
+
+
+  logoContainer: {
+
+    flex: 1,
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+
+  },
+
+
   logo: {
+
     width: 50,
+
     height: 50,
+
   },
+
+
   headerRight: {
-    flexDirection: 'row',
+
+    width: 40,
+
     alignItems: 'center',
-    gap: 10,
+
+    justifyContent: 'center',
+
   },
+
   sidebarOverlay: {
+
     flex: 1,
+
     flexDirection: 'row',
+
   },
+
+
   sidebarBackdrop: {
+
     flex: 1,
+
     backgroundColor: 'rgba(0,0,0,0.5)',
+
   },
+
+
   sidebarContainer: {
+
     width: 280,
-    backgroundColor: '#000',
+
+    backgroundColor: COLORS.black,
+
     paddingVertical: 10,
+
   },
-  sidebarItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+
+  sidebarHeader: {
+
     paddingHorizontal: 20,
+
+    paddingTop: 10,
+
+    paddingBottom: 15,
+
     borderBottomWidth: 1,
+
     borderBottomColor: '#333',
+
   },
-  sidebarItemLogout: {
-    borderBottomWidth: 0,
-    marginTop: 5,
+
+
+  sidebarLogo: {
+
+    width: 65,
+
+    height: 65,
+
+    marginBottom: 8,
+
   },
-  sidebarItemText: {
-    color: '#fff',
-    fontSize: 15,
-    marginLeft: 12,
+
+
+  userInfo: {
+
+    marginTop: 2,
+
   },
-  sidebarDivider: {
+
+
+  userName: {
+
+    color: COLORS.white,
+
+    fontSize: 16,
+
+    fontWeight: '700',
+
+  },
+
+
+  userRole: {
+
+    color: COLORS.primary,
+
+    fontSize: 12,
+
+    fontWeight: '600',
+
+    marginTop: 3,
+
+  },
+
+  sidebarItem: {
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    paddingVertical: 12,
+
+    paddingHorizontal: 20,
+
     borderBottomWidth: 1,
-    borderBottomColor: '#444',
-    marginVertical: 10,
+
+    borderBottomColor: '#333',
+
   },
+
+
+  sidebarItemText: {
+
+    color: COLORS.white,
+
+    fontSize: 15,
+
+    marginLeft: 12,
+
+  },
+
+  sidebarDivider: {
+
+    borderBottomWidth: 1,
+
+    borderBottomColor: '#444',
+
+    marginVertical: 10,
+
+  },
+
+  // LOGOUT
+  sidebarItemLogout: {
+
+    borderBottomWidth: 0,
+
+    marginTop: 5,
+
+  },
+
 });

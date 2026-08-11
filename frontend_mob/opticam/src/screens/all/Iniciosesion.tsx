@@ -1,5 +1,7 @@
-// Iniciosesion.tsx
+// src/screens/all/Iniciosesion.tsx
+
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -12,121 +14,314 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   navigation: any;
 }
 
-// Recibir navigation desde props (NO usar useNavigation)
- export const Iniciosesion = ({ navigation }: Props) => {
+export const Iniciosesion = ({
+  navigation,
+}: Props) => {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-  const { login, user } = useAuth();
+  const { login } = useAuth();
 
-  const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+  // REDIRECCIÓN SEGÚN ROL
 
-  //  Ahora navigation viene de las props
-  const handleRedirectByRole = () => {
+  const handleRedirectByRole = (
+    usuario: any
+  ) => {
+
     try {
-      if (!user) {
-        console.log(' No hay usuario, redirigiendo a Principal');
+
+      if (!usuario) {
+
+        console.log(
+          ' No hay usuario para redirigir'
+        );
+
         navigation.navigate('Principal');
+
         return;
       }
 
-      console.log(' Usuario logeado:', user);
+      console.log(
+        ' Usuario para redirección:',
+        usuario
+      );
+
+      // OBTENER ROLES
 
       let rolesArray: string[] = [];
 
-      if (Array.isArray(user.roles)) {
-        rolesArray = user.roles;
-      } else if (typeof user.roles === 'string') {
-        rolesArray = [user.roles];
-      } else if (user.rol) {
-        rolesArray = [user.rol];
-      } else {
-        console.log('️ Usuario sin roles, redirigiendo a Principal');
-        navigation.navigate('Principal');
+      if (Array.isArray(usuario.roles)) {
+
+        rolesArray = usuario.roles;
+
+      } else if (
+        typeof usuario.roles === 'string'
+      ) {
+
+        rolesArray = [usuario.roles];
+
+      } else if (usuario.rol) {
+
+        rolesArray = [usuario.rol];
+      }
+
+
+      rolesArray = rolesArray.map(
+        (role: string) =>
+          role.toUpperCase()
+      );
+
+      console.log(
+        ' Roles:',
+        rolesArray
+      );
+
+
+      if (rolesArray.includes('ADMIN') ||
+          rolesArray.includes('ADMINISTRADOR')) {
+
+        console.log(
+          '➡ Redirigiendo a administrador'
+        );
+
+        navigation.navigate(
+          'PrincipalAdmin'
+        );
+
         return;
       }
 
-      console.log(' Roles del usuario:', rolesArray);
 
-      const firstRole = rolesArray.length > 0 ? rolesArray[0].toUpperCase() : '';
-      console.log(' Primer rol:', firstRole);
+      if (
+        rolesArray.includes('REPARTIDOR')
+      ) {
 
-      if (firstRole === 'ADMIN' || firstRole === 'ADMINISTRADOR') {
-        console.log(' Redirigiendo a AdminInicio');
-        navigation.navigate('PrincipalAdmin');
-      } else if (firstRole === 'REPARTIDOR') {
-        console.log(' Redirigiendo a RepartidorInicio');
-        navigation.navigate('PrincipalRepartidor');
-      } else if (firstRole === 'CLIENTE') {
-        console.log(' Redirigiendo a ClienteInicio');
-        navigation.navigate('PrincipalCliente');
-      } else {
-        console.log('⚠ Rol no reconocido, redirigiendo a Principal');
-        navigation.navigate('Principal');
+        console.log(
+          '➡ Redirigiendo a repartidor'
+        );
+
+        navigation.navigate(
+          'PrincipalRepartidor'
+        );
+
+        return;
       }
+
+
+      if (
+        rolesArray.includes('CLIENTE')
+      ) {
+
+        console.log(
+          '➡ Redirigiendo a cliente'
+        );
+
+        navigation.navigate(
+          'PrincipalCliente'
+        );
+
+        return;
+      }
+
+
+      console.log(
+        '⚠ Rol no reconocido'
+      );
+
+      navigation.navigate('Principal');
+
     } catch (error) {
-      console.error(' Error al redirigir:', error);
+
+      console.error(
+        ' Error al redirigir:',
+        error
+      );
+
       navigation.navigate('Principal');
     }
   };
 
+  // MOSTRAR / OCULTAR CONTRASEÑA
+
+  const toggleShowPassword = () => {
+
+    setShowPassword(
+      !showPassword
+    );
+  };
+
+  // LOGIN
+
   const handleSubmit = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa email y contraseña');
+
+    if (
+      !email.trim() ||
+      !password.trim()
+    ) {
+
+      Alert.alert(
+        'Error',
+        'Por favor ingresa email y contraseña'
+      );
+
       return;
     }
+
 
     setError('');
     setLoading(true);
 
+
     try {
-      const result = await login(email, password);
-      console.log(' Resultado del login:', result);
+
+      console.log(
+        ' Intentando iniciar sesión...'
+      );
+
+
+      const result =
+        await login(
+          email.trim(),
+          password
+        );
+
+
+      console.log(
+        ' Resultado del login:',
+        result
+      );
+
 
       if (!result.success) {
-        setError(result.message || 'Credenciales incorrectas');
-        Alert.alert('Error de inicio de sesión', result.message || 'Credenciales incorrectas');
-        setLoading(false);
-      } else {
-        console.log(' Inicio sesion exitoso, redirigiendo...');
-        setLoading(false);
-        setTimeout(() => {
-          handleRedirectByRole();
-        }, 500);
+
+        setError(
+          result.message ||
+          'Credenciales incorrectas'
+        );
+
+        Alert.alert(
+          'Error de inicio de sesión',
+          result.message ||
+          'Credenciales incorrectas'
+        );
+
+        return;
       }
+
+      console.log(
+        ' Inicio de sesión exitoso'
+      );
+
+      console.log(
+        ' Usuario recibido:',
+        result.user
+      );
+
+      handleRedirectByRole(
+        result.user
+      );
+
     } catch (err) {
-      console.error(' Error en login:', err);
-      setError('Error al iniciar sesión');
-      Alert.alert('Error', 'Error al iniciar sesión');
+
+      console.error(
+        ' Error en login:',
+        err
+      );
+
+      setError(
+        'Error al iniciar sesión'
+      );
+
+      Alert.alert(
+        'Error',
+        'Error al iniciar sesión'
+      );
+
+    } finally {
+
       setLoading(false);
     }
   };
 
+  // INTERFAZ
+
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
+      }
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>Iniciar</Text>
-          <Text style={styles.subtitle}>Sesión</Text>
+
+      <ScrollView
+        contentContainerStyle={
+          styles.scrollContent
+        }
+      >
+
+        <View
+          style={
+            styles.headerContainer
+          }
+        >
+
+          <Text
+            style={styles.title}
+          >
+            Iniciar
+          </Text>
+
+          <Text
+            style={styles.subtitle}
+          >
+            Sesión
+          </Text>
+
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Email</Text>
+
+        <View
+          style={styles.formContainer}
+        >
+
+          {error ? (
+            <View
+              style={
+                styles.errorContainer
+              }
+            >
+
+              <Text
+                style={styles.errorText}
+              >
+                {error}
+              </Text>
+
+            </View>
+          ) : null}
+
+
+          <Text style={styles.label}>
+            Email
+          </Text>
+
           <TextInput
             style={styles.input}
             value={email}
@@ -137,67 +332,149 @@ interface Props {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Contraseña</Text>
-          <View style={styles.passwordContainer}>
+
+          <Text style={styles.label}>
+            Contraseña
+          </Text>
+
+          <View
+            style={
+              styles.passwordContainer
+            }
+          >
+
             <TextInput
-              style={styles.passwordInput}
+              style={
+                styles.passwordInput
+              }
               value={password}
-              onChangeText={setPassword}
+              onChangeText={
+                setPassword
+              }
               placeholder="••••••••"
               placeholderTextColor="#999"
-              secureTextEntry={!showPassword}
+              secureTextEntry={
+                !showPassword
+              }
             />
+
             <TouchableOpacity
-              onPress={toggleShowPassword}
-              style={styles.eyeButton}
+              onPress={
+                toggleShowPassword
+              }
+              style={
+                styles.eyeButton
+              }
             >
+
               <Ionicons
-                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                name={
+                  showPassword
+                    ? 'eye-off-outline'
+                    : 'eye-outline'
+                }
                 size={24}
                 color="#666"
               />
+
             </TouchableOpacity>
+
           </View>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('RecuperarContraseña')}
-            style={styles.forgotPasswordButton}
-          >
-            <Text style={styles.forgotPasswordText}>Recuperar contraseña</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleSubmit}
+            onPress={() =>
+              navigation.navigate(
+                'RecuperarContraseña'
+              )
+            }
+            style={
+              styles.forgotPasswordButton
+            }
+          >
+
+            <Text
+              style={
+                styles.forgotPasswordText
+              }
+            >
+              Recuperar contraseña
+            </Text>
+
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            style={[
+              styles.loginButton,
+              loading &&
+                styles.loginButtonDisabled,
+            ]}
+            onPress={
+              handleSubmit
+            }
             disabled={loading}
           >
+
             {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
+
+              <ActivityIndicator
+                size="small"
+                color="#fff"
+              />
+
             ) : (
-              <Text style={styles.loginButtonText}>Ingresar</Text>
+
+              <Text
+                style={
+                  styles.loginButtonText
+                }
+              >
+                Ingresar
+              </Text>
+
             )}
+
           </TouchableOpacity>
 
-          <Text style={styles.registerText}>
+
+          <Text
+            style={styles.registerText}
+          >
+
             ¿No tienes una cuenta?{' '}
+
             <Text
-              style={styles.registerLink}
-              onPress={() => navigation.navigate('AutoRegistro')}
+              style={
+                styles.registerLink
+              }
+              onPress={() =>
+                navigation.navigate(
+                  'AutoRegistro'
+                )
+              }
             >
               Regístrate aquí
             </Text>
+
           </Text>
+
         </View>
+
       </ScrollView>
+
     </KeyboardAvoidingView>
   );
 };
 
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
+
   scrollContent: {
     flexGrow: 1,
     alignItems: 'center',
@@ -205,22 +482,26 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 20,
   },
+
   headerContainer: {
     alignItems: 'center',
     marginBottom: 20,
   },
+
   title: {
     fontSize: 48,
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
   },
+
   subtitle: {
     fontSize: 28,
     fontWeight: '500',
     color: '#000',
     textAlign: 'center',
   },
+
   formContainer: {
     width: '100%',
     maxWidth: 370,
@@ -228,11 +509,30 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+
+  errorContainer: {
+    backgroundColor: '#ffebee',
+    borderWidth: 1,
+    borderColor: '#ffcdd2',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+
+  errorText: {
+    color: '#c62828',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+
   label: {
     color: '#000',
     marginTop: 12,
@@ -240,6 +540,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+
   input: {
     width: '100%',
     padding: 12,
@@ -250,11 +551,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 4,
   },
+
   passwordContainer: {
     position: 'relative',
     width: '100%',
     marginBottom: 4,
   },
+
   passwordInput: {
     width: '100%',
     padding: 12,
@@ -265,19 +568,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
+
   eyeButton: {
     position: 'absolute',
     right: 12,
     top: 12,
   },
+
   forgotPasswordButton: {
     marginTop: 10,
     alignSelf: 'flex-start',
   },
+
   forgotPasswordText: {
     color: '#B90F0F',
     fontSize: 14,
   },
+
   loginButton: {
     width: '100%',
     marginTop: 20,
@@ -287,22 +594,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   loginButtonDisabled: {
     opacity: 0.6,
   },
+
   loginButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
+
   registerText: {
     textAlign: 'center',
     marginTop: 16,
     fontSize: 14,
     color: '#333',
   },
+
   registerLink: {
     color: '#B90F0F',
     fontWeight: '500',
   },
+
 });
