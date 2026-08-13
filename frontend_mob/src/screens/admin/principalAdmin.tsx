@@ -22,11 +22,11 @@ export default function PrincipalAdmin() {
                 <View style={[styles.cardInfo, styles.cardTotal]}>
                     <View style={styles.headerCard}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="cube-outline" size={24} color="#B90F0F" />
+                            <Ionicons name="cube-outline" size={28} color="#B90F0F" />
                         </View>
                         <View style={styles.textContainer}>
                            <Text style={styles.titleCard}>Productos</Text>
-                            <Text style={styles.numberCard}>Cantidad</Text> 
+                            <Text style={styles.numberCard}>0</Text> 
                         </View>
                         
                     </View>
@@ -36,11 +36,11 @@ export default function PrincipalAdmin() {
                 <View style={[styles.cardInfo, styles.cardTotal]}>
                     <View style={styles.headerCard}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="cart-outline" size={24} color="#B90F0F" />
+                            <Ionicons name="cart-outline" size={28} color="#B90F0F" />
                         </View>
                         <View style={styles.textContainer}>
                             <Text style={styles.titleCard}>Pedidos</Text>
-                            <Text style={styles.numberCard}>Cantidad</Text>
+                            <Text style={styles.numberCard}>0</Text>
                         </View>
                     </View>
                     
@@ -52,11 +52,11 @@ export default function PrincipalAdmin() {
                 <View style={[styles.cardInfo, styles.cardTotal]}>
                     <View style={styles.headerCard}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="person-outline" size={24} color="#B90F0F" />
+                            <Ionicons name="person-outline" size={28} color="#B90F0F" />
                         </View>
                         <View style={styles.textContainer}>
                             <Text style={styles.titleCard}>Usuarios</Text>
-                            <Text style={styles.numberCard}>Cantidad</Text>
+                            <Text style={styles.numberCard}>0</Text>
                         </View>
                     </View>
                     <Text style={styles.descriptionCard}>usuarios registrados</Text>
@@ -64,11 +64,11 @@ export default function PrincipalAdmin() {
                 <View style={[styles.cardInfo, styles.cardTotal]}>
                     <View style={styles.headerCard}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="cash-outline" size={24} color="#B90F0F" />
+                            <Ionicons name="cash-outline" size={28} color="#B90F0F" />
                         </View>
                         <View style={styles.textContainer}>
                             <Text style={styles.titleCard}>Ventas</Text>
-                            <Text style={styles.numberCard}>Cantidad</Text>
+                            <Text style={styles.numberCard}>0</Text>
                         </View>
                     </View>
                     <Text style={styles.descriptionCard}>ventas realizadas</Text>
@@ -78,35 +78,78 @@ export default function PrincipalAdmin() {
             <Text style={styles.segundoTitulo}>Acciones rápidas</Text>
 
             <TouchableOpacity style={styles.button}>
-                <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="bag-outline" size={20} color="#B90F0F" />
+                <View style={styles.buttonContent}>
+
+                    {/* Ícono izquierdo */}
+                    <View style={styles.buttonLeft}>
+                        <View style={styles.iconContainer2}>
+                            <Ionicons name="bag-outline" size={28} color="#B90F0F" />
+                        </View>
                     </View>
-                
-                    <Text style={styles.textButton}>Ver pedidos</Text>
-                    <Ionicons name="chevron-forward-outline" size={20} color="#B90F0F" />
+
+                    {/* Texto centrado */}
+                    <View style={styles.buttonCenter}>
+                        <Text style={styles.textButton}>Ver pedidos</Text>
+                    </View>
+
+                    {/* Flecha derecha */}
+                    <View style={styles.buttonRight}>
+                        <Ionicons
+                            name="chevron-forward-outline"
+                            size={20}
+                            color="#B90F0F"
+                        />
+                    </View>
+
                 </View>
-                
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.button}>
-                <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="document-text-outline" size={20} color="#B90F0F" />
+                <View style={styles.buttonContent}>
+
+                    <View style={styles.buttonLeft}>
+                        <View style={styles.iconContainer2}>
+                            <Ionicons name="document-text-outline" size={28} color="#B90F0F" />
+                        </View>
                     </View>
-                    <Text style={styles.textButton}>Generar reporte</Text>
-                    <Ionicons name="chevron-forward-outline" size={20} color="#B90F0F" />
+
+                    <View style={styles.buttonCenter}>
+                        <Text style={styles.textButton}>Generar reporte</Text>
+                    </View>
+
+                    <View style={styles.buttonRight}>
+                        <Ionicons
+                            name="chevron-forward-outline"
+                            size={20}
+                            color="#B90F0F"
+                        />
+                    </View>
+
                 </View>
-                
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.button}>
-                <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="calculator-outline" size={20} color="#B90F0F" />
+                <View style={styles.buttonContent}>
+
+                    <View style={styles.buttonLeft}>
+                        <View style={styles.iconContainer2}>
+                            <Ionicons name="calculator-outline" size={28} color="#B90F0F" />
+                        </View>
                     </View>
-                    <Text style={styles.textButton}>Gestionar formulas</Text>
-                    <Ionicons name="chevron-forward-outline" size={20} color="#B90F0F" />
+
+                    <View style={styles.buttonCenter}>
+                        <Text style={styles.textButton}>Gestionar formulas</Text>
+                    </View>
+
+                    <View style={styles.buttonRight}>
+                        <Ionicons
+                            name="chevron-forward-outline"
+                            size={20}
+                            color="#B90F0F"
+                        />
+                    </View>
+
                 </View>
-                
             </TouchableOpacity>
 
         </ScrollView>
@@ -145,12 +188,12 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     titleCard: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "400",
         color: "#000",
     },
     numberCard: {
-        fontSize: 14,
+        fontSize: 20,
         color: "#000",
         fontWeight: "600",
     },
@@ -174,9 +217,20 @@ const styles = StyleSheet.create({
         borderColor: "#FEE2E2",
     },
     iconContainer: {
-        backgroundColor: "#FEE2E2",
-        borderRadius: 50,
-        padding: 8,
+        width: 44,
+        height: 44,
+        backgroundColor: "#ffe4e4",
+        borderRadius: 22,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    iconContainer2: {
+        width: 44,
+        height: 44,
+        backgroundColor: "#F3F4F6",
+        borderRadius: 22,
+        alignItems: "center",
+        justifyContent: "center",
     },
     button: {
         backgroundColor: "#FFF",
@@ -186,6 +240,23 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         marginBottom: 16,
         borderRadius: 12.5,
+    },
+    buttonContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+    },
+    buttonLeft: {
+        width: 40,
+        alignItems: "flex-start",
+    },
+    buttonCenter: {
+        flex: 1,
+        alignItems: "center",
+    },
+    buttonRight: {
+        width: 40,
+        alignItems: "flex-end",
     },
     textButton: {
         color: "#000",
@@ -201,5 +272,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#000",
         marginBottom: 10,
+        marginTop: 20,
     },
 })
