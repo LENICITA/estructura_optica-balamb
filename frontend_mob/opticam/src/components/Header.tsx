@@ -253,7 +253,7 @@ export const Header = () => {
           id: 'admin-repartidores',
           label: 'Repartidores',
           icon: 'bicycle-outline',
-          route: 'AdminRepartidores',
+          route: 'DashboardRepartidores',
           admin: true,
         });
 

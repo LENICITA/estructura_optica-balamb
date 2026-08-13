@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../contexts/AuthContext';
+import { COLORS } from '../../constants/colors';
 
 interface Props {
   navigation: any;
@@ -147,7 +148,10 @@ export const AutoRegistro = ({ navigation }: Props) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+        >
 
           <Text style={styles.title}>Registro</Text>
           <Text style={styles.subtitle}>Regístrate gratis y seguro!</Text>
@@ -194,25 +198,46 @@ export const AutoRegistro = ({ navigation }: Props) => {
             />
 
             {/* Fecha de nacimiento */}
-            <Text style={styles.label}>Fecha de nacimiento</Text>
-                        <TouchableOpacity
-                          style={styles.dateInput}
-                          onPress={() => setShowDatePicker(true)}
-                        >
-                          <Text style={formData.fecha_nacimiento ? styles.dateText : styles.datePlaceholder}>
-                            {formData.fecha_nacimiento || 'Seleccionar fecha'}
-                          </Text>
-                        </TouchableOpacity>
+            <Text style={styles.label}>
+              Fecha de nacimiento
+            </Text>
 
-                        {showDatePicker && (
-                          <DateTimePicker
-                            value={new Date()}
-                            mode="date"
-                            display="default"
-                            onChange={handleDateChange}
-                          />
-                        )}
+            <TouchableOpacity
+              style={styles.dateInput}
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={
+                  formData.fecha_nacimiento
+                    ? styles.dateText
+                    : styles.placeholderText
+                }
+              >
+                {formData.fecha_nacimiento ||
+                  'Selecciona tu fecha de nacimiento'}
+              </Text>
 
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={
+                  formData.fecha_nacimiento
+                    ? new Date(`${formData.fecha_nacimiento}T00:00:00`)
+                    : new Date(2000, 0, 1)
+                }
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()}
+                onChange={handleDateChange}
+              />
+            )}
 
             {/* Ciudad */}
             <Text style={styles.label}>Ciudad</Text>
@@ -378,6 +403,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
+dateInput: {
+  width: '100%',
+  minHeight: 48,
+  paddingHorizontal: 12,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#ccc',
+  backgroundColor: '#fff',
+
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+
+dateText: {
+  flex: 1,
+  fontSize: 16,
+  color: '#000',
+},
+
+placeholderText: {
+  flex: 1,
+  fontSize: 16,
+  color: '#999',
+},
   passwordContainer: {
     position: 'relative',
     width: '100%',
