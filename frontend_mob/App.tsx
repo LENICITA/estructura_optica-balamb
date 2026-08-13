@@ -7,6 +7,7 @@ import DashboardRepartidores from './src/presentation/views/admin/DashboardRepar
 import EditarRepartidor from './src/presentation/views/admin/EditarRepartidor';
 import DetalleRepartidor from './src/presentation/views/admin/DetalleRepartidor';
 import GestionarFormulas from './src/presentation/views/admin/GestionarFormulas';
+import InicioRepartidor from './src/presentation/views/repartidor/InicioRepartidor';
 
 export type RootStackParamList = {
   DashboardRepartidores: undefined;
@@ -24,7 +25,7 @@ const App = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
           name="DashboardRepartidores"
-          component={DashboardRepartidores}  // ← Tu componente real
+          component={InicioRepartidor}  // ← Tu componente real
           options={{
             headerShown: true,
             title: "Papoi",
