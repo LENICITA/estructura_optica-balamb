@@ -3,7 +3,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaView, StyleSheet, StatusBar, View } from 'react-native';
-import { AuthProvider } from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { COLORS } from './src/constants/colors';
 
 // Pantallas desde screens/all/
@@ -20,14 +20,18 @@ import { PerfilCliente } from './src/screens/client/PerfilCliente';
 // Pantallas desde screens/admin/
 import { RegistrarRepartidor } from './src/screens/admin/RegistrarRepartidor';
 import { PerfilAdmin } from './src/screens/admin/PerfilAdmin';
+import { PrincipalAdmin } from './src/screens/admin/PrincipalAdmin';
+import DashboardRepartidores from './src/screens/admin/DashboardRepartidores';
 
 // Pantallas desde screens/repa/
 import { PerfilRepartidor } from './src/screens/repa/PerfilRepartidor';
+import { PrincipalRepartidor } from './src/screens/repa/PrincipalRepartidor';
 
 // Importa Header y Footer
 import { Header } from './src/components/Header';
 import { Footer } from './src/components/Footer';
 import { BottomNavigation } from './src/components/BottomNavigation';
+import { ChatBot } from './src/components/ChatBot';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +52,21 @@ const UserLayout = ({
 }: {
   children: React.ReactNode
 }) => {
+
+    const { user } = useAuth();
+
+      const roles = Array.isArray(user?.roles)
+          ? user.roles.map((rol: string) =>
+              String(rol).toUpperCase()
+            )
+          : typeof user?.roles === 'string'
+            ? [user.roles.toUpperCase()]
+            : user?.rol
+              ? [String(user.rol).toUpperCase()]
+              : [];
+
+        const esCliente = roles.includes('CLIENTE');
+
   return (
     <View style={styles.layoutContainer}>
 
@@ -58,6 +77,9 @@ const UserLayout = ({
       <View style={styles.contentContainer}>
         {children}
       </View>
+
+      {/* CHATBOT - SOLO CLIENTE */}
+            {esCliente && <ChatBot />}
 
       {/* NAVEGACIÓN SEGÚN EL ROL */}
       <BottomNavigation />
@@ -86,6 +108,22 @@ export default function App() {
                 <Layout>
                   <Principal />
                 </Layout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="PrincipalAdmin">
+              {({ navigation }) => (
+                  <UserLayout>
+                 <PrincipalAdmin navigation={navigation} />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="DashboardRepartidores">
+              {() => (
+                <UserLayout>
+                  <DashboardRepartidores />
+                </UserLayout>
               )}
             </Stack.Screen>
 
@@ -120,6 +158,14 @@ export default function App() {
                 </UserLayout>
               )}
             </Stack.Screen>
+
+            <Stack.Screen name="PrincipalRepartidor">
+              {({ navigation }) => (
+                  <UserLayout>
+                 <PrincipalRepartidor navigation={navigation} />
+                 </UserLayout>
+               )}
+           </Stack.Screen>
 
             <Stack.Screen name="PerfilRepartidor">
                {({ navigation }) => (

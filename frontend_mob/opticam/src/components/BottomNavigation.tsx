@@ -100,7 +100,7 @@ export const BottomNavigation = () => {
           label: 'Repartidores',
           icon: 'bicycle-outline',
           activeIcon: 'bicycle',
-          route: 'AdminRepartidores',
+          route: 'DashboardRepartidores',
         },
         {
           label: 'Reportes',
