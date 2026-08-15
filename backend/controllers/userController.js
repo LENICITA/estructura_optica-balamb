@@ -623,6 +623,11 @@ export const obtenerPerfil = async (req, res) => {
                     as: 'roles',
                     through: { attributes: [] },
                     attributes: ['nombre']
+                },
+                {
+                    model: Vehiculo,
+                    as: 'vehiculo',
+                    attributes: { exclude: ['id_usuario'] }
                 }
             ]
         });
@@ -648,7 +653,8 @@ export const obtenerPerfil = async (req, res) => {
                 documento: usuario.documento,
                 fecha_nacimiento: usuario.fecha_nacimiento,
                 estado: usuario.estado,
-                roles: usuario.roles?.map(r => r.nombre) || []
+                roles: usuario.roles?.map(r => r.nombre) || [],
+                vehiculo: usuario.vehiculo || null
             }
         });
 

@@ -332,36 +332,6 @@ router.get("/colores", inventarioController.getColores);
  */
 router.get("/categorias", inventarioController.getCategorias);
 
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   get:
- *     summary: Obtener categoría por ID
- *     tags: [Inventario]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     responses:
- *       200:
- *         description: Categoría encontrada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 categoria:
- *                   $ref: '#/components/schemas/Categoria'
- *       404:
- *         description: Categoría no encontrada
- */
-router.get("/categorias/:id", inventarioController.getCategoriaById);
-
 // ========== RUTAS PROTEGIDAS (SOLO ADMIN) ==========
 
 // Productos - CRUD admin

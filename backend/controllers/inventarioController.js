@@ -433,32 +433,6 @@ export const getCategorias = async (req, res) => {
   }
 };
 
-// Obtener categoría por ID
-export const getCategoriaById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await Inventario.getCategoriaById(id);
-
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: "Categoría no encontrada"
-      });
-    }
-
-    res.json({
-      success: true,
-      categoria: result
-    });
-  } catch (error) {
-    console.error("Error al obtener categoría:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener categoría"
-    });
-  }
-};
-
 // Crear categoría (solo admin)
 export const createCategoria = async (req, res) => {
   try {
@@ -496,21 +470,14 @@ export const updateCategoria = async (req, res) => {
     const { id } = req.params;
     const { tipo_categoria, descripcion } = req.body;
 
-    const categoriaActual = await Inventario.getCategoriaById(id);
-
-    if (!categoriaActual) {
-      return res.status(404).json({
-        success: false,
-        message: "Categoría no encontrada"
-      });
-    }
-
     await Inventario.updateCategoria(id, {
-      tipo_categoria: tipo_categoria || categoriaActual.tipo_categoria,
-      descripcion: descripcion !== undefined ? descripcion : categoriaActual.descripcion
+      tipo_categoria,
+      descripcion
     });
 
-    const updatedCategoria = await Inventario.getCategoriaById(id);
+    // Obtener todas las categorías y buscar la actualizada
+    const todas = await Inventario.getCategorias();
+    const updatedCategoria = todas.find(c => c.id_categoria === parseInt(id));
 
     res.json({
       success: true,
@@ -521,7 +488,7 @@ export const updateCategoria = async (req, res) => {
     console.error("Error al actualizar categoría:", error);
     res.status(500).json({
       success: false,
-      message: "Error al actualizar categoría"
+      message: error.message || "Error al actualizar categoría"
     });
   }
 };
@@ -530,15 +497,6 @@ export const updateCategoria = async (req, res) => {
 export const deleteCategoria = async (req, res) => {
   try {
     const { id } = req.params;
-
-    const categoria = await Inventario.getCategoriaById(id);
-
-    if (!categoria) {
-      return res.status(404).json({
-        success: false,
-        message: "Categoría no encontrada"
-      });
-    }
 
     await Inventario.deleteCategoria(id);
 
@@ -550,7 +508,7 @@ export const deleteCategoria = async (req, res) => {
     console.error("Error al eliminar categoría:", error);
     res.status(500).json({
       success: false,
-      message: "Error al eliminar categoría"
+      message: error.message || "Error al eliminar categoría"
     });
   }
 };

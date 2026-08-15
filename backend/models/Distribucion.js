@@ -258,7 +258,7 @@ const DistribucionModelo = {
       observaciones: observacion || 'Cancelado por administrador'
     });
     
-    // Actualizar estado del pedido a 'Pendiente'
+    // Actualizar estado del pedido a 'Pagado'
     await sequelize.query(
       'UPDATE PEDIDOS SET estado = "Pagado" WHERE id_pedido = ?',
       { replacements: [distribucion.id_pedido] }

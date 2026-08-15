@@ -431,23 +431,6 @@ const Inventario = {
     }
   },
 
-  // Obtener categoría por ID
-  getCategoriaById: async (id) => {
-    try {
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) return null;
-
-      return {
-        id_categoria: categoria.id_categoria,
-        tipo_categoria: categoria.tipo_categoria,
-        descripcion: categoria.descripcion
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
-
   // Crear categoría
   createCategoria: async (data) => {
     try {

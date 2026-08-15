@@ -523,8 +523,8 @@ const formulasData = [
 ];
 // 5. VEHÍCULO
 const vehiculosData = [
-  { id_usuario: 7, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
-  { id_usuario: 8, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
+  { id_usuario: 8, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
+  { id_usuario: 9, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
 ];
 // 6. PEDIDOS (12 PEDIDOS
 const pedidosData = [
