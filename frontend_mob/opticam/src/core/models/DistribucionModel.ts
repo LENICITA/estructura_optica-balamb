@@ -31,6 +31,7 @@ export interface Distribucion {
     nombre: string;
     email: string;
     telefono: string;
+    vehiculo?: string | null;
   };
 }
 
@@ -59,6 +60,7 @@ export class DistribucionModel implements Distribucion {
     nombre: string;
     email: string;
     telefono: string;
+    vehiculo?: string | null;
   };
 
   constructor(data: Distribucion) {
@@ -72,6 +74,11 @@ export class DistribucionModel implements Distribucion {
     this.pedido = data.pedido;
     this.repartidor = data.repartidor;
   }
+
+    get vehiculoRepartidor(): string {
+        if (!this.repartidor) return 'N/A';
+        return this.repartidor.vehiculo || 'N/A';
+      }
 
   get estadoDisplay(): string {
     const map: Record<EstadoDistribucion, string> = {
@@ -127,9 +134,15 @@ export class DistribucionModel implements Distribucion {
       fecha_entrega: data.fecha_entrega || null,
       observaciones: data.observaciones || null,
       pedido: data.pedido,
-      repartidor: data.repartidor,
-    });
-  }
+      repartidor: data.repartidor? {
+          id: data.repartidor.id || data.repartidor.id_usuario || 0,
+        nombre: data.repartidor.nombre || data.repartidor.nombre_completo || '',
+        email: data.repartidor.email || '',
+        telefono: data.repartidor.telefono || '',
+        vehiculo: data.repartidor.vehiculo || null,
+         } : undefined,
+     });
+ }
 
   static fromJSONArray(data: any[]): DistribucionModel[] {
     return data.map(item => DistribucionModel.fromJSON(item));
