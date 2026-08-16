@@ -171,12 +171,14 @@ export const obtenerFormulaPorId = async (req, res) => {
       });
     }
 
-    if (formula.id_usuario !== usuario.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver esta fórmula'
-      });
-    }
+    const esAdmin = usuario.roles?.includes('ADMIN') || false;
+        
+        if (!esAdmin && formula.id_usuario !== usuario.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para ver esta fórmula'
+            });
+        }
 
     const formulaConImagen = {
       ...formula,

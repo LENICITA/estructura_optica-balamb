@@ -1,7 +1,6 @@
 import express from 'express';
 import { 
-    login, 
-    register, 
+    login,
     verifyToken, 
     logout,
     solicitarRecuperacion,
@@ -14,7 +13,6 @@ const router = express.Router();
 
 // RUTAS PÚBLICAS
 router.post('/login', login);
-router.post('/register', register);
 
 // RUTAS DE RECUPERACIÓN DE CONTRASEÑA
 router.post('/recuperar-password', solicitarRecuperacion);

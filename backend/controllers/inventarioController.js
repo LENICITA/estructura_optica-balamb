@@ -264,11 +264,11 @@ export const createProducto = async (req, res) => {
         message: "El campo nombre es obligatorio"
       });
     }
-    if (!precio) {
-      return res.status(400).json({
+    if (!precio || parseFloat(precio) <= 0) {
+    return res.status(400).json({
         success: false,
-        message: "El campo precio es obligatorio"
-      });
+        message: "El precio debe ser mayor a cero"
+    });
     }
 
     if (!req.file) {
@@ -438,12 +438,13 @@ export const createCategoria = async (req, res) => {
   try {
     const { tipo_categoria, descripcion } = req.body;
 
-    if (!tipo_categoria) {
-      return res.status(400).json({
+    const tiposValidos = ['MONTURAS', 'ACCESORIOS', 'GAFAS DE SOL'];
+if (!tipo_categoria || !tiposValidos.includes(tipo_categoria.toUpperCase())) {
+    return res.status(400).json({
         success: false,
-        message: "El campo tipo_categoria es obligatorio"
-      });
-    }
+        message: "tipo_categoria debe ser: MONTURAS, ACCESORIOS o GAFAS DE SOL"
+    });
+}
 
     const result = await Inventario.createCategoria({
       tipo_categoria,

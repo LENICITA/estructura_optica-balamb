@@ -2,7 +2,8 @@ import {
     Usuario, 
     Vehiculo, 
     Role, 
-    RolUsuario 
+    RolUsuario,
+    Distribucion
 } from "../models/relaciones.js";
 import sequelize from "../config/database.js";
 import { generateToken } from "../utils/generadorToken.js";
@@ -313,9 +314,19 @@ export const obtenerRepartidor = async (req, res) => {
             });
         }
 
+        const pedidosEntregados = await Distribucion.count({
+            where: {
+                id_usuario: id,
+                estado: 'ENTREGADO' 
+            }
+        });
+
+            const usuarioData = usuario.toJSON();
+        usuarioData.pedidos_entregados = pedidosEntregados;
+
         res.json({
             success: true,
-            data: usuario
+            data: usuarioData
         });
 
     } catch (error) {

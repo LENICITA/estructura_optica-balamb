@@ -280,31 +280,6 @@ router.get("/productos/:id", inventarioController.getProductoById);
  */
 router.get("/marcas", inventarioController.getMarcas);
 
-/**
- * @swagger
- * /api/inventario/colores:
- *   get:
- *     summary: Obtener todos los colores disponibles
- *     tags: [Inventario]
- *     responses:
- *       200:
- *         description: Lista de colores
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 count:
- *                   type: integer
- *                 colores:
- *                   type: array
- *                   items:
- *                     type: string
- */
-router.get("/colores", inventarioController.getColores);
-
 // Categorías
 
 /**

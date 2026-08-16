@@ -436,6 +436,32 @@ export const obtenerDistribucionPorId = async (req, res) => {
       clienteData = cliente;
     }
 
+    let vehiculoInfo = null;
+    if (distribucion.repartidor) {
+      const [rol] = await sequelize.query(
+        `SELECT r.nombre as rol
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ?`,
+        { replacements: [distribucion.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (rol?.rol === 'ADMIN') {
+        vehiculoInfo = 'N/A';
+      } else if (rol?.rol === 'REPARTIDOR') {
+        const [vehiculo] = await sequelize.query(
+          `SELECT tipo, modelo, placa, color FROM VEHICULOS WHERE id_usuario = ?`,
+          { replacements: [distribucion.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        if (vehiculo) {
+          vehiculoInfo = `${vehiculo.tipo} ${vehiculo.modelo} - Placa: ${vehiculo.placa}`;
+        } else {
+          vehiculoInfo = 'Sin vehículo asignado';
+        }
+      }
+    }
+
     res.json({
       success: true,
       data: {
@@ -460,7 +486,8 @@ export const obtenerDistribucionPorId = async (req, res) => {
           id: distribucion.repartidor.id_usuario,
           nombre: distribucion.repartidor.nombre_completo,
           email: distribucion.repartidor.email,
-          telefono: distribucion.repartidor.telefono
+          telefono: distribucion.repartidor.telefono,
+          vehiculo: vehiculoInfo
         } : null
       }
     });
@@ -752,10 +779,33 @@ export const obtenerTodas = async (req, res) => {
   try {
     const distribuciones = await DistribucionModelo.obtenerTodas();
 
-    res.json({
-      success: true,
-      count: distribuciones.length,
-      data: distribuciones.map(d => ({
+    // Obtener datos con vehículo para cada distribución
+    const distribucionesConVehiculo = [];
+    for (const d of distribuciones) {
+      // Verificar si el usuario asignado es ADMIN o REPARTIDOR
+      const [usuarioAsignado] = await sequelize.query(
+        `SELECT r.nombre as rol
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ?`,
+        { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      let vehiculoInfo = 'N/A';
+      
+      // Si es REPARTIDOR, buscar su vehículo
+      if (usuarioAsignado?.rol === 'REPARTIDOR') {
+        const [vehiculo] = await sequelize.query(
+          `SELECT placa, tipo, modelo, color FROM VEHICULOS WHERE id_usuario = ?`,
+          { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        if (vehiculo) {
+          vehiculoInfo = `${vehiculo.tipo} ${vehiculo.modelo} - Placa: ${vehiculo.placa}`;
+        }
+      }
+
+      distribucionesConVehiculo.push({
         id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
@@ -768,9 +818,16 @@ export const obtenerTodas = async (req, res) => {
         },
         repartidor: {
           id: d.repartidor?.id_usuario,
-          nombre: d.repartidor?.nombre_completo
+          nombre: d.repartidor?.nombre_completo,
+          vehiculo: vehiculoInfo  
         }
-      }))
+      });
+    }
+
+     res.json({
+      success: true,
+      count: distribucionesConVehiculo.length,
+      data: distribucionesConVehiculo
     });
 
   } catch (error) {
@@ -876,7 +933,8 @@ export const obtenerDistribucionesExternas = async (req, res) => {
               id: admin.id_usuario,
               nombre_completo: admin.nombre_completo,
               email: admin.email,
-              telefono: admin.telefono
+              telefono: admin.telefono,
+              vehiculo: 'N/A' 
             },
             cliente: {
               id: usuario?.id_usuario || null,
