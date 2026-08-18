@@ -65,7 +65,7 @@ export default function App() {
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator
-            initialRouteName="PrincipalAdmin"
+            initialRouteName="Repartidores"
             screenOptions={{
               headerShown: false,
               animation: 'slide_from_right',
