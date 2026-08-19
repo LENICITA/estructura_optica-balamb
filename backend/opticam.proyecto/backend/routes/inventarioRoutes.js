@@ -303,7 +303,8 @@ router.get("/marcas", inventarioController.getMarcas);
  *                 categorias:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Categoria'
+ *                     type: string
+ *                   example: ["ACCESORIOS", "GAFAS DE SOL", "MONTURAS"]
  */
 router.get("/categorias", inventarioController.getCategorias);
 
@@ -473,120 +474,5 @@ router.put("/productos/:id", authMiddleware, adminMiddleware,upload.single("imag
  *         description: Acceso denegado (requiere admin)
  */
 router.delete("/productos/:id", authMiddleware, adminMiddleware, inventarioController.deleteProducto);
-
-// Categorías - CRUD admin
-
-/**
- * @swagger
- * /api/inventario/categorias:
- *   post:
- *     summary: Crear una nueva categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - tipo_categoria
- *             properties:
- *               tipo_categoria:
- *                 type: string
- *                 enum: [MONTURAS, ACCESORIOS, GAFAS DE SOL]
- *                 example: "ACCESORIOS"
- *               descripcion:
- *                 type: string
- *                 example: "Lentes de contacto y accesorios"
- *     responses:
- *       201:
- *         description: Categoría creada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 id_categoria:
- *                   type: integer
- *       400:
- *         description: Campos obligatorios faltantes
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.post("/categorias", authMiddleware, adminMiddleware, inventarioController.createCategoria);
-
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   put:
- *     summary: Actualizar una categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               tipo_categoria:
- *                 type: string
- *                 enum: [MONTURAS, ACCESORIOS, GAFAS DE SOL]
- *               descripcion:
- *                 type: string
- *     responses:
- *       200:
- *         description: Categoría actualizada
- *       404:
- *         description: Categoría no encontrada
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.put("/categorias/:id", authMiddleware, adminMiddleware, inventarioController.updateCategoria);
-
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   delete:
- *     summary: Eliminar una categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     responses:
- *       200:
- *         description: Categoría eliminada
- *       404:
- *         description: Categoría no encontrada
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.delete("/categorias/:id", authMiddleware, adminMiddleware, inventarioController.deleteCategoria);
 
 export default router;

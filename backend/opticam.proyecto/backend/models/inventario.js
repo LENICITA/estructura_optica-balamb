@@ -418,70 +418,13 @@ const Inventario = {
   getCategorias: async () => {
     try {
       const categorias = await Categoria.findAll({
-        order: [['id_categoria', 'ASC']]
+        order: [['tipo_categoria', 'ASC']],
+        attributes: ['tipo_categoria']
       });
 
-      return categorias.map(c => ({
-        id_categoria: c.id_categoria,
-        tipo_categoria: c.tipo_categoria,
-        descripcion: c.descripcion
-      }));
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Crear categoría
-  createCategoria: async (data) => {
-    try {
-      const { tipo_categoria, descripcion } = data;
-      
-      const categoria = await Categoria.create({
-        tipo_categoria,
-        descripcion: descripcion || ''
-      });
-
-      return { insertId: categoria.id_categoria };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Actualizar categoría
-  updateCategoria: async (id, data) => {
-    try {
-      const { tipo_categoria, descripcion } = data;
-      
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) {
-        throw new Error('Categoría no encontrada');
-      }
-
-      await categoria.update({
-        tipo_categoria: tipo_categoria || categoria.tipo_categoria,
-        descripcion: descripcion !== undefined ? descripcion : categoria.descripcion
-      });
-
-      return { affectedRows: 1 };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Eliminar categoría
-  deleteCategoria: async (id) => {
-    try {
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) {
-        throw new Error('Categoría no encontrada');
-      }
-
-      await categoria.destroy();
-      return { affectedRows: 1 };
-    } catch (error) {
-      throw error;
+      return categorias.map(c => c.tipo_categoria);
+  } catch (error) {
+    throw error;
     }
   }
 };
