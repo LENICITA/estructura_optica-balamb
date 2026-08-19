@@ -288,7 +288,7 @@ export const Header = () => {
           id: 'catalogo',
           label: 'Productos',
           icon: 'eye-outline',
-          route: 'Catalogo',
+          route: 'CatalogoCliente',
         });
 
 

@@ -46,7 +46,7 @@ export const BottomNavigation = () => {
           label: 'Catálogo',
           icon: 'grid-outline',
           activeIcon: 'grid',
-          route: 'Catalogo',
+          route: 'CatalogoCliente',
         },
         {
           label: 'Carrito',
