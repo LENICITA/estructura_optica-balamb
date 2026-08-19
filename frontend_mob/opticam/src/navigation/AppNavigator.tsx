@@ -20,6 +20,8 @@ import { RecuperarContraseña } from '../features/auth/screens/RecuperarContrase
 import { RestablecerContraseña } from '../features/auth/screens/RestablecerContraseña';
 import { PrincipalCliente } from '../features/client/screens/PrincipalCliente';
 import { PerfilCliente } from '../features/client/screens/PerfilCliente';
+import { CatalogoCliente } from '../features/client/screens/CatalogoCliente';
+import { DetalleProductoCliente } from '../features/client/screens/DetalleProductoCliente';
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
 import DashboardRepartidores from '../features/admin/screens/DashboardRepartidores';
@@ -41,33 +43,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 const UserLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-
-  const getRoles = (): string[] => {
-    if (!user) return [];
-    let rolesArray: string[] = [];
-    if (Array.isArray(user.roles)) {
-      rolesArray = user.roles.map((r: any) =>
-        typeof r === 'string' ? r : r.nombre || r.rol || r
-      );
-    } else if (typeof user.roles === 'string') {
-      rolesArray = [user.roles];
-    } else if ((user as any).rol) {
-      rolesArray = [(user as any).rol];
-    }
-    return rolesArray.map((role) => role.toUpperCase());
-  };
-
-  const roles = getRoles();
-  const esCliente = roles.includes('CLIENTE');
-
   return (
     <View style={styles.layoutContainer}>
       <Header />
       <View style={styles.contentContainer}>{children}</View>
-      {esCliente && <ChatBot />}
       <BottomNavigation />
       <Footer />
+    </View>
+  );
+};
+
+const ClientLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <View style={styles.layoutContainer}>
+      <Header />
+      <View style={styles.contentContainer}>{children}</View>
+      <BottomNavigation />
+      <Footer />
+      <ChatBot />
     </View>
   );
 };
@@ -125,18 +118,34 @@ export default function AppNavigator() {
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (
-                <UserLayout>
+                <ClientLayout>
                   <PrincipalCliente navigation={navigation} />
-                </UserLayout>
+                </ClientLayout>
               )}
             </Stack.Screen>
 
             <Stack.Screen name="PerfilCliente">
               {({ navigation }) => (
-                <UserLayout>
+                <ClientLayout>
                   <PerfilCliente navigation={navigation} />
-                </UserLayout>
+                </ClientLayout>
               )}
+            </Stack.Screen>
+
+            <Stack.Screen name="CatalogoCliente">
+               {({ navigation }) => (
+                   <ClientLayout>
+                     <CatalogoCliente navigation={navigation} />
+                   </ClientLayout>
+               )}
+           </Stack.Screen>
+
+           <Stack.Screen name="DetalleProductoCliente">
+                {({ navigation, route }) => (
+                    <ClientLayout>
+                      <DetalleProductoCliente navigation={navigation} route={route} />
+                    </ClientLayout>
+                )}
             </Stack.Screen>
 
             <Stack.Screen name="PrincipalRepartidor">

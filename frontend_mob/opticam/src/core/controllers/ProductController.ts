@@ -35,12 +35,15 @@ export class ProductController {
 
   async getProductoById(id: number): Promise<ProductModel | null> {
     try {
-      return await this.productService.getProductoById(id);
-    } catch (error) {
-      console.error(' Error en getProductoById:', error);
-      return null;
-    }
-  }
+      console.log('Controller - getProductoById con ID:', id);
+          const producto = await this.productService.getProductoById(id);
+          console.log('Controller - producto obtenido:', producto);
+          return producto;
+        } catch (error) {
+          console.error(' Error en getProductoById:', error);
+          return null;
+        }
+      }
 
   async buscarProductos(query: string): Promise<ProductModel[]> {
     try {
@@ -104,7 +107,7 @@ export class ProductController {
     }
   }
 
-  async getCategorias(): Promise<any[]> {
+  async getCategorias(): Promise<string[]> {
     try {
       return await this.productService.getCategorias();
     } catch (error) {
@@ -193,78 +196,6 @@ export class ProductController {
       return {
         success: false,
         message: error.response?.data?.message || 'Error al eliminar producto',
-      };
-    }
-  }
-
-  // ============================================
-  // CATEGORÍAS - ADMIN
-  // ============================================
-
-  async crearCategoria(data: {
-    tipo_categoria: string;
-    descripcion: string;
-  }): Promise<{ success: boolean; message: string; id_categoria?: number }> {
-    try {
-      if (!data.tipo_categoria) {
-        return { success: false, message: 'El tipo de categoría es requerido' };
-      }
-      const response = await this.productService.crearCategoria(data);
-      if (!response.success) {
-        return { success: false, message: response.message || 'Error al crear categoría' };
-      }
-      return {
-        success: true,
-        message: response.message || 'Categoría creada exitosamente',
-        id_categoria: response.id_categoria,
-      };
-    } catch (error: any) {
-      console.error(' Error en crearCategoria:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al crear categoría',
-      };
-    }
-  }
-
-  async actualizarCategoria(id: number, data: {
-    tipo_categoria?: string;
-    descripcion?: string;
-  }): Promise<{ success: boolean; message: string; data?: any }> {
-    try {
-      const response = await this.productService.actualizarCategoria(id, data);
-      if (!response.success) {
-        return { success: false, message: response.message || 'Error al actualizar categoría' };
-      }
-      return {
-        success: true,
-        message: response.message || 'Categoría actualizada exitosamente',
-        data: response.data,
-      };
-    } catch (error: any) {
-      console.error(' Error en actualizarCategoria:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al actualizar categoría',
-      };
-    }
-  }
-
-  async eliminarCategoria(id: number): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await this.productService.eliminarCategoria(id);
-      if (!response.success) {
-        return { success: false, message: response.message || 'Error al eliminar categoría' };
-      }
-      return {
-        success: true,
-        message: response.message || 'Categoría eliminada exitosamente',
-      };
-    } catch (error: any) {
-      console.error(' Error en eliminarCategoria:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al eliminar categoría',
       };
     }
   }

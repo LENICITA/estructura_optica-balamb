@@ -33,14 +33,14 @@ export const Iniciosesion = ({ navigation }: Props) => {
   const handleRedirectByRole = (usuario: any) => {
     try {
       if (!usuario) {
-        console.log('⚠️ No hay usuario para redirigir');
+        console.log(' No hay usuario para redirigir');
         navigation.navigate('Principal');
         return;
       }
 
-      console.log('👤 Usuario para redirección:', usuario);
+      console.log(' Usuario para redirección:', usuario);
 
-      //  OBTENER ROLES - trabajamos con el objeto plano
+      //  OBTENER ROLES
       let rolesArray: string[] = [];
 
       if (Array.isArray(usuario.roles)) {

@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ChatBotController } from '../../../core/controllers/ChatBotController';
@@ -45,6 +47,8 @@ export const ChatBot = () => {
 
   const scrollRef =
     useRef<ScrollView>(null);
+
+  const inputRef = useRef<TextInput>(null);
 
   // CARGAR BOTONES
 
@@ -113,6 +117,7 @@ export const ChatBot = () => {
     );
 
     setMensaje('');
+    inputRef.current?.blur();
 
     try {
 
@@ -194,11 +199,12 @@ export const ChatBot = () => {
       behavior={
         Platform.OS === 'ios'
           ? 'padding'
-          : undefined
+          : 'height'
       }
+  keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       pointerEvents="box-none"
     >
-
+<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.chatContainer}>
 
         {/* HEADER */}
@@ -216,7 +222,6 @@ export const ChatBot = () => {
               />
 
             </View>
-
             <View>
 
               <Text style={styles.headerTitle}>
@@ -371,6 +376,7 @@ export const ChatBot = () => {
         <View style={styles.inputSection}>
 
           <TextInput
+          ref={inputRef}
             style={styles.input}
             placeholder="Escribe un mensaje..."
             placeholderTextColor="#999"
@@ -379,6 +385,8 @@ export const ChatBot = () => {
             multiline
             maxLength={300}
             editable={!enviando}
+            returnKeyType="send"
+              onSubmitEditing={() => enviarMensaje()}
           />
 
           <TouchableOpacity
@@ -408,6 +416,8 @@ export const ChatBot = () => {
         </View>
 
       </View>
+
+      </TouchableWithoutFeedback>
 
     </KeyboardAvoidingView>
 
