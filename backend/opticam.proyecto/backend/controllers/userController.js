@@ -374,6 +374,57 @@ export const actualizarRepartidor = async (req, res) => {
             });
         }
 
+// Verificar si el documento ya existe en otro usuario 
+        if (documento && documento !== usuario.documento) {
+            const documentoExistente = await Usuario.findOne({
+                where: {
+                    documento: documento,
+                    id_usuario: { [Op.ne]: id }
+                },
+                transaction
+            });
+
+            if (documentoExistente) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'El documento ya está registrado por otro usuario'
+                });
+            }
+        }
+
+         // Verificar si el email ya existe en otro usuario 
+        if (email && email !== usuario.email) {
+            const emailExistente = await Usuario.findOne({
+                where: {
+                    email: email,
+                    id_usuario: { [Op.ne]: id }
+                },
+                transaction
+            });
+
+            if (emailExistente) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'El email ya está registrado por otro usuario'
+                });
+            }
+        }
+
+        // Validar fecha de nacimiento si se proporciona
+        if (fecha_nacimiento) {
+            const fecha = new Date(fecha_nacimiento);
+            if (isNaN(fecha.getTime())) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'La fecha de nacimiento no es válida'
+                });
+            }
+        }
+
+
         // Actualizar repartidor
         await usuario.update({
             nombre_completo: nombre_completo || usuario.nombre_completo,
@@ -683,7 +734,7 @@ export const obtenerPerfil = async (req, res) => {
 export const actualizarPerfil = async (req, res) => {
     try {
         const usuarioId = req.user.id;
-        const { nombre_completo, telefono, direccion, ciudad, email } = req.body;
+        const { nombre_completo, telefono, direccion, ciudad, email, fecha_nacimiento, documento } = req.body;
 
         console.log(` Actualizando perfil del usuario ${usuarioId}`);
 
@@ -730,13 +781,43 @@ export const actualizarPerfil = async (req, res) => {
             }
         }
 
+        // Verificar si el documento ya existe en otro usuario
+        if (documento && documento !== usuario.documento) {
+            const documentoExistente = await Usuario.findOne({
+                where: {
+                    documento: documento,
+                    id_usuario: { [Op.ne]: usuarioId }
+                }
+            });
+
+            if (documentoExistente) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El documento ya está registrado por otro usuario'
+                });
+            }
+        }
+
+        // Validar fecha de nacimiento si se proporciona
+        if (fecha_nacimiento) {
+            const fecha = new Date(fecha_nacimiento);
+            if (isNaN(fecha.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La fecha de nacimiento no es válida'
+                });
+            }
+        }
+
         // Actualizar solo los campos permitidos
         await usuario.update({
             nombre_completo: nombre_completo || usuario.nombre_completo,
             telefono: telefono || usuario.telefono,
             direccion: direccion !== undefined ? direccion : usuario.direccion,
             ciudad: ciudad || usuario.ciudad,
-            email: email || usuario.email
+            email: email || usuario.email,
+            fecha_nacimiento: fecha_nacimiento || usuario.fecha_nacimiento,
+            documento: documento || usuario.documento
         });
 
         console.log('Perfil actualizado');
@@ -749,7 +830,10 @@ export const actualizarPerfil = async (req, res) => {
                 nombre_completo: usuario.nombre_completo,
                 email: usuario.email,
                 telefono: usuario.telefono,
-                direccion: usuario.direccion
+                direccion: usuario.direccion,
+                ciudad: usuario.ciudad,
+                fecha_nacimiento: usuario.fecha_nacimiento,  
+                documento: usuario.documento
             }
         });
 
