@@ -26,6 +26,8 @@ import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
 import DashboardRepartidores from '../features/admin/screens/DashboardRepartidores';
 import { RegistrarRepartidor } from '../features/admin/screens/RegistrarRepartidor';
+import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
+import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
 
@@ -115,6 +117,22 @@ export default function AppNavigator() {
                 </UserLayout>
               )}
             </Stack.Screen>
+
+            <Stack.Screen name="CatalogoAdmin">
+               {({ navigation }) => (
+                   <UserLayout>
+                     <CatalogoAdmin navigation={navigation} />
+                   </UserLayout>
+               )}
+              </Stack.Screen>
+
+            <Stack.Screen name="DetalleProductoAdmin">
+               {({ navigation, route }) => (
+                   <UserLayout>
+                     <DetalleProductoAdmin navigation={navigation} route={route} />
+                   </UserLayout>
+               )}
+              </Stack.Screen>
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (

@@ -23,6 +23,8 @@ export interface UpdateProfileRequest {
   direccion?: string;
   ciudad?: string;
   email?: string;
+  fecha_nacimiento?: string;
+  documento?: string | number;
 }
 
 export interface UpdateProfileResponse {
