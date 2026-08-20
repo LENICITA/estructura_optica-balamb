@@ -9,8 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../auth/context/AuthContext';
 import { UserController } from '../../../core/controllers/UserController';
 import { COLORS } from '../../../shared/constants/colors';
@@ -26,6 +28,7 @@ export const PerfilAdmin = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre_completo: '',
@@ -80,6 +83,17 @@ export const PerfilAdmin = ({ navigation }: Props) => {
     }));
   };
 
+   const handleDateChange = (event: any, selectedDate?: Date) => {
+     setShowDatePicker(false);
+     if (selectedDate) {
+       const year = selectedDate.getFullYear();
+       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+       const day = String(selectedDate.getDate()).padStart(2, '0');
+       const formattedDate = `${year}-${month}-${day}`;
+       handleChange('fecha_nacimiento', formattedDate);
+     }
+   };
+
   // ===== EDITAR =====
   const activarEdicion = () => {
     setEditando(true);
@@ -103,6 +117,19 @@ export const PerfilAdmin = ({ navigation }: Props) => {
       return;
     }
 
+  if (formData.documento && isNaN(Number(formData.documento))) {
+    Alert.alert('Campo inválido', 'El documento debe ser un número válido.');
+    return;
+  }
+
+  if (formData.fecha_nacimiento) {
+    const fecha = new Date(formData.fecha_nacimiento);
+    if (isNaN(fecha.getTime())) {
+      Alert.alert('Campo inválido', 'La fecha de nacimiento no es válida.');
+      return;
+    }
+  }
+
     try {
       setGuardando(true);
 
@@ -112,6 +139,8 @@ export const PerfilAdmin = ({ navigation }: Props) => {
         telefono: formData.telefono.trim(),
         direccion: formData.direccion.trim(),
         ciudad: formData.ciudad.trim(),
+        fecha_nacimiento: formData.fecha_nacimiento.trim(),
+        documento: formData.documento ? Number(formData.documento) : undefined,
       });
 
       if (result.success) {
@@ -234,7 +263,9 @@ export const PerfilAdmin = ({ navigation }: Props) => {
             <Ionicons name="card-outline" size={18} color={COLORS.primary} />
             <TextInput
               value={formData.documento}
-              editable={false}
+              onChangeText={(text) => handleChange('documento', text)}
+              editable={editando}
+              keyboardType="numeric"
               style={styles.input}
             />
           </View>
@@ -271,15 +302,47 @@ export const PerfilAdmin = ({ navigation }: Props) => {
         {/* FECHA */}
         <View style={styles.field}>
           <Text style={styles.label}>Fecha de nacimiento</Text>
-          <View style={styles.inputContainer}>
-            <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-            <TextInput
-              value={formData.fecha_nacimiento}
-              editable={false}
-              style={styles.input}
-            />
-          </View>
-        </View>
+          <TouchableOpacity
+                      style={styles.inputContainer}
+                      onPress={() => editando && setShowDatePicker(true)}
+                      activeOpacity={editando ? 0.7 : 1}
+                      disabled={!editando}
+                    >
+                      <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+                      <Text
+                        style={[
+                          styles.input,
+                          !formData.fecha_nacimiento && styles.placeholderText,
+                        ]}
+                      >
+                        {formData.fecha_nacimiento || 'Selecciona una fecha'}
+                      </Text>
+                      <Ionicons
+                        name="chevron-down-outline"
+                        size={18}
+                        color={editando ? COLORS.primary : COLORS.gray}
+                      />
+                    </TouchableOpacity>
+                    {editando && (
+                      <Text style={styles.helperText}>
+                        Toca para seleccionar fecha con el calendario
+                      </Text>
+                    )}
+                  </View>
+
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={
+                        formData.fecha_nacimiento
+                          ? new Date(`${formData.fecha_nacimiento}T00:00:00`)
+                          : new Date(2000, 0, 1)
+                      }
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      maximumDate={new Date()}
+                      onChange={handleDateChange}
+                    />
+                  )}
 
         {/* ESTADO */}
         <View style={styles.field}>
@@ -531,4 +594,16 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: '600',
   },
+
+ placeholderText: {
+   color: '#999',
+ },
+
+ helperText: {
+   fontSize: 10,
+   color: COLORS.gray,
+   marginTop: 2,
+   marginLeft: 4,
+ },
+
 });

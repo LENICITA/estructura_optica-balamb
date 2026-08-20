@@ -86,6 +86,8 @@ export class UserController {
       direccion?: string;
       ciudad?: string;
       email?: string;
+      fecha_nacimiento?: string;
+      documento?: string | number;
     },
     userRoles?: string[]
   ): Promise<{ success: boolean; message: string; data?: any }> {
@@ -113,7 +115,7 @@ export class UserController {
       if (error.response?.status === 400) {
         message = error.response?.data?.message || 'Datos inválidos';
       } else if (error.response?.status === 409) {
-        message = error.response?.data?.message || 'El email ya está registrado';
+        message = error.response?.data?.message || 'El email o documento ya está registrado';
       } else if (error.response?.data?.message) {
         message = error.response.data.message;
       }

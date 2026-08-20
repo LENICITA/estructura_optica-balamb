@@ -234,7 +234,7 @@ export const Header = () => {
           id: 'admin-inventario',
           label: 'Inventario',
           icon: 'cube-outline',
-          route: 'AdminInventario',
+          route: 'CatalogoAdmin',
           admin: true,
         });
 

@@ -82,7 +82,7 @@ export const BottomNavigation = () => {
           label: 'Inventario',
           icon: 'cube-outline',
           activeIcon: 'cube',
-          route: 'AdminInventario',
+          route: 'CatalogoAdmin',
         },
         {
           label: 'Pedidos',
