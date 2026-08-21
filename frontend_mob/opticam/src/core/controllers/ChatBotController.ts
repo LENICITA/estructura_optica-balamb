@@ -36,7 +36,7 @@ export class ChatBotController {
       if (!response.success) {
         return {
           success: false,
-          error: response.message || 'Error al procesar el mensaje',
+          error: 'Error al procesar el mensaje',
         };
       }
 
