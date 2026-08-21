@@ -14,6 +14,13 @@ export interface ProfileResponse {
     fecha_nacimiento: string;
     estado: string;
     roles: string[];
+    vehiculo?: {             
+      id_vehiculo?: number;
+      tipo: string;
+      modelo: string;
+      placa: string;
+      color: string;
+    };
   };
 }
 
