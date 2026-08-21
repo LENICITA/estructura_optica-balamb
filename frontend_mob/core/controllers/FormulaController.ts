@@ -216,7 +216,7 @@ export class FormulaController {
       }
 
       const response =
-        await this.formulaService.actualizarEstadoFormula(
+        await this.formulaService.actualizarCostoFormula(
           id_formula,
           estado
         );

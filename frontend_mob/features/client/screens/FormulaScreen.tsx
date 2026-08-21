@@ -16,9 +16,12 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { ProductController } from '../../../core/controllers/FormulaController';
-import { ProductModel } from '../../../core/models/FormulaModel';
-import { COLORS } from '../../../shared/constants/colors';
+import { FormulaController } from '../../../core/controllers/FormulaController';
+import { FormulaModel, EstadoFormula } from '../../../core/models/FormulaModel';
+import * as ImagePicker from 'expo-image-picker'
+import { Header } from '../../../shared/components/navigation/Header';
+import { Footer } from '../../../shared/components/navigation/Footer';
+import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
   
 
 // ============================================================

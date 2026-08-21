@@ -30,6 +30,7 @@ import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import  FormulaScreen  from '../features/client/screens/FormulaScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -164,6 +165,13 @@ export default function AppNavigator() {
                       <DetalleProductoCliente navigation={navigation} route={route} />
                     </ClientLayout>
                 )}
+            </Stack.Screen>
+                        <Stack.Screen name="FormulaScreen">
+              {({ navigation }) => (
+                <ClientLayout>
+                  <FormulaScreen navigation={navigation} />
+                </ClientLayout>
+              )}
             </Stack.Screen>
 
             <Stack.Screen name="PrincipalRepartidor">
