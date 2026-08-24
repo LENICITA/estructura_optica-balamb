@@ -313,15 +313,8 @@ export default function DashboardRepartidores() {
                 <TouchableOpacity
                   style={styles.detalles}
                   onPress={() => {
-                    navigation.navigate('detalleRepartidor', {
+                    navigation.navigate('DetalleRepartidor', {
                       id: item.id,
-                      nombre: item.nombre,
-                      estado: item.estado,
-                      telefono: item.telefono,
-                      correo: item.correo,
-                      ciudad: item.ciudad,
-                      pedidos: item.pedidos,
-                      fecha_registro: item.fecha_registro,
                     });
                   }}
                 >
