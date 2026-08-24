@@ -64,7 +64,6 @@ export class FormulaController {
     id_formula?: number;
   }> {
     try {
-
       if (
         !data.id_usuario ||
         !data.condicion ||
@@ -94,12 +93,9 @@ export class FormulaController {
         message:
           response.message ||
           'Fórmula creada exitosamente',
-
         id_formula: response.id_formula,
       };
-
     } catch (error: any) {
-
       console.error(
         'Error en crearFormula:',
         error
@@ -120,9 +116,7 @@ export class FormulaController {
     success: boolean;
     message: string;
   }> {
-
     try {
-
       if (!id_formula) {
         return {
           success: false,
@@ -150,9 +144,7 @@ export class FormulaController {
           response.message ||
           'Fórmula eliminada exitosamente',
       };
-
     } catch (error: any) {
-
       console.error(
         'Error en eliminarFormula:',
         error
@@ -167,19 +159,14 @@ export class FormulaController {
     }
   }
 
-
   // ============================================
   // ADMINISTRADOR
   // ============================================
 
   async getTodasLasFormulas(): Promise<FormulaModel[]> {
-
     try {
-
       return await this.formulaService.getTodasLasFormulas();
-
     } catch (error) {
-
       console.error(
         'Error en getTodasLasFormulas:',
         error
@@ -189,7 +176,6 @@ export class FormulaController {
     }
   }
 
-
   async actualizarEstadoFormula(
     id_formula: number,
     estado: EstadoFormula
@@ -198,31 +184,37 @@ export class FormulaController {
     message: string;
     data?: FormulaModel;
   }> {
-
     try {
-
       const estadosPermitidos: EstadoFormula[] = [
         'PENDIENTE',
         'APROBADO',
         'RECHAZADO',
       ];
 
-      if (!estadosPermitidos.includes(estado)) {
+      if (!id_formula) {
+        return {
+          success: false,
+          message: 'El ID de la fórmula es requerido',
+        };
+      }
 
+      if (!estadosPermitidos.includes(estado)) {
         return {
           success: false,
           message: 'Estado de fórmula no válido',
         };
       }
 
+      // IMPORTANTE:
+      // Ahora el Service tiene exactamente
+      // el mismo nombre que llama el Controller.
       const response =
-        await this.formulaService.actualizarCostoFormula(
+        await this.formulaService.actualizarEstadoFormula(
           id_formula,
           estado
         );
 
       if (!response.success) {
-
         return {
           success: false,
           message:
@@ -241,9 +233,7 @@ export class FormulaController {
           ? FormulaModel.fromJSON(response.data)
           : undefined,
       };
-
     } catch (error: any) {
-
       console.error(
         'Error en actualizarEstadoFormula:',
         error
@@ -258,7 +248,6 @@ export class FormulaController {
     }
   }
 
-
   async actualizarCostoFormula(
     id_formula: number,
     costo: number
@@ -266,17 +255,23 @@ export class FormulaController {
     success: boolean;
     message: string;
   }> {
-
     try {
+      if (!id_formula) {
+        return {
+          success: false,
+          message: 'El ID de la fórmula es requerido',
+        };
+      }
 
       if (costo < 0) {
-
         return {
           success: false,
           message: 'El costo no puede ser negativo',
         };
       }
 
+      // Ahora el Service recibe directamente
+      // id_formula y costo.
       const response =
         await this.formulaService.actualizarCostoFormula(
           id_formula,
@@ -293,9 +288,7 @@ export class FormulaController {
               : 'Error al actualizar el costo'
           ),
       };
-
     } catch (error: any) {
-
       console.error(
         'Error en actualizarCostoFormula:',
         error

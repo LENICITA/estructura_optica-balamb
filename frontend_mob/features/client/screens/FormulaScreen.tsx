@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { Header } from '../../../shared/components/navigation/Header';
 import { Footer } from '../../../shared/components/navigation/Footer';
 import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
+import { useAuth } from '../../../features/auth/context/AuthContext';
   
 
 // ============================================================
