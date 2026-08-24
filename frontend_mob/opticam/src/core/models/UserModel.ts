@@ -5,6 +5,45 @@ export interface Role {
   nombre: string;
 }
 
+export interface ProfileResponse {
+  success: boolean;
+  data: {
+    id_usuario: number;
+    nombre_completo: string;
+    email: string;
+    telefono: string;
+    direccion: string;
+    ciudad: string;
+    documento: number;
+    fecha_nacimiento: string;
+    estado: string;
+    roles: string[];
+    vehiculo?: {
+      id_vehiculo?: number;
+      tipo: string;
+      modelo: string;
+      placa: string;
+      color: string;
+    };
+  };
+}
+
+export interface UpdateProfileRequest {
+  nombre_completo?: string;
+  telefono?: string;
+  direccion?: string;
+  ciudad?: string;
+  email?: string;
+  fecha_nacimiento?: string;
+  documento?: string | number;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data: any;
+}
+
 export interface User {
   id_usuario: number;
   nombre_completo: string;
@@ -15,6 +54,7 @@ export interface User {
   direccion: string;
   fecha_registro: string;
   email: string;
+  contrasena?: string;
   estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO';
   roles?: Role[] | string[];
   vehiculo?: {
@@ -35,9 +75,9 @@ export class UserModel implements User {
   direccion: string;
   fecha_registro: string;
   email: string;
+  contrasena?: string | undefined;
   estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO';
   roles?: Role[] | string[];
-  // ✅ AGREGA ESTO:
   vehiculo?: {
     tipo: string;
     modelo: string;
@@ -55,6 +95,7 @@ export class UserModel implements User {
     this.direccion = data.direccion;
     this.fecha_registro = data.fecha_registro;
     this.email = data.email;
+    this.contrasena = data.contrasena;
     this.estado = data.estado;
     this.roles = data.roles || [];
     this.vehiculo = data.vehiculo;
@@ -64,12 +105,10 @@ export class UserModel implements User {
   getRoles(): string[] {
     if (!this.roles) return [];
 
-    // Si los roles son objetos con propiedad 'nombre'
     if (Array.isArray(this.roles) && this.roles.length > 0) {
       if (typeof this.roles[0] === 'string') {
         return this.roles as string[];
       }
-      // Si son objetos Role
       return (this.roles as Role[]).map(r => r.nombre);
     }
     return [];
@@ -111,8 +150,9 @@ export class UserModel implements User {
       documento: data.documento || 0,
       ciudad: data.ciudad || '',
       direccion: data.direccion || '',
-      fecha_registro: data.fecha_registro || '',
+      fecha_registro: data.fecha_registro || new Date().toISOString(),
       email: data.email || '',
+      contrasena: data.contrasena || '',
       estado: data.estado || 'ACTIVO',
       roles: data.roles || [],
       vehiculo: data.vehiculo,
