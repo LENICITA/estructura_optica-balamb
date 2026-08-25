@@ -31,6 +31,7 @@ import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import { ContactoScreen } from '../features/client/screens/ContactoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -166,7 +167,7 @@ export default function AppNavigator() {
                    </ClientLayout>
                )}
            </Stack.Screen>
-
+            
            <Stack.Screen name="DetalleProductoCliente">
                 {({ navigation, route }) => (
                     <ClientLayout>
@@ -174,6 +175,13 @@ export default function AppNavigator() {
                     </ClientLayout>
                 )}
             </Stack.Screen>
+            <Stack.Screen name="Contacto">
+              {() => (
+                   <ClientLayout>
+                  <ContactoScreen />
+               </ClientLayout>
+                  )}
+              </Stack.Screen>
 
             <Stack.Screen name="PrincipalRepartidor">
               {({ navigation }) => (

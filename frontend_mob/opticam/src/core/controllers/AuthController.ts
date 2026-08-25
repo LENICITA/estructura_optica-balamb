@@ -3,6 +3,9 @@ import { AuthService } from '../services/AuthService';
 import { UserRepository } from '../repositories/UserRepository';
 import { UserModel } from '../models/UserModel';
 
+// ============================================
+// INTERFACES DE RESPUESTA
+// ============================================
 export interface LoginResult {
   success: boolean;
   message?: string;
@@ -17,6 +20,9 @@ export interface RegisterResult {
   token?: string;
 }
 
+// ============================================
+// CONTROLADOR
+// ============================================
 export class AuthController {
   private authService: AuthService;
   private userRepository: UserRepository;
@@ -26,50 +32,66 @@ export class AuthController {
     this.userRepository = new UserRepository();
   }
 
-  // LOGIN
-
+  // ===== LOGIN =====
   async login(email: string, password: string): Promise<LoginResult> {
     try {
       if (!email || !password) {
         return { success: false, message: 'Email y contraseña son requeridos' };
       }
 
-      const response = await this.authService.login(email.trim().toLowerCase(), password);
+      // ✅ Usamos 'any' para evitar errores de tipos mientras depuramos
+      const response: any = await this.authService.login(email.trim().toLowerCase(), password);
+
+      // 📌 LOG PARA DEBUG: Ver qué devuelve el backend
+      console.log('📦 Respuesta del login:', JSON.stringify(response, null, 2));
 
       if (!response.success) {
         return { success: false, message: response.message || 'Credenciales inválidas' };
       }
 
-      const { token, usuario } = response.data;
+      // 📌 Obtener token y usuario de diferentes formas posibles
+      const token = response.data?.token || response.token;
+      const usuario = response.data?.usuario || response.usuario || response.data;
+
+      if (!token) {
+        console.error('❌ No se recibió token. Respuesta completa:', response);
+        return { success: false, message: 'No se recibió un token válido' };
+      }
 
       const tokenString = typeof token === 'string' ? token : token?.token;
       if (!tokenString) {
         return { success: false, message: 'No se recibió un token válido' };
       }
 
+      // Normalizar roles
       let rolesArray: string[] = [];
-      if (Array.isArray(usuario.roles)) {
-        rolesArray = usuario.roles.map((r: any) =>
-          typeof r === 'string' ? r : r.nombre || r.rol || r
-        );
-      } else if (usuario.roles) {
-        rolesArray = [usuario.roles];
-      } else {
+      if (usuario) {
+        if (Array.isArray(usuario.roles)) {
+          rolesArray = usuario.roles.map((r: any) =>
+            typeof r === 'string' ? r : r.nombre || r.rol || r
+          );
+        } else if (usuario.roles) {
+          rolesArray = [usuario.roles];
+        } else if (usuario.rol) {
+          rolesArray = [usuario.rol];
+        }
+      }
+      if (rolesArray.length === 0) {
         rolesArray = ['CLIENTE'];
       }
       rolesArray = rolesArray.map((role) => role.toUpperCase());
 
       const userData = {
-        id_usuario: usuario.id,
-        nombre_completo: usuario.nombre_completo,
-        email: usuario.email,
-        telefono: usuario.telefono || '',
-        ciudad: usuario.ciudad || '',
-        direccion: '',
-        documento: 0,
-        fecha_nacimiento: '',
-        fecha_registro: '',
-        estado: 'ACTIVO' as const,
+        id_usuario: usuario?.id || usuario?.id_usuario || 0,
+        nombre_completo: usuario?.nombre_completo || usuario?.nombre || 'Usuario',
+        email: usuario?.email || email,
+        telefono: usuario?.telefono || '',
+        ciudad: usuario?.ciudad || '',
+        direccion: usuario?.direccion || '',
+        documento: usuario?.documento || 0,
+        fecha_nacimiento: usuario?.fecha_nacimiento || '',
+        fecha_registro: usuario?.fecha_registro || '',
+        estado: usuario?.estado || 'ACTIVO',
         roles: rolesArray,
       };
 
@@ -81,7 +103,7 @@ export class AuthController {
       return {
         success: true,
         user: userModel,
-        token: token,
+        token: tokenString,
       };
 
     } catch (error: any) {
@@ -98,8 +120,7 @@ export class AuthController {
     }
   }
 
-  // REGISTER
-
+  // ===== REGISTER =====
   async register(userData: any): Promise<RegisterResult> {
     try {
       if (!userData.nombre_completo || !userData.email || !userData.contrasena) {
@@ -115,42 +136,57 @@ export class AuthController {
         email: userData.email.trim().toLowerCase(),
       };
 
-      const response = await this.authService.register(dataToSend);
+      const response: any = await this.authService.register(dataToSend);
+
+      // 📌 LOG PARA DEBUG: Ver qué devuelve el backend
+      console.log('📦 Respuesta del registro:', JSON.stringify(response, null, 2));
 
       if (!response.success) {
         return { success: false, message: response.message || 'Error al registrar usuario' };
       }
 
-      const { token, usuario } = response.data;
+      const token = response.data?.token || response.token;
+      const usuario = response.data?.usuario || response.usuario || response.data;
+
+      if (!token) {
+        console.error('❌ No se recibió token. Respuesta completa:', response);
+        return { success: false, message: 'No se recibió un token válido' };
+      }
 
       const tokenString = typeof token === 'string' ? token : token?.token;
       if (!tokenString) {
         return { success: false, message: 'No se recibió un token válido' };
       }
 
+      // Normalizar roles
       let rolesArray: string[] = [];
-      if (Array.isArray(usuario.roles)) {
-        rolesArray = usuario.roles.map((r: any) =>
-          typeof r === 'string' ? r : r.nombre || r.rol || r
-        );
-      } else if (usuario.roles) {
-        rolesArray = [usuario.roles];
-      } else {
+      if (usuario) {
+        if (Array.isArray(usuario.roles)) {
+          rolesArray = usuario.roles.map((r: any) =>
+            typeof r === 'string' ? r : r.nombre || r.rol || r
+          );
+        } else if (usuario.roles) {
+          rolesArray = [usuario.roles];
+        } else if (usuario.rol) {
+          rolesArray = [usuario.rol];
+        }
+      }
+      if (rolesArray.length === 0) {
         rolesArray = ['CLIENTE'];
       }
       rolesArray = rolesArray.map((role) => role.toUpperCase());
 
       const userModel = UserModel.fromJSON({
-        id_usuario: usuario.id,
-        nombre_completo: usuario.nombre_completo,
-        email: usuario.email,
-        telefono: usuario.telefono || '',
-        ciudad: usuario.ciudad || '',
-        direccion: '',
-        documento: 0,
-        fecha_nacimiento: '',
-        fecha_registro: '',
-        estado: 'ACTIVO' as const,
+        id_usuario: usuario?.id || usuario?.id_usuario || 0,
+        nombre_completo: usuario?.nombre_completo || usuario?.nombre || 'Usuario',
+        email: usuario?.email || userData.email,
+        telefono: usuario?.telefono || '',
+        ciudad: usuario?.ciudad || '',
+        direccion: usuario?.direccion || '',
+        documento: usuario?.documento || 0,
+        fecha_nacimiento: usuario?.fecha_nacimiento || '',
+        fecha_registro: usuario?.fecha_registro || '',
+        estado: usuario?.estado || 'ACTIVO',
         roles: rolesArray,
       });
 
@@ -160,11 +196,11 @@ export class AuthController {
       return {
         success: true,
         user: userModel,
-        token: token,
+        token: tokenString,
       };
 
     } catch (error: any) {
-      console.error(' Error en register:', error);
+      console.error('❌ Error en register:', error);
       let message = 'Error al registrar usuario';
       if (error.response?.status === 400) {
         message = error.response?.data?.message || 'Datos inválidos. Verifica los campos.';
@@ -177,8 +213,7 @@ export class AuthController {
     }
   }
 
-  // LOGOUT
-
+  // ===== LOGOUT =====
   async logout(): Promise<{ success: boolean; message: string }> {
     try {
       await this.userRepository.clearSession();
@@ -189,13 +224,12 @@ export class AuthController {
       }
       return { success: true, message: 'Sesión cerrada correctamente' };
     } catch (error) {
-      console.error(' Error en logout:', error);
+      console.error('❌ Error en logout:', error);
       return { success: false, message: 'Error al cerrar sesión' };
     }
   }
 
-  // CARGAR USUARIO
-
+  // ===== CARGAR USUARIO =====
   async loadUser(): Promise<UserModel | null> {
     try {
       const token = await this.userRepository.getToken();
@@ -204,20 +238,20 @@ export class AuthController {
       const storedUser = await this.userRepository.getUser();
       if (storedUser) return storedUser;
 
-      const response = await this.authService.verifyToken();
+      const response: any = await this.authService.verifyToken();
 
       if (response.success && response.data?.usuario) {
         const userData = response.data.usuario;
         const userModel = UserModel.fromJSON({
-          id_usuario: userData.id,
-          nombre_completo: userData.nombre_completo,
-          email: userData.email,
+          id_usuario: userData.id || userData.id_usuario || 0,
+          nombre_completo: userData.nombre_completo || userData.nombre || 'Usuario',
+          email: userData.email || '',
           telefono: userData.telefono || '',
           direccion: userData.direccion || '',
           ciudad: userData.ciudad || '',
           documento: userData.documento || 0,
           fecha_nacimiento: userData.fecha_nacimiento || '',
-          fecha_registro: '',
+          fecha_registro: userData.fecha_registro || '',
           estado: userData.estado || 'ACTIVO',
           roles: userData.roles || [],
         });
@@ -226,27 +260,72 @@ export class AuthController {
       }
       return null;
     } catch (error) {
-      console.error(' Error en loadUser:', error);
+      console.error('❌ Error en loadUser:', error);
       await this.userRepository.clearSession();
       return null;
     }
   }
 
-  // RECUPERAR CONTRASEÑA
+  // ===== ACTUALIZAR USUARIO =====
+  async updateUser(): Promise<UserModel | null> {
+    try {
+      const response: any = await this.authService.getProfile();
+      if (response.success && response.data) {
+        const userData = response.data;
+        const userModel = UserModel.fromJSON({
+          id_usuario: userData.id || userData.id_usuario || 0,
+          nombre_completo: userData.nombre_completo || userData.nombre || 'Usuario',
+          email: userData.email || '',
+          telefono: userData.telefono || '',
+          direccion: userData.direccion || '',
+          ciudad: userData.ciudad || '',
+          documento: userData.documento || 0,
+          fecha_nacimiento: userData.fecha_nacimiento || '',
+          fecha_registro: userData.fecha_registro || '',
+          estado: userData.estado || 'ACTIVO',
+          roles: userData.roles || [],
+        });
+        await this.userRepository.saveUser(userModel);
+        return userModel;
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error en updateUser:', error);
+      return null;
+    }
+  }
 
+  // ===== VERIFICAR TOKEN =====
+  async verifyToken(): Promise<{ success: boolean; data?: any }> {
+    try {
+      const response: any = await this.authService.verifyToken();
+      if (!response.success) {
+        return { success: false };
+      }
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error('❌ Error en verifyToken:', error);
+      return { success: false };
+    }
+  }
+
+  // ===== SOLICITAR RECUPERACIÓN =====
   async solicitarRecuperacion(email: string): Promise<{ success: boolean; message: string; token?: string }> {
     try {
-      const response = await this.authService.solicitarRecuperacion(email.trim().toLowerCase());
+      const response: any = await this.authService.solicitarRecuperacion(email.trim().toLowerCase());
       if (!response.success) {
         return { success: false, message: response.message || 'Error al enviar el correo' };
       }
       return {
         success: true,
         message: response.message || 'Correo enviado correctamente',
-        token: response.token,
+        token: response.token || response.data?.token,
       };
     } catch (error: any) {
-      console.error(' Error en solicitarRecuperacion:', error);
+      console.error('❌ Error en solicitarRecuperacion:', error);
       let message = 'Error al procesar la solicitud';
       if (error.response?.status === 404) {
         message = 'No existe una cuenta con este email';
@@ -257,12 +336,13 @@ export class AuthController {
     }
   }
 
+  // ===== VERIFICAR TOKEN DE RECUPERACIÓN =====
   async verificarTokenRecuperacion(token: string): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       if (!token) {
         return { success: false, message: 'Token requerido' };
       }
-      const response = await this.authService.verificarTokenRecuperacion(token);
+      const response: any = await this.authService.verificarTokenRecuperacion(token);
       if (!response.success) {
         return { success: false, message: response.message || 'Token inválido o expirado' };
       }
@@ -272,7 +352,7 @@ export class AuthController {
         data: response.data,
       };
     } catch (error: any) {
-      console.error(' Error en verificarTokenRecuperacion:', error);
+      console.error('❌ Error en verificarTokenRecuperacion:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error al verificar el token',
@@ -280,6 +360,7 @@ export class AuthController {
     }
   }
 
+  // ===== RESETEAR CONTRASEÑA =====
   async resetearPassword(token: string, nuevaContrasena: string): Promise<{ success: boolean; message: string }> {
     try {
       if (!token || !nuevaContrasena) {
@@ -289,7 +370,7 @@ export class AuthController {
         return { success: false, message: 'La contraseña debe tener al menos 8 caracteres' };
       }
 
-      const response = await this.authService.resetearPassword(token, nuevaContrasena);
+      const response: any = await this.authService.resetearPassword(token, nuevaContrasena);
       if (!response.success) {
         return { success: false, message: response.message || 'Error al resetear la contraseña' };
       }
@@ -298,29 +379,11 @@ export class AuthController {
         message: response.message || 'Contraseña actualizada correctamente',
       };
     } catch (error: any) {
-      console.error(' Error en resetearPassword:', error);
+      console.error('❌ Error en resetearPassword:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error al resetear la contraseña',
       };
-    }
-  }
-
-  // VERIFICAR TOKEN
-
-  async verifyToken(): Promise<{ success: boolean; data?: any }> {
-    try {
-      const response = await this.authService.verifyToken();
-      if (!response.success) {
-        return { success: false };
-      }
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      console.error(' Error en verifyToken:', error);
-      return { success: false };
     }
   }
 }

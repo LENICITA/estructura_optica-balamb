@@ -210,6 +210,12 @@ export const Header = () => {
       icon: 'home-outline',
       route: 'Principal',
     });
+     items.push({
+    id: 'contacto',
+    label: 'Enviar mensaje de contacto',
+    icon: 'chatbubble-outline',
+    route: 'Contacto',
+  });
 
     // SI ESTÁ AUTENTICADO
 
