@@ -116,17 +116,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (userData: any) => {
     try {
       setIsLoading(true);
-      console.log(' AuthContext: Iniciando registro...');
+      console.log(' AuthContext: Iniciando registro de cliente...');
 
-      const result = await authController.register(userData);
+      const result = await userController.registrarCliente({
+            nombre_completo: userData.nombre_completo,
+            email: userData.email,
+            documento: userData.documento || '',
+            fecha_nacimiento: userData.fecha_nacimiento || '',
+            ciudad: userData.ciudad || '',
+            direccion: userData.direccion || '',
+            telefono: userData.telefono || '',
+            contrasena: userData.contrasena,
+          });
 
-      if (result.success && result.user) {
-        setUser(result.user);
-        setIsAuthenticated(true);
+            console.log('Resultado de registrarCliente:', result);
+
+          if (result.success) {
         console.log(' AuthContext: Registro exitoso');
         return {
           success: true,
-          user: result.user,
+          message: result.message || 'Usuario registrado correctamente',
         };
       } else {
         console.log(' AuthContext: Registro fallido:', result.message);
