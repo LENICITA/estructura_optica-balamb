@@ -32,9 +32,18 @@ export class FormulaModel implements Formula {
     this.fecha_creacion = data.fecha_creacion;
     this.estado = data.estado;
     this.costo = data.costo;
+    
+    console.log('🏗️ FormulaModel creado:', {
+      id_formula: this.id_formula,
+      condicion: this.condicion,
+      estado: this.estado
+    });
   }
 
   get costoFormateado(): string {
+    if (!this.costo || this.costo === 0) {
+      return '$0';
+    }
     return `$${this.costo.toLocaleString('es-CO')}`;
   }
 
@@ -42,50 +51,39 @@ export class FormulaModel implements Formula {
     switch (this.estado) {
       case 'APROBADO':
         return 'Aprobado';
-
       case 'RECHAZADO':
         return 'Rechazado';
-
       default:
         return 'Pendiente';
     }
   }
 
   static fromJSON(data: any): FormulaModel {
+    console.log('🔄 fromJSON - Datos recibidos:', data);
+
+    // Si Sequelize manda dataValues, usarlo
+    const source = data?.dataValues ?? data ?? {};
+
+    console.log('🔄 fromJSON - Datos normalizados:', source);
+
+    const idFormula = Number(
+      source.id_formula ??
+      source.id_Formula ??
+      source.id ??
+      0
+    );
+
+    console.log('🔄 fromJSON - ID final:', idFormula);
+
     return new FormulaModel({
-      id_formula: Number(data.id_formula || data.id || 0),
-
-      id_usuario: Number(
-        data.id_usuario ||
-        data.usuario_id ||
-        0
-      ),
-
-      condicion: data.condicion || '',
-
-      imagen_formula:
-        data.imagen_formula ||
-        data.imagen ||
-        '',
-
-      observaciones:
-        data.observaciones ||
-        data.descripcion ||
-        '',
-
-      fecha_creacion:
-        data.fecha_creacion ||
-        data.fecha ||
-        '',
-
-      estado:
-        String(data.estado || 'PENDIENTE').toUpperCase() as EstadoFormula,
-
-      costo: Number(data.costo || 0),
+      id_formula: idFormula,
+      id_usuario: Number(source.id_usuario ?? source.usuario_id ?? 0),
+      condicion: source.condicion ?? '',
+      imagen_formula: source.imagen_formula ?? source.imagen_url ?? source.imagen ?? '',
+      observaciones: source.observaciones ?? source.descripcion ?? '',
+      fecha_creacion: source.fecha_creacion ?? source.fecha ?? new Date().toISOString().split('T')[0],
+      costo: Number(source.costo ?? 0),
+      estado: (source.estado ?? 'PENDIENTE').toUpperCase() as EstadoFormula,
     });
-  }
-
-  static fromJSONArray(data: any[]): FormulaModel[] {
-    return data.map(item => FormulaModel.fromJSON(item));
   }
 }

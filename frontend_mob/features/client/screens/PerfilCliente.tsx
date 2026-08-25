@@ -385,15 +385,16 @@ export const PerfilCliente = ({ navigation }: Props) => {
             </TouchableOpacity>
 
             {/* ✅ PASAR ID_USUARIO CORRECTAMENTE */}
-            <TouchableOpacity
-              style={styles.btnFormula}
-              onPress={() => navigation.navigate('FormulaScreen', {
-                id_usuario: user?.id_usuario  // ✅ Usar el ID del contexto
-              })}
-            >
-              <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
-              <Text style={styles.btnFormulaText}>Mis fórmulas</Text>
-            </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.btnFormula}
+  onPress={() => {
+    console.log('📱 Navegando a MisFórmulas');
+    navigation.navigate('MisFormulasScreen');
+  }}
+>
+  <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
+  <Text style={styles.btnFormulaText}>Mis fórmulas</Text>
+</TouchableOpacity>
           </>
         ) : (
           <View style={styles.buttonsRow}>
