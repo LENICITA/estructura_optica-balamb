@@ -79,6 +79,28 @@ export const AutoRegistro = ({ navigation }: Props) => {
       setError('Ingresa un email válido');
       return;
     }
+
+if (!formData.telefono.trim()) {
+    setError('El teléfono es obligatorio');
+    return;
+  }
+  if (!formData.documento.trim()) {
+    setError('El documento es obligatorio');
+    return;
+  }
+  if (!formData.ciudad.trim()) {
+    setError('La ciudad es obligatoria');
+    return;
+  }
+  if (!formData.direccion.trim()) {
+    setError('La dirección es obligatoria');
+    return;
+  }
+  if (!formData.fecha_nacimiento) {
+    setError('La fecha de nacimiento es obligatoria');
+    return;
+  }
+
     if (!formData.contrasena) {
       setError('La contraseña es obligatoria');
       return;
@@ -103,22 +125,24 @@ export const AutoRegistro = ({ navigation }: Props) => {
       const userData = {
         nombre_completo: formData.nombre_completo.trim(),
         email: formData.email.trim().toLowerCase(),
-        documento: formData.documento.trim() || '',
-        fecha_nacimiento: formData.fecha_nacimiento || '',
-        ciudad: formData.ciudad.trim() || '',
-        direccion: formData.direccion.trim() || '',
-        telefono: formData.telefono.trim() || '',
+        documento: formData.documento.trim(),
+        fecha_nacimiento: formData.fecha_nacimiento,
+        ciudad: formData.ciudad.trim(),
+        direccion: formData.direccion.trim(),
+        telefono: formData.telefono.trim(),
         contrasena: formData.contrasena,
-        rol: 'CLIENTE'
       };
 
       //  Usamos register de useAuth (que ya usa AuthController)
       const result: any = await register(userData);
 
+      console.log('Registro exitoso en AutoRegistro:', result);
+
       if (result.success) {
         Alert.alert('¡Éxito!', 'Cuenta creada correctamente. Por favor inicia sesión.');
         navigation.navigate('Iniciosesion');
       } else {
+          console.log('Error en registro:', result.message);
         if (result.message?.includes('email')) {
           setError('Este email ya está registrado.');
         } else if (result.message?.includes('documento')) {
