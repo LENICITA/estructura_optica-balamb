@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
 
-      const response = await api.post('/auth/register', {
+      const response = await api.post('/usuarios/registro', {
         nombre_completo: userData.nombre_completo || userData.name,
         telefono: userData.telefono || '',
         fecha_nacimiento: userData.fecha_nacimiento || '',
