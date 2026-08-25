@@ -110,54 +110,58 @@ export class FormulaController {
     }
   }
 
-  async eliminarFormula(
-    id_formula: number
-  ): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    try {
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El ID de la fórmula es requerido',
-        };
-      }
+  // src/core/controllers/FormulaController.ts
 
-      const response =
-        await this.formulaService.eliminarFormula(
-          id_formula
-        );
+async eliminarFormula(
+  id_formula: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    console.log('🔍 Eliminando fórmula con ID:', id_formula); // ✅ Log para depuración
 
-      if (!response.success) {
-        return {
-          success: false,
-          message:
-            response.message ||
-            'Error al eliminar la fórmula',
-        };
-      }
-
+    if (!id_formula) {
       return {
-        success: true,
-        message:
-          response.message ||
-          'Fórmula eliminada exitosamente',
+        success: false,
+        message: 'El ID de la fórmula es requerido',
       };
-    } catch (error: any) {
-      console.error(
-        'Error en eliminarFormula:',
-        error
+    }
+
+    const response =
+      await this.formulaService.eliminarFormula(
+        id_formula
       );
 
+    if (!response.success) {
       return {
         success: false,
         message:
-          error.response?.data?.message ||
+          response.message ||
           'Error al eliminar la fórmula',
       };
     }
+
+    return {
+      success: true,
+      message:
+        response.message ||
+        'Fórmula eliminada exitosamente',
+    };
+  } catch (error: any) {
+    console.error(
+      'Error en eliminarFormula:',
+      error
+    );
+
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        'Error al eliminar la fórmula',
+    };
   }
+}
 
   // ============================================
   // ADMINISTRADOR

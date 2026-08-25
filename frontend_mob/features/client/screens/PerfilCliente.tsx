@@ -22,7 +22,7 @@ interface Props {
 }
 
 export const PerfilCliente = ({ navigation }: Props) => {
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();  // ✅ Obtener user del contexto
   const userController = new UserController();
 
   const [loading, setLoading] = useState(true);
@@ -50,19 +50,19 @@ export const PerfilCliente = ({ navigation }: Props) => {
   const cargarPerfil = async () => {
     try {
       setLoading(true);
-      const user = await userController.getProfile();
+      const userData = await userController.getProfile();
 
-      if (user) {
+      if (userData) {
         setFormData({
-          nombre_completo: user.nombre_completo || '',
-          email: user.email || '',
-          telefono: user.telefono || '',
-          direccion: user.direccion || '',
-          ciudad: user.ciudad || '',
-          documento: user.documento ? String(user.documento) : '',
-          fecha_nacimiento: user.fecha_nacimiento || '',
-          estado: user.estado || '',
-          roles: user.getRoles().join(', ') || '',
+          nombre_completo: userData.nombre_completo || '',
+          email: userData.email || '',
+          telefono: userData.telefono || '',
+          direccion: userData.direccion || '',
+          ciudad: userData.ciudad || '',
+          documento: userData.documento ? String(userData.documento) : '',
+          fecha_nacimiento: userData.fecha_nacimiento || '',
+          estado: userData.estado || '',
+          roles: userData.getRoles().join(', ') || '',
         });
       } else {
         Alert.alert('Error', 'No fue posible cargar el perfil.');
@@ -83,16 +83,16 @@ export const PerfilCliente = ({ navigation }: Props) => {
     }));
   };
 
-const handleDateChange = (event: any, selectedDate?: Date) => {
-  setShowDatePicker(false);
-  if (selectedDate) {
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
-    handleChange('fecha_nacimiento', formattedDate);
-  }
-};
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      handleChange('fecha_nacimiento', formattedDate);
+    }
+  };
 
   // ===== EDITAR =====
   const activarEdicion = () => {
@@ -117,18 +117,18 @@ const handleDateChange = (event: any, selectedDate?: Date) => {
       return;
     }
 
-      if (formData.documento && isNaN(Number(formData.documento))) {
-        Alert.alert('Campo inválido', 'El documento debe ser un número válido.');
+    if (formData.documento && isNaN(Number(formData.documento))) {
+      Alert.alert('Campo inválido', 'El documento debe ser un número válido.');
+      return;
+    }
+
+    if (formData.fecha_nacimiento) {
+      const fecha = new Date(formData.fecha_nacimiento);
+      if (isNaN(fecha.getTime())) {
+        Alert.alert('Campo inválido', 'La fecha de nacimiento no es válida.');
         return;
       }
-
-      if (formData.fecha_nacimiento) {
-        const fecha = new Date(formData.fecha_nacimiento);
-        if (isNaN(fecha.getTime())) {
-          Alert.alert('Campo inválido', 'La fecha de nacimiento no es válida.');
-          return;
-        }
-      }
+    }
 
     try {
       setGuardando(true);
@@ -288,46 +288,46 @@ const handleDateChange = (event: any, selectedDate?: Date) => {
         <View style={styles.fieldHalf}>
           <Text style={styles.label}>Fecha de nacimiento</Text>
           <TouchableOpacity
-              style={styles.inputContainer}
-              onPress={() => editando && setShowDatePicker(true)}
-              activeOpacity={editando ? 0.7 : 1}
-              disabled={!editando}
+            style={styles.inputContainer}
+            onPress={() => editando && setShowDatePicker(true)}
+            activeOpacity={editando ? 0.7 : 1}
+            disabled={!editando}
+          >
+            <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
+            <Text
+              style={[
+                styles.input,
+                !formData.fecha_nacimiento && styles.placeholderText,
+              ]}
             >
-              <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-              <Text
-                style={[
-                  styles.input,
-                  !formData.fecha_nacimiento && styles.placeholderText,
-                ]}
-              >
-                {formData.fecha_nacimiento || 'Selecciona una fecha'}
-              </Text>
-              <Ionicons
-                name="chevron-down-outline"
-                size={18}
-                color={editando ? COLORS.primary : COLORS.gray}
-              />
-            </TouchableOpacity>
-            {editando && (
-              <Text style={styles.helperText}>
-                Toca para seleccionar fecha con el calendario
-              </Text>
-            )}
-          </View>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={
-                formData.fecha_nacimiento
-                  ? new Date(`${formData.fecha_nacimiento}T00:00:00`)
-                  : new Date(2000, 0, 1)
-              }
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              maximumDate={new Date()}
-              onChange={handleDateChange}
+              {formData.fecha_nacimiento || 'Selecciona una fecha'}
+            </Text>
+            <Ionicons
+              name="chevron-down-outline"
+              size={18}
+              color={editando ? COLORS.primary : COLORS.gray}
             />
+          </TouchableOpacity>
+          {editando && (
+            <Text style={styles.helperText}>
+              Toca para seleccionar fecha con el calendario
+            </Text>
           )}
+        </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={
+              formData.fecha_nacimiento
+                ? new Date(`${formData.fecha_nacimiento}T00:00:00`)
+                : new Date(2000, 0, 1)
+            }
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            maximumDate={new Date()}
+            onChange={handleDateChange}
+          />
+        )}
 
         {/* ESTADO */}
         <View style={styles.fieldHalf}>
@@ -384,9 +384,12 @@ const handleDateChange = (event: any, selectedDate?: Date) => {
               <Text style={styles.btnEditarText}>Editar perfil</Text>
             </TouchableOpacity>
 
+            {/* ✅ PASAR ID_USUARIO CORRECTAMENTE */}
             <TouchableOpacity
               style={styles.btnFormula}
-              onPress={() => navigation.navigate('FormulaScreen')}
+              onPress={() => navigation.navigate('FormulaScreen', {
+                id_usuario: user?.id_usuario  // ✅ Usar el ID del contexto
+              })}
             >
               <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
               <Text style={styles.btnFormulaText}>Mis fórmulas</Text>
@@ -575,11 +578,9 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: '600',
   },
-
   placeholderText: {
     color: '#999',
   },
-
   helperText: {
     fontSize: 10,
     color: COLORS.gray,

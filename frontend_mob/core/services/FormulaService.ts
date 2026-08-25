@@ -50,23 +50,26 @@ export class FormulaService {
       : [];
   }
 
-  // ==========================================================
-  // OBTENER FÓRMULAS DE UN USUARIO
-  // ==========================================================
 
-  async getFormulasByUsuario(
-    id_usuario: number
-  ): Promise<FormulaModel[]> {
+// ==========================================================
+// OBTENER FÓRMULAS DE UN USUARIO
+// ==========================================================
 
-    if (!id_usuario) {
-      throw new Error(
-        'El id_usuario es obligatorio.'
-      );
-    }
+async getFormulasByUsuario(
+  id_usuario: number
+): Promise<FormulaModel[]> {
 
+  if (!id_usuario) {
+    throw new Error(
+      'El id_usuario es obligatorio.'
+    );
+  }
+
+  try {
+    // ✅ Usar la ruta correcta que existe en el backend
     const response =
       await apiClient.get<FormulaResponse>(
-        `/formulas/usuario/${id_usuario}`
+        '/formulas/mis-formulas'  // ← Ruta corregida
       );
 
     const data = response.data;
@@ -78,10 +81,26 @@ export class FormulaService {
       );
     }
 
+    // Convertir los datos a FormulaModel
     return Array.isArray(data.data)
-      ? data.data
+      ? data.data.map((item: any) => FormulaModel.fromJSON(item))
       : [];
+
+  } catch (error: any) {
+    console.error(
+      'Error en FormulaService.getFormulasByUsuario:',
+      error
+    );
+    
+    // Si el error es 404, devolver array vacío en lugar de lanzar error
+    if (error.response?.status === 404) {
+      console.warn('Ruta /mis-formulas no encontrada, verificando rutas disponibles...');
+      return [];
+    }
+    
+    throw error;
   }
+}
 
   // ==========================================================
   // OBTENER UNA FÓRMULA POR ID
@@ -114,10 +133,11 @@ export class FormulaService {
     return data.data || null;
   }
 
-  // ==========================================================
-  // CREAR / SUBIR FÓRMULA
-  // ==========================================================
-// src/core/services/FormulaService.ts
+ // src/core/services/FormulaService.ts
+
+// ==========================================================
+// CREAR / SUBIR FÓRMULA - CORREGIDO
+// ==========================================================
 
 async crearFormula(
   data: CrearFormulaData
@@ -128,7 +148,7 @@ async crearFormula(
   data?: FormulaModel;
 }> {
   try {
-    // ✅ Validaciones corregidas
+    // ✅ Validaciones
     if (!data.id_usuario) {
       return { success: false, message: 'El usuario es obligatorio.' };
     }
@@ -139,23 +159,33 @@ async crearFormula(
       return { success: false, message: 'La imagen de la fórmula es obligatoria.' };
     }
 
-    // ✅ CREAR FormData
+    // ✅ CREAR FormData para enviar como multipart/form-data
     const formData = new FormData();
+
+    // Agregar campos de texto
     formData.append('condicion', data.condicion);
     formData.append('observaciones', data.observaciones || '');
 
     // ✅ AGREGAR IMAGEN como archivo
-    const uriParts = data.imagen_formula.split('.');
+    const uri = data.imagen_formula;
+    const uriParts = uri.split('.');
     const fileType = uriParts[uriParts.length - 1] || 'jpg';
     const fileName = `formula_${Date.now()}.${fileType}`;
-    
-    formData.append('imagen_formula', {
-      uri: data.imagen_formula,
-      name: fileName,
-      type: `image/${fileType}`,
-    } as any);
 
-    // ✅ ENVIAR con multipart
+    // Determinar el tipo MIME
+    let mimeType = 'image/jpeg';
+    if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
+    else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
+    else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
+
+    // @ts-ignore - React Native necesita este formato para FormData
+    formData.append('imagen', {
+      uri: uri,
+      name: fileName,
+      type: mimeType,
+    });
+
+    // ✅ ENVIAR con multipart/form-data
     const response = await apiClient.post<FormulaResponse>(
       '/formulas',
       formData,
@@ -177,65 +207,81 @@ async crearFormula(
 
   } catch (error: any) {
     console.error('Error en FormulaService.crearFormula:', error);
+    
+    // Mejorar el mensaje de error
+    let errorMessage = 'No fue posible crear la fórmula.';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.status === 400) {
+      errorMessage = 'Datos inválidos. Verifica la imagen y los campos.';
+    } else if (error.response?.status === 413) {
+      errorMessage = 'La imagen es demasiado grande.';
+    } else if (error.response?.status === 500) {
+      errorMessage = 'Error en el servidor. Intenta nuevamente.';
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.message || 'No fue posible crear la fórmula.',
+      message: errorMessage,
     };
   }
 }
+  // src/core/services/FormulaService.ts
 
-  // ==========================================================
-  // ELIMINAR FÓRMULA
-  // ==========================================================
+// ==========================================================
+// ELIMINAR FÓRMULA - CORREGIDO
+// ==========================================================
 
-  async eliminarFormula(
-    id_formula: number
-  ): Promise<{
-    success: boolean;
-    message: string;
-  }> {
+async eliminarFormula(
+  id_formula: number
+): Promise<{
+  success: boolean;
+  message: string;
+}> {
 
-    try {
+  try {
+    console.log('🗑️ Service - Eliminando fórmula ID:', id_formula); // ✅ Log
 
-      if (!id_formula) {
-        return {
-          success: false,
-          message:
-            'El id_formula es obligatorio.',
-        };
-      }
-
-      const response =
-        await apiClient.delete<FormulaResponse>(
-          `/formulas/${id_formula}`
-        );
-
-      const result = response.data;
-
-      return {
-        success:
-          result.success ?? true,
-
-        message:
-          result.message ??
-          'Fórmula eliminada exitosamente.',
-      };
-
-    } catch (error: any) {
-
-      console.error(
-        'Error en FormulaService.eliminarFormula:',
-        error
-      );
-
+    if (!id_formula) {
       return {
         success: false,
-        message:
-          error.response?.data?.message ||
-          'No fue posible eliminar la fórmula.',
+        message: 'El id_formula es obligatorio.',
       };
     }
+
+    // ✅ Asegurarse de que el ID se envía correctamente en la URL
+    const response = await apiClient.delete<FormulaResponse>(
+      `/formulas/${id_formula}`  // ← El ID debe ir en la URL
+    );
+
+    const result = response.data;
+
+    console.log('✅ Respuesta de eliminación:', result);
+
+    return {
+      success: result.success ?? true,
+      message: result.message ?? 'Fórmula eliminada exitosamente.',
+    };
+
+  } catch (error: any) {
+    console.error('Error en FormulaService.eliminarFormula:', error);
+    
+    // Mejorar mensaje de error
+    let errorMessage = 'No fue posible eliminar la fórmula.';
+    if (error.response?.status === 404) {
+      errorMessage = 'La fórmula no existe o ya fue eliminada.';
+    } else if (error.response?.status === 403) {
+      errorMessage = 'No tienes permiso para eliminar esta fórmula.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    
+    return {
+      success: false,
+      message: errorMessage,
+    };
   }
+}
 
   // ==========================================================
   // ACTUALIZAR ESTADO DE FÓRMULA
