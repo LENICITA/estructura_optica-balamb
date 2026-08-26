@@ -11,6 +11,9 @@ export interface Formula {
   fecha_creacion: string;
   estado: EstadoFormula;
   costo: number;
+  nombre_completo: string;
+  telefono: string;
+  email: string;
 }
 
 export class FormulaModel implements Formula {
@@ -22,6 +25,9 @@ export class FormulaModel implements Formula {
   fecha_creacion: string;
   estado: EstadoFormula;
   costo: number;
+  nombre_completo: string;
+  telefono: string;
+  email: string;
 
   constructor(data: Formula) {
     this.id_formula = data.id_formula;
@@ -32,6 +38,9 @@ export class FormulaModel implements Formula {
     this.fecha_creacion = data.fecha_creacion;
     this.estado = data.estado;
     this.costo = data.costo;
+    this.nombre_completo = data.nombre_completo;
+    this.telefono = data.telefono;
+    this.email = data.email;
     
     console.log('🏗️ FormulaModel creado:', {
       id_formula: this.id_formula,
@@ -84,6 +93,9 @@ export class FormulaModel implements Formula {
       fecha_creacion: source.fecha_creacion ?? source.fecha ?? new Date().toISOString().split('T')[0],
       costo: Number(source.costo ?? 0),
       estado: (source.estado ?? 'PENDIENTE').toUpperCase() as EstadoFormula,
+      nombre_completo: source.nombre_completo,
+      telefono: source.telefono,
+      email: source.email,
     });
   }
 }

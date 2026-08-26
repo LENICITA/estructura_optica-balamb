@@ -9,7 +9,7 @@ import {
     View,
     Image
 } from 'react-native'
-import { Ionicons} from '@expo/vector-icons';
+import { Ionicons, AntDesign} from '@expo/vector-icons';
 
 import { FormulaController } from '@/core/controllers/FormulaController';
 import { FormulaModel } from '@/core/models/FormulaModel';

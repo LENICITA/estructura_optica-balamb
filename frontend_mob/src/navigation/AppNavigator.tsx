@@ -35,6 +35,7 @@ import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
 import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
 import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
 import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen';
+import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
 
 const Stack = createNativeStackNavigator();
 
@@ -95,6 +96,14 @@ export default function AppNavigator() {
               {({ navigation }) => (
                 <UserLayout>
                   <PrincipalAdmin navigation={navigation} />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name='GestionarFormulas'>
+              {() => (
+                <UserLayout>
+                  <GestionarFormulas />
                 </UserLayout>
               )}
             </Stack.Screen>

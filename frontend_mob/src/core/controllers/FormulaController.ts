@@ -29,11 +29,11 @@ export class FormulaController {
   }
 
   async getFormulaById(
-    id_formula: number
+    id: number
   ): Promise<FormulaModel | null> {
     try {
-      console.log('📋 Controller - getFormulaById:', id_formula);
-      const result = await this.formulaService.getFormulaById(id_formula);
+      console.log('📋 Controller - getFormulaById:', id);
+      const result = await this.formulaService.getFormulaById(id);
       return result;
     } catch (error) {
       console.error('Error en getFormulaById:', error);

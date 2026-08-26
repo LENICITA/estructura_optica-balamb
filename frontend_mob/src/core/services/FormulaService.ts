@@ -34,7 +34,7 @@ export class FormulaService {
 
   async getTodasLasFormulas(): Promise<FormulaModel[]> {
     const response =
-      await apiClient.get<FormulaResponse>('/formulas');
+      await apiClient.get<FormulaResponse>('/formulas/admin/todas');
 
     const data = response.data;
 
