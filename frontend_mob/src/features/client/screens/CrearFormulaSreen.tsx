@@ -159,8 +159,8 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-            <Text style={styles.backText}>Volver a Mis Fórmulas</Text>
+            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+            <Text style={styles.backText}>Volver</Text>
           </TouchableOpacity>
 
           <Text style={styles.title}>Crear Fórmula</Text>
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
-    color: COLORS.black,
+    color: COLORS.primary,
     fontWeight: '500',
   },
   title: {

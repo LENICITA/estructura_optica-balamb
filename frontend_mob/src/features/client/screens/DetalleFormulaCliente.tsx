@@ -7,9 +7,10 @@ import {
     TouchableOpacity,
     Text,
     View,
-    Image
+    Image,
+    TextInput
 } from 'react-native'
-import { Ionicons, AntDesign} from '@expo/vector-icons';
+import { Ionicons} from '@expo/vector-icons';
 
 import { FormulaController } from '@/core/controllers/FormulaController';
 import { FormulaModel } from '@/core/models/FormulaModel';
@@ -20,7 +21,7 @@ export const DetalleFormulaCliente = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
 
-    const { id } = route.params ?? {};
+    const { id_formula } = route.params ?? {};
 
     const [formula, setFormula] = useState<FormulaModel | null>(null);
     const [loading, setLoading] = useState(true);
@@ -29,18 +30,18 @@ export const DetalleFormulaCliente = () => {
 
     useEffect(() => {
         cargarFormula();
-    }, [id]);
+    }, [id_formula]);
 
     const cargarFormula = async () => {
         try {
             setLoading(true);
 
-            if (!id) {
+            if (!id_formula) {
                 console.error('No se recibió el ID de la fórmula');
                 return;
             }
 
-            const resultado = await formulaController.getFormulaById(Number(id));
+            const resultado = await formulaController.getFormulaById(Number(id_formula));
 
             if (resultado) {
                 setFormula(resultado);
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     },
     imagenContainer: {
         width: "100%",
-        height: 220,
+        height: 450,
         justifyContent: "center",
         alignItems: "center",
         marginVertical: 15,

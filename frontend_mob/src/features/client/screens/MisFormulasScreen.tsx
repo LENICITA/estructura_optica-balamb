@@ -12,9 +12,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../auth/context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
 import { FormulaController } from '../../../core/controllers/FormulaController';
+import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
+import { useAuth } from '../../auth/context/AuthContext';
 import { FormulaModel, EstadoFormula } from '../../../core/models/FormulaModel';
+
 
 const COLORS = {
   primary: '#B90F0F',
@@ -41,7 +44,6 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   const [formulas, setFormulas] = useState<FormulaModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [eliminando, setEliminando] = useState<number | null>(null);
   const [actualizando, setActualizando] = useState(false);
 
   useEffect(() => {
@@ -50,19 +52,19 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   const cargarFormulas = async () => {
     if (!user?.id_usuario) {
-      console.warn('⚠️ No hay usuario autenticado');
+      console.warn('No hay usuario autenticado');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      console.log('📋 Cargando fórmulas para usuario:', user.id_usuario);
+      console.log('Cargando fórmulas para usuario:', user.id_usuario);
       const resultado = await formulaController.getFormulasByUsuario(user.id_usuario);
-      console.log('📋 Fórmulas cargadas:', resultado.length);
+      console.log('Fórmulas cargadas:', resultado.length);
       setFormulas(resultado);
     } catch (error) {
-      console.error('❌ Error cargando fórmulas:', error);
+      console.error('Error cargando fórmulas:', error);
       Alert.alert('Error', 'No fue posible cargar tus fórmulas.');
     } finally {
       setLoading(false);
@@ -77,72 +79,6 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
       console.error('Error actualizando fórmulas:', error);
     } finally {
       setActualizando(false);
-    }
-  };
-
-  const confirmarEliminarFormula = (formula: FormulaModel) => {
-    console.log('🔍 Fórmula a eliminar:', formula);
-    console.log('🔍 ID de fórmula:', formula?.id_formula);
-
-    const idFormula = formula?.id_formula;
-    
-    if (!idFormula) {
-      console.error('❌ No se pudo extraer el ID:', formula);
-      Alert.alert('Error', 'No se pudo identificar la fórmula a eliminar.');
-      return;
-    }
-
-    Alert.alert(
-      'Eliminar fórmula',
-      '¿Estás seguro de que deseas eliminar esta fórmula?\n\nSolo puedes eliminar fórmulas en estado Pendiente.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => eliminarFormula(Number(idFormula)),
-        },
-      ]
-    );
-  };
-
-  const eliminarFormula = async (id_formula: number) => {
-    console.log('🗑️ Eliminando fórmula ID:', id_formula);
-    
-    if (!id_formula || isNaN(id_formula) || id_formula <= 0) {
-      Alert.alert('Error', 'ID de fórmula no válido.');
-      return;
-    }
-
-    try {
-      setEliminando(id_formula);
-      const resultado = await formulaController.eliminarFormula(id_formula);
-      
-      console.log('📊 Resultado eliminación:', resultado);
-
-      if (!resultado.success) {
-        Alert.alert('Error', resultado.message);
-        return;
-      }
-
-      await cargarFormulas();
-      Alert.alert('Éxito', resultado.message || 'La fórmula fue eliminada correctamente.');
-    } catch (error: any) {
-      console.error('❌ Error eliminando fórmula:', error);
-      Alert.alert('Error', error?.message || 'No fue posible eliminar la fórmula.');
-    } finally {
-      setEliminando(null);
-    }
-  };
-
-  const estadoColor = (estado: EstadoFormula | string) => {
-    switch (String(estado).toUpperCase()) {
-      case 'APROBADO':
-        return COLORS.approvedText;
-      case 'RECHAZADO':
-        return COLORS.rejectedText;
-      default:
-        return COLORS.pendingText;
     }
   };
 
@@ -168,6 +104,28 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
     }
   };
 
+  const obtenerIconoEstado = (estado: EstadoFormula | string) => {
+    switch (String(estado).toUpperCase()) {
+      case 'APROBADO':
+        return 'checkmark-circle';
+      case 'RECHAZADO':
+        return 'close-circle';
+      default:
+        return 'time-outline';
+    }
+  };
+
+  const obtenerColorIcono = (estado: EstadoFormula | string) => {
+    switch (String(estado).toUpperCase()) {
+      case 'APROBADO':
+        return '#28a745';
+      case 'RECHAZADO':
+        return '#dc3545';
+      default:
+        return '#ffc107';
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -179,6 +137,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
+      
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -204,7 +163,8 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             </TouchableOpacity>
           </View>
 
-          {formulas.length === 0 ? (
+
+           {formulas.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="document-outline" size={70} color="#CCCCCC" />
               <Text style={styles.emptyText}>Aún no has subido fórmulas.</Text>
@@ -213,94 +173,46 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
               </Text>
             </View>
           ) : (
-            formulas.map((item) => (
-              <View key={item.id_formula} style={styles.formulaCard}>
-                {item.imagen_formula ? (
-                  <Image
-                    source={{ uri: item.imagen_formula }}
-                    style={styles.cardImage}
-                    resizeMode="cover"
+             formulas.map((item) => (
+              <TouchableOpacity
+                key={item.id_formula}
+                style={styles.formulaCard}
+                activeOpacity={0.7}
+                onPress={() => {
+                  console.log('📱 Abriendo detalle de fórmula:', item.id_formula);
+                  navigation.navigate('DetalleFormulaCliente', {
+                    id_formula: item.id_formula,
+                  });
+                }}
+              >
+                
+
+                <View style={[styles.statusContainer, { backgroundColor: estadoFondo(item.estado) }]}>
+                  <Ionicons 
+                    name={obtenerIconoEstado(item.estado)} 
+                    size={28} 
+                    color={obtenerColorIcono(item.estado)} 
                   />
-                ) : (
-                  <View style={styles.noCardImage}>
-                    <Ionicons name="document-outline" size={50} color="#CCCCCC" />
-                  </View>
-                )}
-
-                <View style={styles.cardBody}>
-                  <View style={styles.row}>
-                    <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.small}>{item.fecha_creacion}</Text>
-                  </View>
-
-                  <Text style={styles.cardTitle}>
-                    {item.observaciones || 'Fórmula óptica'}
+                  <Text style={[styles.statusText, { color: obtenerColorIcono(item.estado) }]}>
+                    {obtenerEstadoTexto(item.estado)}
                   </Text>
-
-                  <View style={styles.row}>
-                    <Ionicons name="eye-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.small}>{item.condicion}</Text>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.badge,
-                      { backgroundColor: estadoFondo(item.estado) },
-                    ]}
-                  >
-                    <Text style={[styles.badgeText, { color: estadoColor(item.estado) }]}>
-                      {obtenerEstadoTexto(item.estado)}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.price}>
-                    {String(item.estado).toUpperCase() === 'APROBADO'
-                      ? item.costoFormateado
-                      : 'En revisión'}
-                  </Text>
-
-                  {String(item.estado).toUpperCase() === 'PENDIENTE' && (
-                    <Text style={styles.statusMessage}>
-                      Tu fórmula está siendo revisada por el administrador.
-                    </Text>
-                  )}
-
-                  {String(item.estado).toUpperCase() === 'APROBADO' && (
-                    <Text style={styles.statusMessage}>Tu fórmula fue aprobada.</Text>
-                  )}
-
-                  {String(item.estado).toUpperCase() === 'RECHAZADO' && (
-                    <Text style={styles.rejectedMessage}>
-                      Tu fórmula fue rechazada. Revisa las observaciones.
-                    </Text>
-                  )}
-
-                  <TouchableOpacity
-                    style={styles.delete}
-                    onPress={() => {
-                      console.log('🖱️ Click eliminar - ID:', item.id_formula);
-                      confirmarEliminarFormula(item);
-                    }}
-                    disabled={eliminando === item.id_formula}
-                  >
-                    {eliminando === item.id_formula ? (
-                      <ActivityIndicator size="small" color="#666" />
-                    ) : (
-                      <Ionicons name="trash-outline" size={18} color="#666" />
-                    )}
-                    <Text style={styles.deleteText}>
-                      {eliminando === item.id_formula ? 'Eliminando...' : 'Eliminar'}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
-              </View>
+
+
+                <View style={styles.tapIndicator}>
+                  <Ionicons name="chevron-forward-circle-outline" size={18} color="#CCCCCC" />
+                  <Text style={styles.tapText}>Ver detalles</Text>
+                </View>
+              </TouchableOpacity>
             ))
           )}
+
+
 
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
-              console.log('➕ Navegando a CrearFormula con usuario:', user?.id_usuario);
+              console.log(' Navegando a CrearFormula con usuario:', user?.id_usuario);
               navigation.navigate('CrearFormulaScreen', { 
                 id_usuario: user?.id_usuario 
               });
@@ -310,10 +222,12 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             <Text style={styles.createButtonText}>Crear Fórmula</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -324,7 +238,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   content: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 100,
   },
   loadingContainer: {
@@ -339,7 +253,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginTop: 15,
@@ -350,7 +264,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     marginTop: 8,
     marginBottom: 20,
-    fontSize: 16,
+    fontSize: 14,
   },
   headerRow: {
     flexDirection: 'row',
@@ -393,83 +307,37 @@ const styles = StyleSheet.create({
   formulaCard: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
-    marginBottom: 20,
-    overflow: 'hidden',
-    elevation: 4,
+    marginBottom: 12,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 3,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
-  cardImage: {
-    width: '100%',
-    height: 180,
-  },
-  noCardImage: {
-    width: '100%',
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
-  },
-  cardBody: {
-    padding: 16,
-  },
-  row: {
+  statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    minWidth: '60%',
+    justifyContent: 'center',
   },
-  small: {
-    color: COLORS.gray,
-    fontSize: 14,
-  },
-  cardTitle: {
-    fontSize: 18,
+  statusText: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: COLORS.black,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginVertical: 8,
-  },
-  badgeText: {
-    fontWeight: '600',
-  },
-  price: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginTop: 8,
-  },
-  statusMessage: {
-    color: COLORS.gray,
-    fontSize: 13,
-    marginTop: 8,
-    lineHeight: 18,
-  },
-  rejectedMessage: {
-    color: COLORS.rejectedText,
-    fontSize: 13,
-    marginTop: 8,
-    lineHeight: 18,
-  },
-  delete: {
-    marginTop: 15,
+  tapIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 6,
-    padding: 12,
-    backgroundColor: '#F2F2F2',
-    borderRadius: 10,
+    marginTop: 12,
   },
-  deleteText: {
-    color: '#666',
+  tapText: {
+    fontSize: 12,
+    color: '#CCCCCC',
   },
   createButton: {
     flexDirection: 'row',
@@ -477,7 +345,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     backgroundColor: COLORS.primary,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     marginTop: 10,
     marginBottom: 20,
@@ -488,7 +356,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: COLORS.white,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
