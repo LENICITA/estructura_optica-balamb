@@ -15,8 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../auth/context/AuthContext';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { FormulaModel, EstadoFormula } from '../../../core/models/FormulaModel';
-import { Header } from '../../../shared/components/navigation/Header';
-import { Footer } from '../../../shared/components/navigation/Footer';
 
 const COLORS = {
   primary: '#B90F0F',
@@ -181,7 +179,6 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <Header />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -313,7 +310,6 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             <Text style={styles.createButtonText}>Crear Fórmula</Text>
           </TouchableOpacity>
         </View>
-        <Footer />
       </ScrollView>
     </View>
   );

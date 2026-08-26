@@ -153,7 +153,7 @@ export const PrincipalCliente = ({ navigation }: Props) => {
             {[
               { icon: 'glasses-outline', title: 'Monturas', action: 'Catalogo' },
               { icon: 'sunny-outline', title: 'Gafas de Sol', action: 'Catalogo' },
-              { icon: 'document-text-outline', title: 'Fórmula Médica', action: 'Formula' },
+              { icon: 'document-text-outline', title: 'Fórmula Médica', action: 'MisFormulasScreen' },
               { icon: 'trending-up-outline', title: 'Más Vendidos', action: 'Catalogo' }
             ].map((cat, idx) => (
               <TouchableOpacity

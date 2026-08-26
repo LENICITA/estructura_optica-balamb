@@ -34,6 +34,7 @@ import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor'
 import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
 import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
 import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
+import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -118,6 +119,14 @@ export default function AppNavigator() {
               {() => (
                 <ClientLayout>
                   <DetalleFormulaCliente />
+                </ClientLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="CrearFormulaScreen">
+              {({ navigation }) => (
+                <ClientLayout>
+                  <CrearFormulaScreen navigation={navigation} />
                 </ClientLayout>
               )}
             </Stack.Screen>
