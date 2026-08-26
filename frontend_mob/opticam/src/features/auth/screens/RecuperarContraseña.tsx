@@ -44,13 +44,9 @@ export const RecuperarContraseña = ({ navigation }: Props) => {
             {
               text: 'OK',
               onPress: () => {
-                if (result.token) {
-                  navigation.navigate('RestablecerContraseña', { token: result.token });
-                } else {
-                  navigation.navigate('Iniciosesion');
+                  navigation.navigate('RestablecerContraseña');
                 }
               },
-            },
           ]
         );
         setEmail('');
