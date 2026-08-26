@@ -1,5 +1,6 @@
+// middleware/auth.js
 import jwt from 'jsonwebtoken';
-import { Usuario } from '../models/relaciones.js';
+import { Usuario, Role } from '../models/relaciones.js';
 
 export const authMiddleware = async (req, res, next) => {
     try {
@@ -16,7 +17,6 @@ export const authMiddleware = async (req, res, next) => {
             });
         }
 
-        // Verificar que empiece con 'Bearer '
         if (!authHeader.startsWith('Bearer ')) {
             console.log('Header no empieza con Bearer');
             return res.status(401).json({
@@ -25,20 +25,17 @@ export const authMiddleware = async (req, res, next) => {
             });
         }
 
-        // Extraer el token
         const token = authHeader.split(' ')[1];
         console.log('Token extraído:', token ? token.substring(0, 30) + '...' : 'No token');
 
-        // Verificar que el token no esté vacío
         if (!token || token === 'null' || token === 'undefined' || token === '') {
-            console.log('❌ Token vacío o inválido');
+            console.log('Token vacío o inválido');
             return res.status(401).json({
                 success: false,
                 message: 'Token inválido'
             });
         }
 
-        // Verificar JWT_SECRET
         if (!process.env.JWT_SECRET) {
             console.error('JWT_SECRET no está definido en .env');
             return res.status(500).json({
@@ -47,7 +44,6 @@ export const authMiddleware = async (req, res, next) => {
             });
         }
 
-        // Verificar el token
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -72,18 +68,21 @@ export const authMiddleware = async (req, res, next) => {
             throw jwtError;
         }
 
-        // Verificar que el token tenga el campo 'id'
         if (!decoded.id) {
-            console.log('❌ Token no contiene campo "id"');
+            console.log('Token no contiene campo "id"');
             return res.status(401).json({
                 success: false,
                 message: 'Token inválido: no contiene ID de usuario'
             });
         }
 
-        // Buscar el usuario en la base de datos
         const usuario = await Usuario.findByPk(decoded.id, {
-            attributes: ['id_usuario', 'nombre_completo', 'email', 'estado', 'ciudad']
+            attributes: ['id_usuario', 'nombre_completo', 'email', 'estado', 'ciudad'],
+            include: [{
+                model: Role,
+                as: 'roles',
+                through: { attributes: [] }
+            }]
         });
 
         if (!usuario) {
@@ -94,7 +93,6 @@ export const authMiddleware = async (req, res, next) => {
             });
         }
         
-        // Verificar estado del usuario
         if (usuario.estado !== 'ACTIVO') {
             console.log('Usuario inactivo');
             return res.status(403).json({
@@ -103,20 +101,25 @@ export const authMiddleware = async (req, res, next) => {
             });
         }
 
-        // Guardar usuario en req.user
+        const roles = usuario.roles?.map(role => role.nombre) || [];
+        const esAdmin = roles.includes('ADMIN');
+        const rolPrincipal = roles.length > 0 ? roles[0] : null;
+
         req.user = {
             id: usuario.id_usuario,
             nombre_completo: usuario.nombre_completo,
             email: usuario.email,
             estado: usuario.estado,
-            ciudad: usuario.ciudad
+            ciudad: usuario.ciudad,
+            roles: roles,
+            rol: rolPrincipal,
+            isAdmin: esAdmin
         };
         
-        console.log(`Usuario autenticado: ${req.user.nombre_completo} (ID: ${req.user.id})`);
         next();
 
     } catch (error) {
-        console.error('❌ Error en auth middleware:', error);
+        console.error('Error en auth middleware:', error);
         return res.status(401).json({
             success: false,
             message: 'Error al autenticar usuario'

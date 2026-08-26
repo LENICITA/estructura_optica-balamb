@@ -5,6 +5,7 @@ import { generateToken } from "../utils/generadorToken.js";
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
+import { createTransport } from 'nodemailer';
 
 // LOGIN
 export const login = async (req, res) => {
@@ -302,8 +303,7 @@ export const solicitarRecuperacion = async (req, res) => {
         });
 
         if (!usuario) {
-            console.log('Email no encontrado:', email);
-            return res.status(404).json({
+             return res.status(404).json({
                 success: false,
                 message: 'No existe una cuenta con este email'
             });
@@ -317,16 +317,70 @@ export const solicitarRecuperacion = async (req, res) => {
             reset_token_expiry: resetTokenExpiry
         });
 
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+        const resetLink = `http://192.168.0.4:5000/reset-password?token=${resetToken}`;
 
-        console.log('Token generado:', resetToken);
+        console.log('Token generado para:', email);
         console.log('Enlace:', resetLink);
+
+        // INTENTAR ENVIAR AL USUARIO PRIMERO
+
+        let envioExitoso = false;
+        let emailFalso = false;
+
+        try {
+            await enviarCorreoRecuperacion({
+                emailDestino: usuario.email,
+                nombre: usuario.nombre_completo,
+                resetLink,
+                emailOriginal: usuario.email,
+                esFalso: false
+            });
+            console.log(' Correo enviado a:', usuario.email);
+            envioExitoso = true;
+        } catch (emailError) {
+
+            // SI EL CORREO REBOTA (EMAIL NO EXISTE)
+
+            console.log(' Error al enviar a:', usuario.email);
+            console.log('Error:', emailError.message);
+            
+            // Verificar si es error de "usuario no existe"
+            if (emailError.message?.includes('550') || 
+                emailError.message?.includes('Recipient address rejected') ||
+                emailError.message?.includes('User unknown') ||
+                emailError.message?.includes('Invalid recipient')) {
+                
+                console.log(' El email NO EXISTE en la vida real');
+                emailFalso = true;
+                
+                // Enviar al admin
+                await enviarCorreoRecuperacion({
+                    emailDestino: process.env.ADMIN_EMAIL || 'opticampostman@gmail.com',
+                    nombre: usuario.nombre_completo,
+                    resetLink,
+                    emailOriginal: usuario.email,
+                    esFalso: true
+                });
+                console.log(' Reenviado al administrador');
+                envioExitoso = true;
+            } else {
+                // Otro tipo de error
+                throw emailError;
+            }
+        }
+
+        if (!envioExitoso) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error al enviar el correo de recuperación'
+            });
+        }
 
         res.json({
             success: true,
-            message: 'Se ha enviado un enlace de recuperación a tu correo',
-            resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
-            token: resetToken
+            message: emailFalso 
+                ? 'El email no existe en la vida real. El enlace ha sido enviado al administrador.'
+                : 'Se ha enviado un enlace de recuperación a tu correo'
         });
 
     } catch (error) {
@@ -337,6 +391,57 @@ export const solicitarRecuperacion = async (req, res) => {
         });
     }
 };
+
+// ============================================
+// FUNCIÓN: Enviar correo de recuperación
+// ============================================
+const enviarCorreoRecuperacion = async ({ emailDestino, nombre, resetLink, emailOriginal, esFalso }) => {
+    const transporter = createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+
+    let subject = '🔐 Recuperación de contraseña - Óptica Balamb';
+    let html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #B90F0F;">🔐 Recuperación de contraseña</h2>
+            <p>Hola <strong>${nombre}</strong>,</p>
+            <p>Copia y pega el siguiente enlace en la app:</p>
+            <div style="background-color: #f0f0f0; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace;">
+                ${resetLink}
+            </div>
+            <p>Expira en 1 hora.</p>
+        </div>
+    `;
+
+    if (esFalso) {
+        subject = '⚠️ [ADMIN] Email no existe - Óptica Balamb';
+        html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #B90F0F; border-radius: 8px;">
+                <h2 style="color: #B90F0F;">⚠️ EL EMAIL NO EXISTE</h2>
+                <p><strong>Usuario:</strong> ${nombre}</p>
+                <p><strong>Email que intentó recuperar:</strong> ${emailOriginal}</p>
+                <p>Enlace para restablecer:</p>
+                <div style="background-color: #f0f0f0; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace;">
+                    ${resetLink}
+                </div>
+            </div>
+        `;
+    }
+
+    await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Óptica Balamb" <${process.env.SMTP_USER}>`,
+        to: emailDestino,
+        subject: subject,
+        html: html,
+    });
+};
+
 
 // RECUPERAR CONTRASEÑA - Verificar token
 export const verificarTokenRecuperacion = async (req, res) => {
