@@ -11,6 +11,8 @@ import {
   Dimensions,
   SafeAreaView,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -342,6 +344,16 @@ export const Header = () => {
 
   return (
     <>
+
+    {/* ===============================================
+            STATUS BAR
+        =============================================== */}
+        <StatusBar
+          backgroundColor={COLORS.black}
+          barStyle="light-content"
+          translucent={false}
+        />
+
       {/* ===============================================
           HEADER
       =============================================== */}
@@ -602,6 +614,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
 
     paddingVertical: 10,
+
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
 
     minHeight: 60,
 

@@ -5,3 +5,4 @@ export * from './ChatBotController';
 export * from '/DistribucionController';
 export * from '/PedidoController';
 export * from '/ProductController';
+export * from '/ContactoController';

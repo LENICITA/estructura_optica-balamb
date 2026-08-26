@@ -22,7 +22,8 @@ interface Props {
 }
 
 export const RestablecerContraseña = ({ navigation, route }: Props) => {
-  const token = route.params?.token || '';
+  const tokenFromRoute = route.params?.token || '';
+  const [token, setToken] = useState(tokenFromRoute);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,11 +31,24 @@ export const RestablecerContraseña = ({ navigation, route }: Props) => {
 
   const authController = new AuthController();
 
+  const extraerToken = (texto: string) => {
+      if (texto.includes('token=')) {
+        const match = texto.match(/token=([^&]+)/);
+        if (match) return match[1];
+      }
+      return texto;
+    };
+
+    const handleTokenChange = (text: string) => {
+      const tokenExtraido = extraerToken(text);
+      setToken(tokenExtraido);
+    };
+
   const handleSubmit = async () => {
-    if (!token) {
-      Alert.alert('Error', 'Token de recuperación no válido');
-      return;
-    }
+      if (!token || token.trim() === '') {
+        Alert.alert('Error', 'Debes ingresar el enlace de recuperación que recibiste en el correo');
+        return;
+      }
 
     if (newPassword.length < 8) {
       Alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres');
@@ -79,6 +93,20 @@ export const RestablecerContraseña = ({ navigation, route }: Props) => {
         </View>
 
         <View style={styles.card}>
+        <Text style={styles.label}>Enlace de recuperación</Text>
+                  <TextInput
+                    style={[styles.input, styles.tokenInput]}
+                    placeholder="Pega aquí el enlace que recibiste en el correo"
+                    placeholderTextColor="#999"
+                    value={token}
+                    onChangeText={handleTokenChange}
+                    autoCapitalize="none"
+                    multiline
+                    numberOfLines={2}
+                  />
+                  <Text style={styles.helperText}>
+                    Copia el enlace del correo y pégalo aquí
+                  </Text>
           <Text style={styles.label}>Nueva contraseña</Text>
           <View style={styles.passwordContainer}>
             <TextInput
@@ -185,6 +213,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     marginBottom: 16,
+  },
+tokenInput: {
+    borderColor: '#B90F0F',
+    borderWidth: 2,
+    backgroundColor: '#FFF5F5',
+    minHeight: 50,
+    textAlignVertical: 'top',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 16,
+    marginTop: -10,
   },
   passwordContainer: {
     flexDirection: 'row',

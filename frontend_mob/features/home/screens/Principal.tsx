@@ -42,7 +42,7 @@ export const Principal = () => {
         {/* Tarjeta 1: Conócenos */}
         <TouchableOpacity
           style={styles.cardWrapper}
-          onPress={() => navigation.navigate('Contacto' as never)}
+          onPress={() => navigation.navigate('ContactoScreen' as never)}
           activeOpacity={0.8}
         >
           <ImageBackground

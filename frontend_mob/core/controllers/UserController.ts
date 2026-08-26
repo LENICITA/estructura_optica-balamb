@@ -3,40 +3,6 @@ import { UserService } from '../services/UserService';
 import { UserRepository } from '../repositories/UserRepository';
 import { UserModel } from '../models/UserModel';
 
-export interface RepartidorData {
-  id: number;
-  nombre: string;
-  estado: string;
-  correo?: string;
-  telefono?: string;
-  ciudad?: string;
-  pedidos?: number;
-  fecha_registro: string;
-  vehiculo?: {
-    tipo: string;
-    modelo: string;
-    placa: string;
-    color: string;
-  };
-}
-
-export interface RegisterRepartidorData {
-  nombre_completo: string;
-  telefono: string;
-  fecha_nacimiento: string;
-  documento: string;
-  ciudad: string;
-  direccion: string;
-  email: string;
-  contrasena: string;
-  vehiculo: {
-    tipo: string;
-    modelo: string;
-    placa: string;
-    color: string;
-  };
-}
-
 export class UserController {
   private userService: UserService;
   private userRepository: UserRepository;
@@ -188,62 +154,71 @@ export class UserController {
   // REPARTIDORES
   // ============================================
 
-  async getRepartidores(): Promise<RepartidorData[]> {
+  async getRepartidores(): Promise<UserModel[]> {
     try {
       const response = await this.userService.getRepartidores();
       if (!response.success) return [];
 
-      return response.data.map((r: any) => ({
-        id: r.id_usuario || r.id,
-        nombre: r.nombre_completo || r.nombre,
-        estado: r.estado || 'INACTIVO',
-        correo: r.email,
-        telefono: r.telefono,
-        ciudad: r.ciudad,
-        pedidos: r.pedidos_count || 0,
-        fecha_registro: r.fecha_registro || new Date().toISOString(),
-        vehiculo: r.vehiculo ? {
-          tipo: r.vehiculo.tipo,
-          modelo: r.vehiculo.modelo,
-          placa: r.vehiculo.placa,
-          color: r.vehiculo.color,
-        } : undefined,
-      }));
+      return response.data.map((r: any) =>
+        UserModel.fromJSON({
+          id_usuario: r.id_usuario || r.id || 0,
+          nombre_completo: r.nombre_completo || r.nombre || '',
+          telefono: r.telefono || '',
+          fecha_nacimiento: r.fecha_nacimiento || '',
+          documento: r.documento || 0,
+          ciudad: r.ciudad || '',
+          direccion: r.direccion || '',
+          fecha_registro: r.fecha_registro || new Date().toISOString(),
+          email: r.email || '',
+          estado: r.estado || 'INACTIVO',
+          roles: r.roles || [],
+          vehiculo: r.vehiculo ? {
+            tipo: r.vehiculo.tipo,
+            modelo: r.vehiculo.modelo,
+            placa: r.vehiculo.placa,
+            color: r.vehiculo.color,
+          } : undefined,
+        })
+      );
     } catch (error) {
       console.error(' Error en getRepartidores:', error);
       return [];
     }
   }
 
-  async getRepartidorById(id: number): Promise<RepartidorData | null> {
+  async getRepartidorById(id: number): Promise<UserModel | null> {
     try {
+      console.log('Fetching repartidor details for ID:', id);
       const response = await this.userService.getRepartidorById(id);
       if (!response.success) return null;
 
       const r = response.data;
-      return {
-        id: r.id_usuario,
-        nombre: r.nombre_completo,
-        estado: r.estado,
-        correo: r.email,
-        telefono: r.telefono,
-        ciudad: r.ciudad,
-        pedidos: r.pedidos_count || 0,
-        fecha_registro: r.fecha_registro,
+      return UserModel.fromJSON({
+        id_usuario: r.id_usuario || r.id || 0,
+        nombre_completo: r.nombre_completo || r.nombre || '',
+        telefono: r.telefono || '',
+        fecha_nacimiento: r.fecha_nacimiento || '',
+        documento: r.documento || 0,
+        ciudad: r.ciudad || '',
+        direccion: r.direccion || '',
+        fecha_registro: r.fecha_registro || '',
+        email: r.email || '',
+        estado: r.estado || 'INACTIVO',
+        roles: r.roles || [],
         vehiculo: r.vehiculo ? {
           tipo: r.vehiculo.tipo,
           modelo: r.vehiculo.modelo,
           placa: r.vehiculo.placa,
           color: r.vehiculo.color,
         } : undefined,
-      };
+      });
     } catch (error) {
       console.error(' Error en getRepartidorById:', error);
       return null;
     }
   }
 
-  async registrarRepartidor(data: RegisterRepartidorData): Promise<{ success: boolean; message: string; data?: any }> {
+  async registrarRepartidor(data: UserModel): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       if (!data.nombre_completo || !data.email || !data.contrasena) {
         return { success: false, message: 'Nombre, email y contraseña son requeridos' };
@@ -339,7 +314,7 @@ export class UserController {
     }
   }
 
-  async buscarRepartidores(filtros: { nombre?: string; ciudad?: string; estado?: string; placa?: string }): Promise<RepartidorData[]> {
+  async buscarRepartidores(filtros: { nombre?: string; ciudad?: string; estado?: string; placa?: string }): Promise<UserModel[]> {
     try {
       const response = await this.userService.buscarRepartidores(filtros);
       if (!response.success) return [];

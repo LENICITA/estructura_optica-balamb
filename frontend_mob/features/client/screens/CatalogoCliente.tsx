@@ -42,11 +42,25 @@ export const CatalogoCliente = ({ navigation }: Props) => {
 
   const [orden, setOrden] = useState('Nuevo');
 
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
+
+  const [marcaSeleccionada, setMarcaSeleccionada] = useState('');
+  const [materialSeleccionado, setMaterialSeleccionado] = useState('');
+  const [colorSeleccionado, setColorSeleccionado] = useState('');
+
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [colores, setColores] = useState<string[]>([]);
+
+  const [aplicandoFiltros, setAplicandoFiltros] = useState(false);
+
   // CARGAR PRODUCTOS
 
   useEffect(() => {
     cargarProductos();
     cargarCategorias();
+    cargarMarcas();
+    cargarColores();
   }, []);
 
   const cargarProductos = async () => {
@@ -72,8 +86,74 @@ export const CatalogoCliente = ({ navigation }: Props) => {
         console.error('Error cargando categorías:', error);
       }
     };
+  
 
+  const cargarMarcas = async () => {
+  try {
+    const data = await productController.getMarcas();
+    setMarcas(data);
+  } catch (error) {
+    console.error('Error cargando marcas:', error);
+  }
+};
+
+const cargarColores = async () => {
+  try {
+    const data = await productController.getColores();
+    setColores(data);
+  } catch (error) {
+    console.error('Error cargando colores:', error);
+  }
+};
   // BÚSQUEDA VISUAL
+
+  const aplicarFiltros = async () => {
+  try {
+    setAplicandoFiltros(true);
+
+    const filtros: {
+      precio_min?: number;
+      precio_max?: number;
+      marca?: string;
+      color?: string;
+      material?: string;
+    } = {};
+
+    if (precioMin.trim() !== '') {
+      filtros.precio_min = Number(precioMin);
+    }
+
+    if (precioMax.trim() !== '') {
+      filtros.precio_max = Number(precioMax);
+    }
+
+    if (marcaSeleccionada !== '') {
+      filtros.marca = marcaSeleccionada;
+    }
+
+    if (materialSeleccionado !== '') {
+      filtros.material = materialSeleccionado;
+    }
+
+    if (colorSeleccionado !== '') {
+      filtros.color = colorSeleccionado;
+    }
+
+    console.log('Filtros enviados:', filtros);
+
+    const resultado = await productController.filtrarProductos(filtros);
+
+    console.log('Productos filtrados:', resultado);
+
+    setProductosFiltrados(resultado);
+    setMostrarFiltros(false);
+
+  } catch (error) {
+    console.error('Error aplicando filtros:', error);
+  } finally {
+    setAplicandoFiltros(false);
+  }
+};
 
   const limpiarBusqueda = () => {
     setBusqueda('');
@@ -481,7 +561,7 @@ export const CatalogoCliente = ({ navigation }: Props) => {
 
               <TouchableOpacity
                 onPress={() =>
-                  setMostrarFiltros(false)
+                  ProductController.filtrarProductos(productosFiltrados)
                 }
               >
                 <Ionicons

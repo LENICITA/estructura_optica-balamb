@@ -85,7 +85,7 @@ export class AuthController {
       };
 
     } catch (error: any) {
-      console.error('❌ Error en login:', error);
+      console.error(' Error en login:', error);
       let message = 'Error al iniciar sesión';
       if (error.response?.status === 401) {
         message = error.response?.data?.message || 'Credenciales inválidas';

@@ -261,6 +261,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         <View style={styles.toolsRow}>
 
           {/* CATEGORÍAS */}
+          <View style={styles.topRow}>
           <TouchableOpacity
             style={styles.categoriesButton}
             onPress={() => setMostrarCategorias(true)}
@@ -277,8 +278,9 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             activeOpacity={0.8}
           >
             <Ionicons name="add-circle-outline" size={17} color={COLORS.white} />
-            <Text style={styles.addButtonText}>Agregar</Text>
+            <Text style={styles.addButtonText}>Crear Producto</Text>
           </TouchableOpacity>
+          </View>
 
           {/* ORDENAR */}
           <TouchableOpacity style={styles.orderButton} onPress={() => {}} activeOpacity={0.8}>
@@ -507,12 +509,17 @@ const styles = StyleSheet.create({
   },
 
   toolsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     marginTop: 10,
-    gap: 6,
+    gap: 8,
   },
+
+topRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 10,
+},
 
   categoriesButton: {
     flexDirection: 'row',
@@ -520,9 +527,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
     borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
   },
 
   categoriesButtonText: {
@@ -537,9 +546,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     borderRadius: 9,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
   },
 
   addButtonText: {
@@ -551,12 +562,14 @@ const styles = StyleSheet.create({
   orderButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    width: '100%',
   },
 
   orderText: {
