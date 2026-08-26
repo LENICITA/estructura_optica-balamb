@@ -1,60 +1,58 @@
-// server.js
-const express = require('express');
-const logger = require('morgan');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
-const usersRoutes = require('./routes/userRoutes');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import inventarioRoutes from './routes/inventarioRoutes.js';
+import chatbotRoutes from './routes/chatbotRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import distribucionRoutes from './routes/distribucionRoutes.js';
+import pagosRoutes from './routes/PagosRoutes.js';
+import formulaRoutes from './routes/formulaRoutes.js';
+import pedidoRoutes from './routes/pedidoRoutes.js';
+import sequelize from './config/database.js';
+import { Usuario, Vehiculo, Role, RolUsuario, Pedido, Distribucion } from './models/relaciones.js';
+import contactoRoutes from './routes/contactoRoutes.js';
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000
+const HOST = process.env.HOST || '192.168.0.5';
 
-// Middlewares globales
-app.use(logger('dev'));
+// Middlewares
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-
-// Documentación de swagger
-const swaggerOptions = {  
-  swaggerOptions: {
-    docExpansion: 'list',           
-    defaultModelsExpandDepth: -1,   
-    defaultModelExpandDepth: 1,     
-    displayRequestDuration: true,   
-    filter: false,                  
-    layout: 'BaseLayout',  
-    showExtensions: true,
-    showCommonExtensions: true,
-    deepLinking: true,         
-    persistAuthorization: true,
-    tagsSorter: 'alpha',       
-    operationsSorter: function(a, b) {
-      const methodOrder = { 'post': 1, 'get': 2, 'put': 3, 'delete': 4 };
-      return methodOrder[a.get('method')] - methodOrder[b.get('method')];
-    }  
-  }  
-};
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
 // Rutas
-app.use('/api/users', usersRoutes);
-
-// Endpoints de prueba
-app.get('/', (req, res) => {
-    res.send('Ruta raíz del Backend');
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', userRoutes);
+app.use('/api/inventario', inventarioRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/reportes', reportRoutes);
+app.use('/api/distribucion', distribucionRoutes);
+app.use('/api/pagos', pagosRoutes);
+app.use('/api/formulas', formulaRoutes);
+app.use('/api/pedidos', pedidoRoutes);
+app.use('/api/contacto', contactoRoutes);
+// Ruta de prueba
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Servidor funcionando correctamente',
+        timestamp: new Date().toISOString()
+    });
 });
 
-app.get('/test', (req, res) => {
-    res.send('Ruta TEST');
+// Iniciar servidor
+app.listen(PORT, async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('Conexión a la base de datos establecida');
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
+        console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
+    } catch (error) {
+        console.error('Error al conectar a la base de datos:', error);
+    }
 });
-
-// Manejo de errores
-app.use((err, req, res, next) => {
-    console.log(err);
-    res.status(err.status || 500).send(err.stack);
-});
-
-console.log('📚 Swagger disponible en: http://192.168.137.177:3000/api-docs');
-
-module.exports = app;
