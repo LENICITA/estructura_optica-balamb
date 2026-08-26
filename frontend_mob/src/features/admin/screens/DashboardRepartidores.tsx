@@ -38,7 +38,7 @@ type RootStackParamList = {
 };
 
 // ============================================
-// MODELO DEL REPARTIDOR PARA EL SCREEN
+// MODELO DEL REPARTIDOR
 // ============================================
 
 interface Repartidor {
@@ -75,15 +75,6 @@ export default function DashboardRepartidores() {
 
   // ============================================
   // CARGAR REPARTIDORES
-  // ============================================
-  //
-  // useFocusEffect hace que los datos se vuelvan
-  // a consultar cada vez que este screen vuelve
-  // a estar enfocado.
-  //
-  // Esto permite que después de editar/eliminar
-  // un repartidor, los cambios aparezcan
-  // automáticamente al regresar.
   // ============================================
 
   useFocusEffect(
@@ -189,7 +180,6 @@ export default function DashboardRepartidores() {
                 return;
               }
 
-              // Actualización inmediata de la lista
               setRepartidores((prev) =>
                 prev.filter(
                   (r) => r.id !== item.id
@@ -286,8 +276,6 @@ export default function DashboardRepartidores() {
 
         <View style={styles.cardContainer}>
 
-          {/* TOTAL */}
-
           <View
             style={[
               styles.cardInfo,
@@ -311,8 +299,6 @@ export default function DashboardRepartidores() {
             </Text>
           </View>
 
-          {/* ACTIVOS */}
-
           <View
             style={[
               styles.cardInfo,
@@ -335,8 +321,6 @@ export default function DashboardRepartidores() {
               Activos
             </Text>
           </View>
-
-          {/* INACTIVOS */}
 
           <View
             style={[
@@ -408,8 +392,6 @@ export default function DashboardRepartidores() {
 
         <View style={styles.filtroContainer}>
 
-          {/* TODOS */}
-
           <TouchableOpacity
             style={[
               styles.cardFiltro,
@@ -431,8 +413,6 @@ export default function DashboardRepartidores() {
             </Text>
           </TouchableOpacity>
 
-          {/* ACTIVOS */}
-
           <TouchableOpacity
             style={[
               styles.cardFiltro,
@@ -453,8 +433,6 @@ export default function DashboardRepartidores() {
               Activos ({cantidadActivos})
             </Text>
           </TouchableOpacity>
-
-          {/* INACTIVOS */}
 
           <TouchableOpacity
             style={[
@@ -652,49 +630,21 @@ export default function DashboardRepartidores() {
                     onPress={() => {
 
                       Alert.alert(
-                        "Opciones",
-                        `¿Qué deseas hacer con ${item.nombre}?`,
+                        "Eliminar repartidor",
+                        `¿Deseas eliminar a ${item.nombre}?`,
                         [
-
-                          // EDITAR
-
                           {
-                            text: "Editar",
-
-                            onPress: () => {
-                              navigation.navigate(
-                                "EditarRepartidor",
-                                {
-                                  repartidorId:
-                                    item.id,
-
-                                  repartidorData:
-                                    item,
-                                }
-                              );
-                            },
+                            text: "Cancelar",
+                            style: "cancel",
                           },
-
-                          // ELIMINAR
-
                           {
                             text: "Eliminar",
-
                             style: "destructive",
-
                             onPress: () =>
                               eliminarRepartidor(
                                 item
                               ),
                           },
-
-                          // CANCELAR
-
-                          {
-                            text: "Cancelar",
-                            style: "cancel",
-                          },
-
                         ]
                       );
 
@@ -1126,17 +1076,9 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
-  // ==========================================
-  // MENÚ
-  // ==========================================
-
   menuButton: {
     padding: 4,
   },
-
-  // ==========================================
-  // RESUMEN
-  // ==========================================
 
   resumen: {
     flexDirection: "row",
@@ -1167,10 +1109,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5CCCC",
   },
 
-  // ==========================================
-  // DETALLES
-  // ==========================================
-
   detalles: {
     alignItems: "center",
     marginTop: 8,
@@ -1183,10 +1121,6 @@ const styles = StyleSheet.create({
     color: "#B90F0F",
     letterSpacing: 0.3,
   },
-
-  // ==========================================
-  // BOTÓN FLOTANTE
-  // ==========================================
 
   containerFlotante: {
     position: "absolute",

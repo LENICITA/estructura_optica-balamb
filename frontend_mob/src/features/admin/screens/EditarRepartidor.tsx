@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// This screen uses JSX and must be compiled with the React JSX transform.
-/** @jsxImportSource react */
-
 import {
   View,
   Text,
@@ -33,13 +30,19 @@ function EditarRepartidor({
   // =========================================================
 
   const repartidor = route?.params?.repartidorData;
-  const repartidorId = route?.params?.repartidorId ?? repartidor?.id_usuario;
+
+  const repartidorId =
+    route?.params?.repartidorId ??
+    repartidor?.id_usuario ??
+    repartidor?.id;
 
   // =========================================================
   // CONTROLLER
   // =========================================================
 
-  const [userController] = useState(() => new UserController());
+  const [userController] = useState(
+    () => new UserController()
+  );
 
   // =========================================================
   // ESTADOS
@@ -69,14 +72,18 @@ function EditarRepartidor({
     Record<string, string | null>
   >({});
 
-  const [formModificado, setFormModificado] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [formModificado, setFormModificado] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
 
   // =========================================================
   // CALENDARIO
   // =========================================================
 
-  const [mostrarCalendario, setMostrarCalendario] = useState(false);
+  const [mostrarCalendario, setMostrarCalendario] =
+    useState(false);
 
   const [fechaSeleccionada, setFechaSeleccionada] =
     useState<Date>(new Date());
@@ -102,10 +109,6 @@ function EditarRepartidor({
           'Cargando repartidor:',
           repartidorId
         );
-
-        // =====================================================
-        // AHORA SE USA EL CONTROLLER
-        // =====================================================
 
         const response =
           await userController.getRepartidorById(
@@ -171,10 +174,6 @@ function EditarRepartidor({
           },
         });
 
-        // =====================================================
-        // CARGAR FECHA PARA EL CALENDARIO
-        // =====================================================
-
         if (r.fecha_nacimiento) {
           const fecha = new Date(
             `${r.fecha_nacimiento}T00:00:00`
@@ -236,18 +235,6 @@ function EditarRepartidor({
       label: 'Moto',
       value: 'MOTO',
     },
-    {
-      label: 'Camioneta',
-      value: 'CAMIONETA',
-    },
-    {
-      label: 'Bicicleta',
-      value: 'BICICLETA',
-    },
-    {
-      label: 'Furgón',
-      value: 'FURGON',
-    },
   ];
 
   // =========================================================
@@ -263,7 +250,10 @@ function EditarRepartidor({
       ...prev,
 
       [seccion]: {
-        ...prev[seccion as keyof typeof prev],
+        ...prev[
+          seccion as keyof typeof prev
+        ],
+
         [campo]: valor,
       },
     }));
@@ -300,7 +290,8 @@ function EditarRepartidor({
 
     setFechaSeleccionada(selectedDate);
 
-    const año = selectedDate.getFullYear();
+    const año =
+      selectedDate.getFullYear();
 
     const mes = String(
       selectedDate.getMonth() + 1
@@ -329,19 +320,26 @@ function EditarRepartidor({
   // =========================================================
 
   const validarFormulario = () => {
-    const nuevosErrores: Record<string, string> = {};
+    const nuevosErrores: Record<
+      string,
+      string
+    > = {};
 
     const {
       datosPersonales,
       datosVehiculo,
     } = formData;
 
-    if (!datosPersonales.nombre_completo.trim()) {
+    if (
+      !datosPersonales.nombre_completo.trim()
+    ) {
       nuevosErrores.nombre_completo =
         'El nombre es obligatorio';
     }
 
-    if (!datosPersonales.email.trim()) {
+    if (
+      !datosPersonales.email.trim()
+    ) {
       nuevosErrores.email =
         'El email es obligatorio';
     } else {
@@ -358,17 +356,23 @@ function EditarRepartidor({
       }
     }
 
-    if (!datosPersonales.documento.trim()) {
+    if (
+      !datosPersonales.documento.trim()
+    ) {
       nuevosErrores.documento =
         'El documento es obligatorio';
     }
 
-    if (!datosPersonales.ciudad.trim()) {
+    if (
+      !datosPersonales.ciudad.trim()
+    ) {
       nuevosErrores.ciudad =
         'La ciudad es obligatoria';
     }
 
-    if (!datosVehiculo.placa.trim()) {
+    if (
+      !datosVehiculo.placa.trim()
+    ) {
       nuevosErrores.placa =
         'La placa es obligatoria';
     }
@@ -378,12 +382,16 @@ function EditarRepartidor({
         'El tipo de vehículo es obligatorio';
     }
 
-    if (!datosVehiculo.modelo.trim()) {
+    if (
+      !datosVehiculo.modelo.trim()
+    ) {
       nuevosErrores.modelo =
         'El modelo es obligatorio';
     }
 
-    if (!datosVehiculo.color.trim()) {
+    if (
+      !datosVehiculo.color.trim()
+    ) {
       nuevosErrores.color =
         'El color es obligatorio';
     }
@@ -405,6 +413,7 @@ function EditarRepartidor({
         'Validación',
         'Por favor, completa todos los campos obligatorios'
       );
+
       return;
     }
 
@@ -460,121 +469,166 @@ function EditarRepartidor({
   // ACTUALIZAR REPARTIDOR
   // =========================================================
 
-  const actualizarRepartidor = async () => {
-    if (!repartidorId) {
-      Alert.alert(
-        'Error',
-        'No se encontró el ID del repartidor.'
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // =====================================================
-      // DATOS QUE SE ENVÍAN AL CONTROLLER
-      // =====================================================
-
-      const datos = {
-        nombre_completo:
-          formData.datosPersonales.nombre_completo,
-
-        telefono:
-          formData.datosPersonales.telefono,
-
-        email:
-          formData.datosPersonales.email,
-
-        documento:
-          formData.datosPersonales.documento,
-
-        ciudad:
-          formData.datosPersonales.ciudad,
-
-        direccion:
-          formData.datosPersonales.direccion,
-
-        fecha_nacimiento:
-          formData.datosPersonales.fecha_nacimiento,
-
-        estado:
-          formData.datosPersonales.estado,
-
-        vehiculo: {
-          tipo:
-            formData.datosVehiculo.tipo,
-
-          modelo:
-            formData.datosVehiculo.modelo,
-
-          placa:
-            formData.datosVehiculo.placa,
-
-          color:
-            formData.datosVehiculo.color,
-        },
-      };
-
-      console.log(
-        'ENVIANDO ACTUALIZACIÓN:',
-        JSON.stringify(datos, null, 2)
-      );
-
-      // =====================================================
-      // CONTROLLER → SERVICE → APICLIENT
-      // =====================================================
-
-      const response =
-        await userController.actualizarRepartidor(
-          Number(repartidorId),
-          datos
-        );
-
-      console.log(
-        'RESPUESTA ACTUALIZACIÓN:',
-        response
-      );
-
-      if (!response.success) {
+  const actualizarRepartidor =
+    async () => {
+      if (!repartidorId) {
         Alert.alert(
           'Error',
-          response.message ||
-            'No se pudo actualizar el repartidor.'
+          'No se encontró el ID del repartidor.'
         );
+
         return;
       }
 
-      setFormModificado(false);
+      try {
+        setLoading(true);
 
-      Alert.alert(
-        'Éxito',
+        const datos = {
+          nombre_completo:
+            formData.datosPersonales
+              .nombre_completo,
 
-        response.message ||
-          'Los datos del repartidor se actualizaron correctamente.',
+          telefono:
+            formData.datosPersonales
+              .telefono,
 
-        [
-          {
-            text: 'OK',
-            onPress: () =>
-              navigation?.goBack(),
+          email:
+            formData.datosPersonales
+              .email,
+
+          documento:
+            formData.datosPersonales
+              .documento,
+
+          ciudad:
+            formData.datosPersonales
+              .ciudad,
+
+          direccion:
+            formData.datosPersonales
+              .direccion,
+
+          fecha_nacimiento:
+            formData.datosPersonales
+              .fecha_nacimiento,
+
+          estado:
+            formData.datosPersonales
+              .estado,
+
+          vehiculo: {
+            tipo:
+              formData.datosVehiculo
+                .tipo,
+
+            modelo:
+              formData.datosVehiculo
+                .modelo,
+
+            placa:
+              formData.datosVehiculo
+                .placa,
+
+            color:
+              formData.datosVehiculo
+                .color,
           },
-        ]
-      );
-    } catch (error: any) {
-      console.error(
-        'Error al actualizar repartidor:',
-        error
-      );
+        };
 
-      Alert.alert(
-        'Error',
-        'No se pudo actualizar el repartidor.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log(
+          '===================================='
+        );
+
+        console.log(
+          'ACTUALIZANDO REPARTIDOR:',
+          Number(repartidorId)
+        );
+
+        console.log(
+          'DATOS ENVIADOS:',
+          JSON.stringify(
+            datos,
+            null,
+            2
+          )
+        );
+
+        console.log(
+          '===================================='
+        );
+
+        const response =
+          await userController.actualizarRepartidor(
+            Number(repartidorId),
+            datos
+          );
+
+        console.log(
+          'RESPUESTA DEL BACKEND:',
+          response
+        );
+
+        // =====================================================
+        // VERIFICAR RESPUESTA
+        // =====================================================
+
+        if (
+          !response ||
+          !response.success
+        ) {
+          Alert.alert(
+            'Error',
+            response?.message ||
+              'No se pudo actualizar el repartidor.'
+          );
+
+          return;
+        }
+
+        // =====================================================
+        // ACTUALIZACIÓN EXITOSA
+        // =====================================================
+
+        console.log(
+          'REPARTIDOR ACTUALIZADO CORRECTAMENTE'
+        );
+
+        setFormModificado(false);
+
+        /*
+         * IMPORTANTE:
+         *
+         * reset elimina la pantalla actual y las anteriores
+         * de la pila de navegación.
+         *
+         * Por eso después de guardar NO se puede regresar
+         * con "Atrás" nuevamente a EditarRepartidor.
+         */
+
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'DashboardRepartidores',
+            },
+          ],
+        });
+
+      } catch (error: any) {
+        console.error(
+          'ERROR ACTUALIZANDO REPARTIDOR:',
+          error
+        );
+
+        Alert.alert(
+          'Error',
+          error?.message ||
+            'No se pudo actualizar el repartidor.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // =========================================================
   // RENDER
@@ -600,9 +654,8 @@ function EditarRepartidor({
           styles.scrollContent
         }
       >
-        {/* =====================================
-            BADGE
-        ===================================== */}
+
+        {/* BADGE */}
 
         <View style={styles.statusBadge}>
           <Ionicons
@@ -612,15 +665,19 @@ function EditarRepartidor({
           />
 
           <Text
-            style={styles.statusBadgeText}
+            style={
+              styles.statusBadgeText
+            }
           >
             Editando:{' '}
-            {formData.datosPersonales.nombre_completo ||
+            {formData.datosPersonales
+              .nombre_completo ||
               'Repartidor'}
           </Text>
         </View>
 
         <View style={styles.formContainer}>
+
           {/* =====================================
               DATOS PERSONALES
           ===================================== */}
@@ -639,12 +696,16 @@ function EditarRepartidor({
             </View>
 
             <Text
-              style={styles.sectionTitle}
+              style={
+                styles.sectionTitle
+              }
             >
               Datos Personales
             </Text>
 
-            <View style={styles.sectionBadge}>
+            <View
+              style={styles.sectionBadge}
+            >
               <Text
                 style={
                   styles.sectionBadgeText
@@ -656,18 +717,23 @@ function EditarRepartidor({
           </View>
 
           <View style={styles.card}>
+
             {/* NOMBRE */}
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Nombre completo
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -707,7 +773,9 @@ function EditarRepartidor({
 
               {errores.nombre_completo && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -716,9 +784,13 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
-                    {errores.nombre_completo}
+                    {
+                      errores.nombre_completo
+                    }
                   </Text>
                 </View>
               )}
@@ -732,7 +804,9 @@ function EditarRepartidor({
               </Text>
 
               <View
-                style={styles.inputWrapper}
+                style={
+                  styles.inputWrapper
+                }
               >
                 <Ionicons
                   name="call-outline"
@@ -765,14 +839,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Email
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -814,7 +892,9 @@ function EditarRepartidor({
 
               {errores.email && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -823,7 +903,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.email}
                   </Text>
@@ -835,14 +917,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Documento
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -883,7 +969,9 @@ function EditarRepartidor({
 
               {errores.documento && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -892,7 +980,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.documento}
                   </Text>
@@ -904,14 +994,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Ciudad
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -951,7 +1045,9 @@ function EditarRepartidor({
 
               {errores.ciudad && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -960,7 +1056,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.ciudad}
                   </Text>
@@ -1023,8 +1121,12 @@ function EditarRepartidor({
               </Text>
 
               <TouchableOpacity
-                style={styles.inputWrapper}
-                onPress={abrirCalendario}
+                style={
+                  styles.inputWrapper
+                }
+                onPress={
+                  abrirCalendario
+                }
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -1114,7 +1216,9 @@ function EditarRepartidor({
               </Text>
 
               <View
-                style={styles.pickerWrapper}
+                style={
+                  styles.pickerWrapper
+                }
               >
                 <Ionicons
                   name="radio-button-on-outline"
@@ -1141,7 +1245,9 @@ function EditarRepartidor({
                   {ESTADOS_REPARTIDOR.map(
                     estado => (
                       <Picker.Item
-                        key={estado.value}
+                        key={
+                          estado.value
+                        }
                         label={
                           estado.label
                         }
@@ -1174,12 +1280,16 @@ function EditarRepartidor({
             </View>
 
             <Text
-              style={styles.sectionTitle}
+              style={
+                styles.sectionTitle
+              }
             >
               Datos del Vehículo
             </Text>
 
-            <View style={styles.sectionBadge}>
+            <View
+              style={styles.sectionBadge}
+            >
               <Text
                 style={
                   styles.sectionBadgeText
@@ -1191,18 +1301,23 @@ function EditarRepartidor({
           </View>
 
           <View style={styles.card}>
+
             {/* TIPO */}
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Tipo de vehículo
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -1240,7 +1355,9 @@ function EditarRepartidor({
                   {TIPOS_VEHICULO.map(
                     tipo => (
                       <Picker.Item
-                        key={tipo.value}
+                        key={
+                          tipo.value
+                        }
                         label={
                           tipo.label
                         }
@@ -1255,7 +1372,9 @@ function EditarRepartidor({
 
               {errores.tipo && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -1264,7 +1383,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.tipo}
                   </Text>
@@ -1276,14 +1397,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Modelo
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -1323,7 +1448,9 @@ function EditarRepartidor({
 
               {errores.modelo && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -1332,7 +1459,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.modelo}
                   </Text>
@@ -1344,14 +1473,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Placa
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -1405,7 +1538,9 @@ function EditarRepartidor({
 
               {errores.placa && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -1414,14 +1549,18 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.placa}
                   </Text>
                 </View>
               )}
 
-              <Text style={styles.hintText}>
+              <Text
+                style={styles.hintText}
+              >
                 <Ionicons
                   name="information-circle-outline"
                   size={14}
@@ -1437,14 +1576,18 @@ function EditarRepartidor({
 
             <View style={styles.inputGroup}>
               <View
-                style={styles.labelContainer}
+                style={
+                  styles.labelContainer
+                }
               >
                 <Text style={styles.label}>
                   Color
                 </Text>
 
                 <Text
-                  style={styles.requiredStar}
+                  style={
+                    styles.requiredStar
+                  }
                 >
                   *
                 </Text>
@@ -1484,7 +1627,9 @@ function EditarRepartidor({
 
               {errores.color && (
                 <View
-                  style={styles.errorContainer}
+                  style={
+                    styles.errorContainer
+                  }
                 >
                   <Ionicons
                     name="alert-circle"
@@ -1493,7 +1638,9 @@ function EditarRepartidor({
                   />
 
                   <Text
-                    style={styles.errorText}
+                    style={
+                      styles.errorText
+                    }
                   >
                     {errores.color}
                   </Text>
@@ -1507,7 +1654,9 @@ function EditarRepartidor({
           ===================================== */}
 
           <View
-            style={styles.buttonContainer}
+            style={
+              styles.buttonContainer
+            }
           >
             <TouchableOpacity
               style={[
@@ -1582,11 +1731,11 @@ function EditarRepartidor({
             </TouchableOpacity>
           </View>
 
-          {/* CAMBIOS */}
-
           {formModificado && (
             <View
-              style={styles.modifiedBadge}
+              style={
+                styles.modifiedBadge
+              }
             >
               <Ionicons
                 name="pencil"
@@ -1595,17 +1744,19 @@ function EditarRepartidor({
               />
 
               <Text
-                style={styles.modifiedText}
+                style={
+                  styles.modifiedText
+                }
               >
                 Tienes cambios sin guardar
               </Text>
             </View>
           )}
 
-          {/* INFO */}
-
           <View
-            style={styles.infoContainer}
+            style={
+              styles.infoContainer
+            }
           >
             <View style={styles.infoRow}>
               <Ionicons
@@ -1614,7 +1765,9 @@ function EditarRepartidor({
                 color="#666"
               />
 
-              <Text style={styles.infoText}>
+              <Text
+                style={styles.infoText}
+              >
                 Los campos con * son obligatorios
               </Text>
             </View>
