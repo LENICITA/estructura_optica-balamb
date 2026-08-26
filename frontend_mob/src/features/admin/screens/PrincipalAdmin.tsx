@@ -204,7 +204,7 @@ export const PrincipalAdmin = ({ navigation }: Props) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('AdminFormulas')}
+        onPress={() => navigation.navigate('DetalleFormula')}
       >
         <View style={styles.buttonContent}>
           <View style={styles.buttonLeft}>

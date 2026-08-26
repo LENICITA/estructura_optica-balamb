@@ -138,7 +138,7 @@ export const PrincipalCliente = ({ navigation }: Props) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.btnFormula}
-              onPress={() => navigation.navigate('Formula')}
+              onPress={() => navigation.navigate('MisFormulasScreen')}
             >
               <Ionicons name="eye-outline" size={20} color="#fff" />
               <Text style={styles.btnFormulaText}>Subir Fórmula</Text>

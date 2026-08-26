@@ -37,7 +37,6 @@ export const DetalleRepartidor = () => {
     const formatDate = (value?: string | Date | null) => {
         if (!value) return 'No disponible';
 
-        // Convertimos a string y tomamos solo la parte de la fecha (YYYY-MM-DD)
         if (typeof value === 'string') {
             const fechaSolo = value.split('T')[0]; // Quita la hora
             const partes = fechaSolo.split('-'); // Divide en año, mes, día
@@ -46,7 +45,6 @@ export const DetalleRepartidor = () => {
             }
         }
 
-        // Si no se pudo formatear manualmente, usamos el Date() estándar
         const date = typeof value === 'string' ? new Date(value) : value;
         return Number.isNaN(date.getTime()) ? 'No disponible' : date.toLocaleDateString('es-ES');
     };

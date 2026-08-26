@@ -31,6 +31,9 @@ import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
+import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
+import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,6 +95,30 @@ export default function AppNavigator() {
                 <UserLayout>
                   <PrincipalAdmin navigation={navigation} />
                 </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="DetalleFormula">
+              {() => (
+                <UserLayout>
+                  <DetalleFormula />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="MisFormulasScreen">
+              {({ navigation }) => (
+                <ClientLayout>
+                  <MisFormulasScreen navigation={navigation} />
+                </ClientLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="DetalleFormulaCliente">
+              {() => (
+                <ClientLayout>
+                  <DetalleFormulaCliente />
+                </ClientLayout>
               )}
             </Stack.Screen>
 
