@@ -7,14 +7,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { FormulaController } from '../../../core/controllers/FormulaController';
-import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
 import { useAuth } from '../../auth/context/AuthContext';
 import { FormulaModel, EstadoFormula } from '../../../core/models/FormulaModel';
 
@@ -45,6 +43,8 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
   const [formulas, setFormulas] = useState<FormulaModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [actualizando, setActualizando] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedFormula, setSelectedFormula] = useState<FormulaModel | null>(null);
 
   useEffect(() => {
     cargarFormulas();
@@ -126,6 +126,80 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
     }
   };
 
+  const eliminarFormula = (formula: FormulaModel) => {
+    const estadoTexto = obtenerEstadoTexto(formula.estado);
+    const mensajeAdvertencia = estadoTexto === 'Aprobado' 
+      ? '\n\nEsta fórmula está APROBADA. ¿Estás seguro de eliminarla?' 
+      : '';
+
+    Alert.alert(
+      "Eliminar Fórmula",
+      `¿Estás seguro de eliminar esta fórmula?\n\nEstado: ${estadoTexto}${mensajeAdvertencia}\nEsta acción no se puede deshacer.`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              Alert.alert('Eliminando...', 'Por favor espera un momento.');
+              
+              const response = await formulaController.eliminarFormula(formula.id_formula);
+
+              if (!response.success) {
+                Alert.alert(
+                  "Error",
+                  response.message || "No se pudo eliminar la fórmula."
+                );
+                return;
+              }
+
+              setFormulas((prev) =>
+                prev.filter((f) => f.id_formula !== formula.id_formula)
+              );
+
+              Alert.alert(
+                "Eliminado",
+                `La fórmula fue eliminada correctamente.`
+              );
+            } catch (error: any) {
+              console.error("Error al eliminar fórmula:", error);
+              
+              let mensajeError = "No se pudo eliminar la fórmula. Intenta nuevamente.";
+              
+              if (error?.response?.data?.message) {
+                mensajeError = error.response.data.message;
+              } else if (error?.message) {
+                mensajeError = error.message;
+              }
+
+              Alert.alert(
+                "Error al eliminar",
+                mensajeError
+              );
+            }
+          },
+        },
+      ],
+      {
+        cancelable: false,
+      }
+    );
+  };
+
+  const mostrarMenu = (formula: FormulaModel) => {
+    setSelectedFormula(formula);
+    setMenuVisible(true);
+  };
+
+  const cerrarMenu = () => {
+    setMenuVisible(false);
+    setSelectedFormula(null);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -137,7 +211,6 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -163,8 +236,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             </TouchableOpacity>
           </View>
 
-
-           {formulas.length === 0 ? (
+          {formulas.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="document-outline" size={70} color="#CCCCCC" />
               <Text style={styles.emptyText}>Aún no has subido fórmulas.</Text>
@@ -173,7 +245,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
               </Text>
             </View>
           ) : (
-             formulas.map((item) => (
+            formulas.map((item) => (
               <TouchableOpacity
                 key={item.id_formula}
                 style={styles.formulaCard}
@@ -185,34 +257,45 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
                   });
                 }}
               >
-                
-
-                <View style={[styles.statusContainer, { backgroundColor: estadoFondo(item.estado) }]}>
-                  <Ionicons 
-                    name={obtenerIconoEstado(item.estado)} 
-                    size={28} 
-                    color={obtenerColorIcono(item.estado)} 
+                <TouchableOpacity
+                  style={styles.menuButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    mostrarMenu(item);
+                  }}
+                >
+                  <Ionicons
+                    name="ellipsis-vertical"
+                    size={24}
+                    color="#888"
                   />
-                  <Text style={[styles.statusText, { color: obtenerColorIcono(item.estado) }]}>
-                    {obtenerEstadoTexto(item.estado)}
-                  </Text>
-                </View>
+                </TouchableOpacity>
 
+                <View style={styles.cardContent}>
+                  <View style={[styles.statusContainer, { backgroundColor: estadoFondo(item.estado) }]}>
+                    <Ionicons 
+                      name={obtenerIconoEstado(item.estado)} 
+                      size={28} 
+                      color={obtenerColorIcono(item.estado)} 
+                    />
+                    <Text style={[styles.statusText, { color: obtenerColorIcono(item.estado) }]}>
+                      {obtenerEstadoTexto(item.estado)}
+                    </Text>
+                  </View>
 
-                <View style={styles.tapIndicator}>
-                  <Ionicons name="chevron-forward-circle-outline" size={18} color="#CCCCCC" />
-                  <Text style={styles.tapText}>Ver detalles</Text>
+                  <View style={styles.tapIndicator}>
+                    <Ionicons name="chevron-forward-circle-outline" size={18} color="#CCCCCC" />
+                    <Text style={styles.tapText}>Ver detalles</Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             ))
           )}
 
-
-
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
-              console.log(' Navegando a CrearFormula con usuario:', user?.id_usuario);
+              console.log('Navegando a CrearFormula con usuario:', user?.id_usuario);
               navigation.navigate('CrearFormulaScreen', { 
                 id_usuario: user?.id_usuario 
               });
@@ -222,12 +305,51 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             <Text style={styles.createButtonText}>Crear Fórmula</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
+
+      <Modal
+        visible={menuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cerrarMenu}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={cerrarMenu}
+        >
+          <View style={styles.modalContent}>
+            {selectedFormula && (
+              <>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Opciones</Text>
+                  <TouchableOpacity onPress={cerrarMenu}>
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => {
+                    cerrarMenu();
+                    setTimeout(() => {
+                      eliminarFormula(selectedFormula);
+                    }, 300);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={24} color="#dc3545" />
+                  <Text style={[styles.modalOptionText, { color: '#dc3545' }]}>
+                    Eliminar fórmula
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -309,11 +431,27 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 12,
     padding: 20,
-    alignItems: 'center',
+    position: 'relative',
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 6,
+    minHeight: 120,
+  },
+  menuButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  cardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    paddingVertical: 10,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -358,5 +496,49 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '85%',
+    maxWidth: 350,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.black,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginVertical: 2,
+    backgroundColor: 'transparent',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    marginLeft: 14,
+    color: '#333',
   },
 });

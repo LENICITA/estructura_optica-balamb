@@ -84,7 +84,7 @@ export class FormulaController {
     message: string;
   }> {
     try {
-      console.log('🗑️ Controller - eliminarFormula ID:', id_formula);
+      console.log('Controller - eliminarFormula ID:', id_formula);
 
       if (!id_formula) {
         return {
@@ -103,12 +103,12 @@ export class FormulaController {
 
       const response = await this.formulaService.eliminarFormula(idNumber);
 
-      console.log('📊 Controller - Respuesta eliminación:', response);
+      console.log('Controller - Respuesta eliminación:', response);
 
       return response;
 
     } catch (error: any) {
-      console.error('❌ Error en eliminarFormula:', error);
+      console.error('Error en eliminarFormula:', error);
       return {
         success: false,
         message: error?.message || 'Error al eliminar la fórmula',
