@@ -32,6 +32,7 @@ import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import GestionarFormulas from '../features/admin/screens/GestionarFormulas';
 
 const Stack = createNativeStackNavigator();
 
@@ -197,6 +198,14 @@ export default function AppNavigator() {
               {({ navigation }) => (
                 <UserLayout>
                   <PerfilRepartidor navigation={navigation} />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="GestionarFormulas">
+              {() => (
+                <UserLayout>
+                  <GestionarFormulas />
                 </UserLayout>
               )}
             </Stack.Screen>

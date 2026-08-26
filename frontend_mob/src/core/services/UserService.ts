@@ -29,6 +29,11 @@ export class UserService {
     return response.data;
   }
 
+  async getClienteById(id: number): Promise<{ success: boolean; data: any }> {
+  const response = await apiClient.get(`/usuarios/clientes/${id}`);
+  return response.data;
+}
+
   // ===== REPARTIDORES =====
   async getRepartidores(): Promise<{ success: boolean; data: any[] }> {
     const response = await apiClient.get('/usuarios/repartidores');
