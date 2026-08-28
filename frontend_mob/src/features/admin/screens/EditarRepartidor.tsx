@@ -595,22 +595,6 @@ function EditarRepartidor({
 
         setFormModificado(false);
 
-        /*
-         * IMPORTANTE:
-         *
-         * Aquí NO hacemos navigation.reset().
-         *
-         * Volvemos al DetalleRepartidor que estaba
-         * anteriormente en la pila.
-         *
-         * Cuando DetalleRepartidor vuelva a tener el foco,
-         * su useFocusEffect ejecutará nuevamente:
-         *
-         * getRepartidorById(id)
-         *
-         * y mostrará los datos actualizados.
-         */
-
         navigation.goBack();
 
       } catch (error: any) {

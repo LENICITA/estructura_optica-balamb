@@ -27,24 +27,18 @@ interface Props {
   route: any;
 }
 
-export const DetalleProductoAdmin = ({
-  navigation,
-  route,
-}: Props) => {
+export const DetalleProductoAdmin = ({ navigation, route,}: Props) => {
 
   const { id_producto } = route.params || {};
 
   const productController = new ProductController();
 
-  const [producto, setProducto] =
-    useState<ProductModel | null>(null);
+  const [producto, setProducto] = useState<ProductModel | null>(null);
 
   const [loading, setLoading] = useState(true);
 
-
-  // ==========================================
   // CARGAR DETALLE DEL PRODUCTO
-  // ==========================================
+
   useEffect(() => {
 
     if (id_producto) {
@@ -68,29 +62,16 @@ export const DetalleProductoAdmin = ({
 
       setLoading(true);
 
-      console.log(
-        'ID del producto:',
-        id_producto
-      );
-
-      const data =
-        await productController.getProductoById(
-          id_producto
-        );
-
-      console.log(
-        'Datos recibidos:',
-        data
-      );
+      console.log('ID del producto:', id_producto);
+      console.log('Tipo de ID:', typeof id_producto);
+      const data = await productController.getProductoById(id_producto);
+      console.log('Datos recibidos:', data);
 
       setProducto(data);
 
     } catch (error) {
 
-      console.error(
-        'Error cargando detalle del producto:',
-        error
-      );
+      console.error('Error cargando detalle del producto:', error);
 
     } finally {
 
@@ -99,24 +80,18 @@ export const DetalleProductoAdmin = ({
     }
   };
 
+  // EDITAR PRODUCTO
 
-  // ==========================================
-  // IR A EDITAR PRODUCTO
-  // ==========================================
   const irAEditarProducto = () => {
 
-    navigation.navigate(
-      'EditarProductoAdmin' as never,
-      {
-        id_producto: Number(id_producto),
-      } as never
-    );
+    navigation.navigate('EditarProductoAdmin' as never, {
+      id_producto: Number(id_producto),
+    } as never);
+
   };
 
-
-  // ==========================================
   // ELIMINAR PRODUCTO
-  // ==========================================
+
   const eliminarProducto = () => {
 
     Alert.alert(
@@ -152,12 +127,7 @@ export const DetalleProductoAdmin = ({
                       text: 'Aceptar',
 
                       onPress: () => {
-
-                        // Volvemos al catálogo.
-                        // CatalogoAdmin detectará que volvió
-                        // a estar enfocado y recargará los productos.
                         navigation.goBack();
-
                       },
                     },
                   ]
@@ -165,11 +135,7 @@ export const DetalleProductoAdmin = ({
 
               } else {
 
-                Alert.alert(
-                  'Error',
-                  response.message ||
-                  'Error al eliminar'
-                );
+              Alert.alert('Error', response.message || 'Error al eliminar');
 
               }
 
@@ -193,10 +159,8 @@ export const DetalleProductoAdmin = ({
     );
   };
 
-
-  // ==========================================
   // LOADING
-  // ==========================================
+  
   if (loading) {
 
     return (
