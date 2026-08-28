@@ -1,67 +1,85 @@
-// controllers/chatbotController.js
-import ChatBot from '../models/chatbot.js';
+// backend/controllers/contactoController.js
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
-// ========== ENVIAR MENSAJE ==========
+dotenv.config();
 
-// 1. Enviar mensaje y recibir respuesta automática
-export const enviarMensaje = (req, res) => {
+console.log(' Configurando transporter...');
+console.log('SMTP_USER:', process.env.SMTP_USER);
+console.log('SMTP_PASS:', process.env.SMTP_PASS ? ' Presente' : ' Faltante');
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Error al conectar con SMTP:', error);
+  } else {
+    console.log(' Servidor SMTP listo para enviar correos');
+  }
+});
+
+export const enviarMensaje = async (req, res) => {
   try {
-    const { mensaje } = req.body;
+    const { nombre, email, telefono, mensaje } = req.body;
 
-    if (!mensaje || mensaje.trim() === "") {
+    console.log(' Mensaje de contacto recibido:');
+    console.log('Nombre:', nombre);
+    console.log('Email:', email);
+    console.log('Teléfono:', telefono);
+    console.log('Mensaje:', mensaje);
+
+    if (!nombre || !email || !mensaje) {
       return res.status(400).json({
         success: false,
-        message: "Debes enviar un mensaje"
+        message: 'Nombre, email y mensaje son requeridos'
       });
     }
 
-    // Detectar intención del mensaje
-    const intencion = ChatBot.detectarIntencion(mensaje);
+    console.log(' Preparando envio de correo...');
 
-    // Obtener respuesta automática
-    const respuesta = ChatBot.obtenerRespuesta(intencion);
+    const mailOptions = {
+      from: process.env.SMTP_FROM || `"Formulario Web" <${process.env.SMTP_USER}>`,
+      to: process.env.CONTACT_EMAIL || 'opticavirtualbalamb@gmail.com',
+      subject: ' Nuevo mensaje de contacto - Óptica Balamb',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+          <h2 style="color: #B90F0F;">📩 Nuevo mensaje de contacto</h2>
+          <p><strong>Nombre:</strong> ${nombre}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Teléfono:</strong> ${telefono || 'No proporcionado'}</p>
+          <p><strong>Mensaje:</strong></p>
+          <p style="background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">${mensaje}</p>
+          <p style="color: #666; font-size: 12px;">Enviado desde el formulario de contacto</p>
+        </div>
+      `,
+    };
 
-    // No se guarda nada en base de datos
-    res.json({
-      success: true,
-      mensaje_usuario: mensaje,
-      respuesta_chatbot: respuesta,
-      intencion: intencion,
-      timestamp: new Date().toISOString()
-    });
+    console.log(' Enviando correo a:', mailOptions.to);
+    console.log(' Desde:', mailOptions.from);
 
-  } catch (error) {
-    console.error("Error al procesar mensaje:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al procesar el mensaje"
-    });
-  }
-};
-
-export const getBotones = (req, res) => {
-  try {
-    const botones = [
-      { id: 1, label: 'Precios', value: 'precios' },
-      { id: 2, label: 'Envíos', value: 'envio' },
-      { id: 3, label: 'Garantía', value: 'garantia' },
-      { id: 4, label: 'Contacto', value: 'contacto' },
-      { id: 5, label: 'Productos', value: 'productos' },
-      { id: 6, label: 'Horario', value: 'horario' },
-      { id: 7, label: 'Pagos', value: 'pago' },
-      { id: 8, label: 'Devoluciones', value: 'devolucion' },
-    ];
+    const info = await transporter.sendMail(mailOptions);
+    console.log(' Correo enviado. ID:', info.messageId);
 
     res.json({
       success: true,
-      count: botones.length,
-      botones: botones
+      message: 'Mensaje enviado correctamente'
     });
+
   } catch (error) {
-    console.error("Error al obtener botones:", error);
+    console.error(' Error al enviar correo:', error);
+    console.error(' Detalle:', error.message);
     res.status(500).json({
       success: false,
-      message: "Error al obtener los botones"
+      message: 'Error al enviar el mensaje',
+      error: error.message
     });
   }
 };
