@@ -98,7 +98,7 @@ export const DetalleFormulaCliente = () => {
                     </View>
 
                     <View style={styles.datoFormula}>
-                        <Text style={styles.titulo}>Asignar precio:</Text>
+                        <Text style={styles.titulo}>Costo:</Text>
                         <Text style={styles.texto}>{formula?.costo}</Text>
                     </View>
                 </View>

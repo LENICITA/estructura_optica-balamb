@@ -187,7 +187,7 @@ export class FormulaService {
         type: mimeType,
       });
 
-      console.log('📤 Service - Enviando FormData con imagen:', fileName);
+      console.log(' Service - Enviando FormData con imagen:', fileName);
 
       //  ENVIAR
       const response = await apiClient.post('/formulas', formData, {
@@ -243,8 +243,8 @@ export class FormulaService {
     success: boolean;
     message: string;
   }> {
-    console.log('🗑️ Service - Eliminando fórmula ID:', id_formula);
-    console.log('🗑️ Service - Tipo de ID:', typeof id_formula);
+    console.log(' Service - Eliminando fórmula ID:', id_formula);
+    console.log(' Service - Tipo de ID:', typeof id_formula);
 
     try {
       //  Validación estricta
@@ -318,7 +318,7 @@ export class FormulaService {
 
   async actualizarEstadoFormula(
     id_formula: number,
-    estado: string
+    estado: EstadoFormula
   ): Promise<{
     success: boolean;
     message: string;
@@ -341,24 +341,22 @@ export class FormulaService {
         };
       }
 
-      const estadosValidos = [
-            'Pendiente',
-            'Aprobado',
-            'Rechazado',
-          ];
+      const estadosValidos: EstadoFormula[] = [
+        'Pendiente',
+        'Aprobado',
+        'Rechazado',
+      ];
 
-      const estadoNormalizado = estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-
-          if (!estadosValidos.includes(estadoNormalizado)) {
-            return {
-              success: false,
-              message: `Estado inválido. Debe ser: ${estadosValidos.join(', ')}`,
-            };
-          }
+      if (!estadosValidos.includes(estado)) {
+        return {
+          success: false,
+          message: 'El estado de la fórmula no es válido.',
+        };
+      }
 
       const response = await apiClient.put<FormulaResponse>(
         `/formulas/${id_formula}/estado`,
-        { estado: estadoNormalizado }
+        { estado: estado }
       );
 
       const result = response.data;
@@ -457,7 +455,7 @@ export class FormulaService {
   // ==========================================================
 
   async getFormulasPendientes(): Promise<FormulaModel[]> {
-    return this.getFormulasByEstado('PENDIENTE');
+    return this.getFormulasByEstado('Pendiente');
   }
 
   // ==========================================================

@@ -131,18 +131,18 @@ export class FormulaController {
 
   async actualizarEstadoFormula(
     id_formula: number,
-    estado: string
+    estado: EstadoFormula
   ): Promise<{
     success: boolean;
     message: string;
     data?: FormulaModel;
   }> {
     try {
-      const estadosPermitidos = [
-            'Pendiente',
-            'Aprobado',
-            'Rechazado',
-          ];
+      const estadosPermitidos: EstadoFormula[] = [
+        'Pendiente',
+        'Aprobado',
+        'Rechazado',
+      ];
 
       if (!id_formula) {
         return {
@@ -151,18 +151,16 @@ export class FormulaController {
         };
       }
 
-      const estadoNormalizado = estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-
-          if (!estadosPermitidos.includes(estadoNormalizado)) {
-            return {
-              success: false,
-              message: `Estado inválido. Debe ser: ${estadosPermitidos.join(', ')}`,
-            };
-          }
+      if (!estadosPermitidos.includes(estado)) {
+        return {
+          success: false,
+          message: 'Estado de fórmula no válido',
+        };
+      }
 
       const response = await this.formulaService.actualizarEstadoFormula(
         id_formula,
-        estadoNormalizado as any
+        estado
       );
 
       if (!response.success) {

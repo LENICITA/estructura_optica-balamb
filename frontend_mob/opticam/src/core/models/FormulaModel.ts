@@ -1,6 +1,6 @@
 // src/core/models/FormulaModel.ts
 
-export type EstadoFormula = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+export type EstadoFormula = 'Pendiente' | 'Aprobado' | 'Rechazado';
 
 export interface Formula {
   id_formula: number;
@@ -58,14 +58,14 @@ export class FormulaModel implements Formula {
 
   get estadoTexto(): string {
     switch (this.estado) {
-          case 'APROBADO':
-            return 'Aprobado';
-          case 'RECHAZADO':
-            return 'Rechazado';
-          default:
-            return 'Pendiente';
-        }
-      }
+      case 'Aprobado':
+        return 'Aprobado';
+      case 'Rechazado':
+        return 'Rechazado';
+      default:
+        return 'Pendiente';
+    }
+  }
 
   static fromJSON(data: any): FormulaModel {
     console.log(' fromJSON - Datos recibidos:', data);
@@ -84,14 +84,6 @@ export class FormulaModel implements Formula {
 
     console.log(' fromJSON - ID final:', idFormula);
 
-    const estadoRaw = source.estado ?? 'PENDIENTE';
-         const estadoUpper = estadoRaw.toUpperCase();
-
-         const estadosValidos = ['PENDIENTE', 'APROBADO', 'RECHAZADO'];
-         const estadoFinal = estadosValidos.includes(estadoUpper)
-           ? estadoUpper
-           : 'PENDIENTE';
-
     return new FormulaModel({
       id_formula: idFormula,
       id_usuario: Number(source.id_usuario ?? source.usuario_id ?? 0),
@@ -100,7 +92,7 @@ export class FormulaModel implements Formula {
       observaciones: source.observaciones ?? source.descripcion ?? '',
       fecha_creacion: source.fecha_creacion ?? source.fecha ?? new Date().toISOString().split('T')[0],
       costo: Number(source.costo ?? 0),
-      estado: estadoFinal as EstadoFormula,
+      estado: (source.estado ?? 'Pendiente') as EstadoFormula,
       nombre_completo: source.nombre_completo,
       telefono: source.telefono,
       email: source.email,
