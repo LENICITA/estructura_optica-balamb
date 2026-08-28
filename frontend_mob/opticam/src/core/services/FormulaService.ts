@@ -57,7 +57,7 @@ export class FormulaService {
   async getFormulasByUsuario(
     id_usuario: number
   ): Promise<FormulaModel[]> {
-    console.log('📋 Service - Obteniendo fórmulas para usuario:', id_usuario);
+    console.log(' Service - Obteniendo fórmulas para usuario:', id_usuario);
 
     if (!id_usuario) {
       throw new Error('El id_usuario es obligatorio.');
@@ -69,7 +69,7 @@ export class FormulaService {
       );
 
       const data = response.data;
-      console.log('📋 Service - Respuesta completa:', data);
+      console.log(' Service - Respuesta completa:', data);
 
       if (!data.success) {
         throw new Error(data.message || 'Error al obtener fórmulas del usuario');
@@ -145,14 +145,14 @@ export class FormulaService {
     data?: FormulaModel;
   }> {
     try {
-      console.log('📤 Service - Creando fórmula con datos:', {
+      console.log(' Service - Creando fórmula con datos:', {
         id_usuario: data.id_usuario,
         condicion: data.condicion,
         observaciones: data.observaciones,
         tieneImagen: !!data.imagen_formula,
       });
 
-      // ✅ Validaciones
+      //  Validaciones
       if (!data.id_usuario) {
         return { success: false, message: 'El usuario es obligatorio.' };
       }
@@ -163,13 +163,13 @@ export class FormulaService {
         return { success: false, message: 'La imagen de la fórmula es obligatoria.' };
       }
 
-      // ✅ CREAR FormData
+      //  CREAR FormData
       const formData = new FormData();
 
       formData.append('condicion', data.condicion);
       formData.append('observaciones', data.observaciones || '');
 
-      // ✅ AGREGAR IMAGEN como archivo
+      //  AGREGAR IMAGEN como archivo
       const uri = data.imagen_formula;
       const uriParts = uri.split('.');
       const fileType = uriParts[uriParts.length - 1] || 'jpg';
@@ -189,14 +189,14 @@ export class FormulaService {
 
       console.log('📤 Service - Enviando FormData con imagen:', fileName);
 
-      // ✅ ENVIAR
+      //  ENVIAR
       const response = await apiClient.post('/formulas', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      console.log('✅ Service - Respuesta del backend:', response.data);
+      console.log(' Service - Respuesta del backend:', response.data);
 
       const result = response.data;
 
@@ -215,7 +215,7 @@ export class FormulaService {
       };
 
     } catch (error: any) {
-      console.error('❌ Error en FormulaService.crearFormula:', error);
+      console.error(' Error en FormulaService.crearFormula:', error);
 
       let errorMessage = 'No fue posible crear la fórmula.';
       if (error.response?.data?.message) {
@@ -247,7 +247,7 @@ export class FormulaService {
     console.log('🗑️ Service - Tipo de ID:', typeof id_formula);
 
     try {
-      // ✅ Validación estricta
+      //  Validación estricta
       if (!id_formula) {
         return {
           success: false,
@@ -255,7 +255,7 @@ export class FormulaService {
         };
       }
 
-      // ✅ Asegurar que sea un número
+      //  Asegurar que sea un número
       const idNumber = Number(id_formula);
       if (isNaN(idNumber) || idNumber <= 0) {
         return {
@@ -264,10 +264,10 @@ export class FormulaService {
         };
       }
 
-      // ✅ Enviar DELETE a la URL correcta
+      //  Enviar DELETE a la URL correcta
       const response = await apiClient.delete(`/formulas/${idNumber}`);
 
-      console.log('✅ Service - Respuesta del backend:', response.data);
+      console.log(' Service - Respuesta del backend:', response.data);
 
       const result = response.data;
 
@@ -284,13 +284,13 @@ export class FormulaService {
       };
 
     } catch (error: any) {
-      console.error('❌ Error en FormulaService.eliminarFormula:', error);
+      console.error(' Error en FormulaService.eliminarFormula:', error);
 
       let errorMessage = 'No fue posible eliminar la fórmula.';
 
       if (error.response) {
-        console.log('📊 Error response:', error.response.status);
-        console.log('📊 Error data:', error.response.data);
+        console.log(' Error response:', error.response.status);
+        console.log(' Error data:', error.response.data);
 
         if (error.response.status === 404) {
           errorMessage = 'La fórmula no existe o ya fue eliminada.';

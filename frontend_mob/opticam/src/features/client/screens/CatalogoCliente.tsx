@@ -91,7 +91,6 @@ useEffect(() => {
 
       if (categoriaSeleccionada === 'Todos') {
 
-        // Reordenar según el orden seleccionado
         const ordenados = [...productos].sort((a, b) => {
           switch (ordenSeleccionado) {
             case 'Nuevo':
@@ -824,7 +823,7 @@ const ordenarProductos = (tipo: string) => {
       </Modal>
 
       {/* ============================================
-                🟢 NUEVO: MODAL ORDENAMIENTO
+                MODAL ORDENAMIENTO
             ============================================ */}
 
             <Modal

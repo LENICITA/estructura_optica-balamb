@@ -251,7 +251,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
                 style={styles.formulaCard}
                 activeOpacity={0.7}
                 onPress={() => {
-                  console.log('📱 Abriendo detalle de fórmula:', item.id_formula);
+                  console.log(' Abriendo detalle de fórmula:', item.id_formula);
                   navigation.navigate('DetalleFormulaCliente', {
                     id_formula: item.id_formula,
                   });
