@@ -150,35 +150,6 @@ export class UserController {
     }
   }
 
-  async getClienteById(id: number): Promise<UserModel | null> {
-  try {
-    console.log('Fetching cliente details for ID:', id);
-
-    const response = await this.userService.getClienteById(id);
-
-    if (!response.success) return null;
-
-    const cliente = response.data;
-
-    return UserModel.fromJSON({
-      id_usuario: cliente.id_usuario || cliente.id || 0,
-      nombre_completo: cliente.nombre_completo || cliente.nombre || '',
-      telefono: cliente.telefono || '',
-      fecha_nacimiento: cliente.fecha_nacimiento || '',
-      documento: cliente.documento || 0,
-      ciudad: cliente.ciudad || '',
-      direccion: cliente.direccion || '',
-      fecha_registro: cliente.fecha_registro || '',
-      email: cliente.email || '',
-      estado: cliente.estado || 'ACTIVO',
-      roles: cliente.roles || [],
-    });
-  } catch (error) {
-    console.error('Error en getClienteById:', error);
-    return null;
-  }
-}
-
   // ============================================
   // REPARTIDORES
   // ============================================

@@ -1,9 +1,9 @@
 // src/core/services/UserService.ts
 import { apiClient } from './ApiClient';
-import { 
-  ProfileResponse, 
-  UpdateProfileRequest, 
-  UpdateProfileResponse 
+import {
+  ProfileResponse,
+  UpdateProfileRequest,
+  UpdateProfileResponse
 } from '../models/UserModel';
 
 export class UserService {
@@ -28,11 +28,6 @@ export class UserService {
     const response = await apiClient.get('/usuarios/clientes/count');
     return response.data;
   }
-
-  async getClienteById(id: number): Promise<{ success: boolean; data: any }> {
-  const response = await apiClient.get(`/usuarios/clientes/${id}`);
-  return response.data;
-}
 
   // ===== REPARTIDORES =====
   async getRepartidores(): Promise<{ success: boolean; data: any[] }> {

@@ -14,6 +14,7 @@ import { ChatBot } from '../shared/components/chatbot/ChatBot';
 
 // ===== SCREENS =====
 import { Principal } from '../features/home/screens/Principal';
+import { ContactoScreen } from '../features/home/screens/ContactoScreen';
 import { Iniciosesion } from '../features/auth/screens/Iniciosesion';
 import { AutoRegistro } from '../features/auth/screens/AutoRegistro';
 import { RecuperarContraseña } from '../features/auth/screens/RecuperarContraseña';
@@ -26,13 +27,12 @@ import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
 import DashboardRepartidores from '../features/admin/screens/DashboardRepartidores';
 import { DetalleRepartidor } from '../features/admin/screens/DetalleRepartidor';
-import { RegistrarRepartidor } from '../features/admin/screens/RegistrarRepartidor';
 import EditarRepartidor from '../features/admin/screens/EditarRepartidor';
+import { RegistrarRepartidor } from '../features/admin/screens/RegistrarRepartidor';
 import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
-import GestionarFormulas from '../features/admin/screens/GestionarFormulas';
 
 const Stack = createNativeStackNavigator();
 
@@ -89,6 +89,14 @@ export default function AppNavigator() {
               )}
             </Stack.Screen>
 
+            <Stack.Screen name="ContactoScreen">
+               {() => (
+                 <Layout>
+                   <ContactoScreen />
+                 </Layout>
+               )}
+           </Stack.Screen>
+
             <Stack.Screen name="PrincipalAdmin">
               {({ navigation }) => (
                 <UserLayout>
@@ -111,17 +119,16 @@ export default function AppNavigator() {
                   <DetalleRepartidor />
                 </UserLayout>
               )}
-            </Stack.Screen>
+              </Stack.Screen>
 
-            <Stack.Screen name="EditarRepartidor">
-              {({ navigation, route }) => (
-                <UserLayout>
-                  <EditarRepartidor navigation={navigation} route={route} />
-                </UserLayout>
-              )}
-            </Stack.Screen>
+               <Stack.Screen name="EditarRepartidor">
+               {({ navigation, route }) => (
+                 <UserLayout>
+                   <EditarRepartidor navigation={navigation} route={route} />
+                 </UserLayout>
+               )}
+               </Stack.Screen>
 
-            
             <Stack.Screen name="RegistrarRepartidor">
               {({ navigation }) => (
                 <UserLayout>
@@ -198,14 +205,6 @@ export default function AppNavigator() {
               {({ navigation }) => (
                 <UserLayout>
                   <PerfilRepartidor navigation={navigation} />
-                </UserLayout>
-              )}
-            </Stack.Screen>
-
-            <Stack.Screen name="GestionarFormulas">
-              {() => (
-                <UserLayout>
-                  <GestionarFormulas />
                 </UserLayout>
               )}
             </Stack.Screen>

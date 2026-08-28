@@ -4,3 +4,4 @@ export * from './VehiculoModel';
 export * from './DistribucionModel';
 export * from './PedidoModel';
 export * from './ProductModel';
+export * from './MensajeContacto';

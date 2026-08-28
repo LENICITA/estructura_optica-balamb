@@ -1,6 +1,7 @@
 // src/features/admin/screens/DetalleProductoAdmin.tsx
 
 import React, { useEffect, useState } from 'react';
+
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+
 import { ProductController } from '../../../core/controllers/ProductController';
 import { ProductModel } from '../../../core/models/ProductModel';
 import { COLORS } from '../../../shared/constants/colors';
@@ -25,71 +27,165 @@ interface Props {
   route: any;
 }
 
-export const DetalleProductoAdmin = ({ navigation, route }: Props) => {
+export const DetalleProductoAdmin = ({
+  navigation,
+  route,
+}: Props) => {
+
   const { id_producto } = route.params || {};
+
   const productController = new ProductController();
 
-  const [producto, setProducto] = useState<ProductModel | null>(null);
+  const [producto, setProducto] =
+    useState<ProductModel | null>(null);
+
   const [loading, setLoading] = useState(true);
 
+
+  // ==========================================
+  // CARGAR DETALLE DEL PRODUCTO
+  // ==========================================
   useEffect(() => {
+
     if (id_producto) {
+
       cargarDetalleProducto();
+
     } else {
+
       console.error('No se recibió id_producto');
+
       setLoading(false);
+
     }
+
   }, [id_producto]);
 
+
   const cargarDetalleProducto = async () => {
+
     try {
+
       setLoading(true);
-      console.log('ID del producto:', id_producto);
-      console.log('Tipo de ID:', typeof id_producto);
-      const data = await productController.getProductoById(id_producto);
-      console.log('Datos recibidos:', data);
+
+      console.log(
+        'ID del producto:',
+        id_producto
+      );
+
+      const data =
+        await productController.getProductoById(
+          id_producto
+        );
+
+      console.log(
+        'Datos recibidos:',
+        data
+      );
+
       setProducto(data);
+
     } catch (error) {
-      console.error('Error cargando detalle del producto:', error);
+
+      console.error(
+        'Error cargando detalle del producto:',
+        error
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
-  // editar producto
+
+  // ==========================================
+  // IR A EDITAR PRODUCTO
+  // ==========================================
   const irAEditarProducto = () => {
-    navigation.navigate('EditarProductoAdmin' as never, {
-      id_producto: Number(id_producto),
-    } as never);
+
+    navigation.navigate(
+      'EditarProductoAdmin' as never,
+      {
+        id_producto: Number(id_producto),
+      } as never
+    );
   };
 
-  // Eliminar producto (con confirmación)
+
+  // ==========================================
+  // ELIMINAR PRODUCTO
+  // ==========================================
   const eliminarProducto = () => {
+
     Alert.alert(
       'Eliminar producto',
       `¿Estás seguro de eliminar "${producto?.nombre}"?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
         {
           text: 'Eliminar',
           style: 'destructive',
+
           onPress: async () => {
+
             try {
+
               setLoading(true);
-              const response = await productController.eliminarProducto(
-                Number(id_producto)
-              );
+
+              const response =
+                await productController.eliminarProducto(
+                  Number(id_producto)
+                );
+
               if (response.success) {
-                Alert.alert('Éxito', 'Producto eliminado correctamente');
-                navigation.goBack(); // Volver al catálogo
+
+                Alert.alert(
+                  'Éxito',
+                  'Producto eliminado correctamente',
+                  [
+                    {
+                      text: 'Aceptar',
+
+                      onPress: () => {
+
+                        // Volvemos al catálogo.
+                        // CatalogoAdmin detectará que volvió
+                        // a estar enfocado y recargará los productos.
+                        navigation.goBack();
+
+                      },
+                    },
+                  ]
+                );
+
               } else {
-                Alert.alert('Error', response.message || 'Error al eliminar');
+
+                Alert.alert(
+                  'Error',
+                  response.message ||
+                  'Error al eliminar'
+                );
+
               }
+
             } catch (error) {
-              Alert.alert('Error', 'No se pudo eliminar el producto');
+
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar el producto'
+              );
+
               console.error(error);
+
             } finally {
+
               setLoading(false);
+
             }
           },
         },
@@ -97,106 +193,254 @@ export const DetalleProductoAdmin = ({ navigation, route }: Props) => {
     );
   };
 
+
+  // ==========================================
+  // LOADING
+  // ==========================================
   if (loading) {
+
     return (
+
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Cargando detalle...</Text>
+
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+        />
+
+        <Text style={styles.loadingText}>
+          Cargando detalle...
+        </Text>
+
       </View>
+
     );
   }
 
+
+  // ==========================================
+  // PRODUCTO NO ENCONTRADO
+  // ==========================================
   if (!producto) {
+
     return (
+
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={60} color={COLORS.gray} />
-        <Text style={styles.errorText}>No se encontró la información del producto.</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>Volver al catálogo</Text>
+
+        <Ionicons
+          name="alert-circle-outline"
+          size={60}
+          color={COLORS.gray}
+        />
+
+        <Text style={styles.errorText}>
+          No se encontró la información del producto.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+
+          <Text style={styles.backBtnText}>
+            Volver al catálogo
+          </Text>
+
         </TouchableOpacity>
+
       </View>
+
     );
   }
 
+
+  // ==========================================
+  // IMAGEN
+  // ==========================================
   const listaImagenes: string[] = [
-    producto.imagen_url || producto.imagen || ''
+    producto.imagen_url ||
+    producto.imagen ||
+    '',
   ];
 
+
+  // ==========================================
+  // ESPECIFICACIONES
+  // ==========================================
   const specs = [
-    { icon: 'pricetag-outline', label: 'Marca', value: producto.marca },
-    { icon: 'cube-outline', label: 'Material', value: producto.material },
-    { icon: 'color-palette-outline', label: 'Color', value: producto.color },
+    {
+      icon: 'pricetag-outline',
+      label: 'Marca',
+      value: producto.marca,
+    },
+    {
+      icon: 'cube-outline',
+      label: 'Material',
+      value: producto.material,
+    },
+    {
+      icon: 'color-palette-outline',
+      label: 'Color',
+      value: producto.color,
+    },
   ];
+
 
   return (
+
     <View style={styles.container}>
-      {/* CABECERA CON BOTÓN VOLVER */}
+
+
+      {/* CABECERA */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color={COLORS.black} />
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => navigation.goBack()}
+        >
+
+          <Ionicons
+            name="chevron-back"
+            size={26}
+            color={COLORS.black}
+          />
+
         </TouchableOpacity>
+
         <View style={{ width: 40 }} />
+
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+
+
         {/* IMAGEN */}
         <View style={styles.imageContainer}>
+
           {listaImagenes[0] !== '' ? (
+
             <Image
-              source={{ uri: listaImagenes[0] }}
+              source={{
+                uri: listaImagenes[0],
+              }}
               style={styles.productImage}
               resizeMode="contain"
             />
+
           ) : (
+
             <View style={styles.noImageContainer}>
-              <Ionicons name="image-outline" size={60} color={COLORS.gray} />
+
+              <Ionicons
+                name="image-outline"
+                size={60}
+                color={COLORS.gray}
+              />
+
             </View>
+
           )}
+
         </View>
 
-        {/* DETALLES DEL PRODUCTO */}
+
+        {/* DETALLES */}
         <View style={styles.detailsContainer}>
 
-          {/* CATEGORÍA BADGE */}
+
+          {/* CATEGORÍA */}
           <View style={styles.categoriaBadge}>
+
             <Text style={styles.categoriaBadgeText}>
               {producto.tipo_categoria || 'Producto'}
             </Text>
+
           </View>
 
-          <Text style={styles.productName}>{producto.nombre}</Text>
-          <Text style={styles.productPrice}>{producto.precioFormateado}</Text>
 
-          {/* DIVIDER */}
+          {/* NOMBRE */}
+          <Text style={styles.productName}>
+            {producto.nombre}
+          </Text>
+
+
+          {/* PRECIO */}
+          <Text style={styles.productPrice}>
+            {producto.precioFormateado}
+          </Text>
+
+
+          {/* DIVISOR */}
           <View style={styles.divider} />
+
 
           {/* ESPECIFICACIONES */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Especificaciones</Text>
+
+            <Text style={styles.sectionTitle}>
+              Especificaciones
+            </Text>
+
             <View style={styles.specGrid}>
+
               {specs.map((spec, index) => (
-                <View key={index} style={styles.specItem}>
-                  <Ionicons name={spec.icon as any} size={16} color={COLORS.primary} />
-                  <Text style={styles.specLabel}>{spec.label}:</Text>
-                  <Text style={styles.specValue}>{spec.value || 'N/A'}</Text>
+
+                <View
+                  key={index}
+                  style={styles.specItem}
+                >
+
+                  <Ionicons
+                    name={spec.icon as any}
+                    size={16}
+                    color={COLORS.primary}
+                  />
+
+                  <Text style={styles.specLabel}>
+                    {spec.label}:
+                  </Text>
+
+                  <Text style={styles.specValue}>
+                    {spec.value || 'N/A'}
+                  </Text>
+
                 </View>
+
               ))}
+
             </View>
+
           </View>
+
 
           {/* DESCRIPCIÓN */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Descripción</Text>
-            <Text style={styles.descriptionText}>
-              {producto.descripcion || 'Sin descripción disponible para este producto.'}
+
+            <Text style={styles.sectionTitle}>
+              Descripción
             </Text>
+
+            <Text style={styles.descriptionText}>
+
+              {producto.descripcion ||
+                'Sin descripción disponible para este producto.'}
+
+            </Text>
+
           </View>
 
         </View>
+
       </ScrollView>
 
-      {/* Botones Editar y Eliminar */}
+
+      {/* BOTONES */}
       <View style={styles.bottomBar}>
+
 
         {/* EDITAR */}
         <TouchableOpacity
@@ -204,9 +448,19 @@ export const DetalleProductoAdmin = ({ navigation, route }: Props) => {
           onPress={irAEditarProducto}
           activeOpacity={0.8}
         >
-          <Ionicons name="create-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.editButtonText}>Editar producto</Text>
+
+          <Ionicons
+            name="create-outline"
+            size={20}
+            color={COLORS.primary}
+          />
+
+          <Text style={styles.editButtonText}>
+            Editar producto
+          </Text>
+
         </TouchableOpacity>
+
 
         {/* ELIMINAR */}
         <TouchableOpacity
@@ -214,8 +468,17 @@ export const DetalleProductoAdmin = ({ navigation, route }: Props) => {
           onPress={eliminarProducto}
           activeOpacity={0.8}
         >
-          <Ionicons name="trash-outline" size={20} color={COLORS.white} />
-          <Text style={styles.deleteButtonText}>Eliminar producto</Text>
+
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={COLORS.white}
+          />
+
+          <Text style={styles.deleteButtonText}>
+            Eliminar producto
+          </Text>
+
         </TouchableOpacity>
 
       </View>
@@ -224,11 +487,14 @@ export const DetalleProductoAdmin = ({ navigation, route }: Props) => {
   );
 };
 
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -240,12 +506,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
+
   iconButton: {
     padding: 6,
   },
+
   scrollContent: {
     paddingBottom: 20,
   },
+
   imageContainer: {
     width: width,
     height: 280,
@@ -253,14 +522,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   productImage: {
     width: width * 0.9,
     height: 260,
   },
+
   noImageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   detailsContainer: {
     padding: 20,
   },
@@ -273,18 +545,21 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 10,
   },
+
   categoriaBadgeText: {
     fontSize: 12,
     color: COLORS.white,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
+
   productName: {
     fontSize: 22,
     fontWeight: '800',
     color: COLORS.black,
     lineHeight: 28,
   },
+
   productPrice: {
     fontSize: 24,
     fontWeight: '800',
@@ -301,39 +576,44 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 22,
   },
+
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: COLORS.black,
     marginBottom: 8,
   },
+
   specGrid: {
     backgroundColor: '#F0F8FF',
     borderRadius: 12,
     padding: 14,
     gap: 10,
   },
+
   specItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   specLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.black,
     marginLeft: 6,
   },
+
   specValue: {
     fontSize: 13,
     color: '#555555',
   },
+
   descriptionText: {
     fontSize: 13,
     color: '#555555',
     lineHeight: 20,
   },
 
-  // Botones ADMIN
   bottomBar: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -374,7 +654,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     shadowColor: COLORS.error,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
@@ -392,23 +675,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
+
   loadingText: {
     marginTop: 10,
     fontSize: 13,
     color: COLORS.gray,
   },
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
+
   errorText: {
     fontSize: 14,
     color: COLORS.gray,
     marginTop: 10,
     textAlign: 'center',
   },
+
   backBtn: {
     marginTop: 15,
     paddingHorizontal: 20,
@@ -416,8 +703,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: 8,
   },
+
   backBtnText: {
     color: COLORS.white,
     fontWeight: '600',
   },
+
 });

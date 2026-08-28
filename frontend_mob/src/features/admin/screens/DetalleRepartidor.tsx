@@ -47,87 +47,73 @@ type RepartidorEditar = {
 };
 
 export const DetalleRepartidor = () => {
-  const navigation =
-    useNavigation<any>();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
 
-  const route =
-    useRoute<any>();
-
-  const { id } =
-    route.params ?? {};
+  const { id } = route.params ?? {};
 
   const [user, setUser] =
-    useState<RepartidorDetalleUser | null>(
-      null
-    );
+    useState<RepartidorDetalleUser | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   // =====================================================
-  // CARGAR DATOS
+  // CARGAR DATOS DEL REPARTIDOR
   // =====================================================
 
-  const cargarDatosRepartidor =
-    useCallback(async () => {
-      if (!id) {
-        return;
+  const cargarDatosRepartidor = useCallback(async () => {
+    if (!id) {
+      console.log('No se recibió ID del repartidor');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      console.log('================================');
+      console.log(
+        'CARGANDO DETALLE REPARTIDOR:',
+        id
+      );
+
+      const controller = new UserController();
+
+      const response =
+        await controller.getRepartidorById(
+          Number(id)
+        );
+
+      console.log(
+        'DATOS ACTUALIZADOS:',
+        response
+      );
+
+      console.log('================================');
+
+      if (response) {
+        setUser(
+          response as unknown as RepartidorDetalleUser
+        );
       }
-
-      try {
-        setLoading(true);
-
-        console.log(
-          '================================'
-        );
-
-        console.log(
-          'CARGANDO DETALLE REPARTIDOR:',
-          id
-        );
-
-        const controller =
-          new UserController();
-
-        const response =
-          await controller.getRepartidorById(
-            Number(id)
-          );
-
-        console.log(
-          'DATOS ACTUALIZADOS:',
-          response
-        );
-
-        console.log(
-          '================================'
-        );
-
-        if (response) {
-          setUser(
-            response as unknown as RepartidorDetalleUser
-          );
-        }
-      } catch (error) {
-        console.error(
-          'Error al cargar los datos del repartidor:',
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, [id]);
+    } catch (error) {
+      console.error(
+        'Error al cargar los datos del repartidor:',
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   // =====================================================
-  // RECARGAR CADA VEZ QUE LA PANTALLA VUELVE A ESTAR
-  // ENFOCADA
+  // RECARGAR CADA VEZ QUE EL DETALLE RECIBE EL FOCO
   // =====================================================
 
   useFocusEffect(
     useCallback(() => {
       cargarDatosRepartidor();
 
-      return () => {};
+      return undefined;
     }, [cargarDatosRepartidor])
   );
 
@@ -195,13 +181,9 @@ export const DetalleRepartidor = () => {
         ? new Date(value)
         : value;
 
-    return Number.isNaN(
-      date.getTime()
-    )
+    return Number.isNaN(date.getTime())
       ? 'No disponible'
-      : date.toLocaleDateString(
-          'es-ES'
-        );
+      : date.toLocaleDateString('es-ES');
   };
 
   // =====================================================
@@ -213,8 +195,7 @@ export const DetalleRepartidor = () => {
       return;
     }
 
-    const repartidorData:
-      RepartidorEditar = {
+    const repartidorData: RepartidorEditar = {
       id: Number(id),
 
       nombre:
@@ -243,20 +224,15 @@ export const DetalleRepartidor = () => {
 
       fecha_registro:
         user.fecha_registro
-          ? String(
-              user.fecha_registro
-            )
+          ? String(user.fecha_registro)
           : '',
     };
 
     navigation.navigate(
       'EditarRepartidor',
       {
-        repartidorId:
-          Number(id),
-
-        repartidorData:
-          repartidorData,
+        repartidorId: Number(id),
+        repartidorData,
       }
     );
   };
@@ -267,21 +243,13 @@ export const DetalleRepartidor = () => {
 
   if (loading && !user) {
     return (
-      <View
-        style={
-          styles.loadingScreen
-        }
-      >
+      <View style={styles.loadingScreen}>
         <ActivityIndicator
           size="large"
           color="#B90F0F"
         />
 
-        <Text
-          style={
-            styles.loadingScreenText
-          }
-        >
+        <Text style={styles.loadingScreenText}>
           Cargando información...
         </Text>
       </View>
@@ -301,9 +269,7 @@ export const DetalleRepartidor = () => {
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() =>
-          navigation.goBack()
-        }
+        onPress={() => navigation.goBack()}
       >
         <Ionicons
           name="arrow-back-outline"
@@ -311,9 +277,7 @@ export const DetalleRepartidor = () => {
           color="#B90F0F"
         />
 
-        <Text
-          style={styles.textBoton}
-        >
+        <Text style={styles.textBoton}>
           Volver
         </Text>
       </TouchableOpacity>
@@ -321,9 +285,8 @@ export const DetalleRepartidor = () => {
       {/* CARD PRINCIPAL */}
 
       <View style={styles.card}>
-        <View
-          style={styles.headerCard}
-        >
+        <View style={styles.headerCard}>
+
           {/* AVATAR */}
 
           <View style={styles.avatar}>
@@ -336,17 +299,10 @@ export const DetalleRepartidor = () => {
 
           {/* INFORMACIÓN */}
 
-          <View
-            style={
-              styles.infoPrincipal
-            }
-          >
-            <View
-              style={styles.nombreRow}
-            >
-              <Text
-                style={styles.nombre}
-              >
+          <View style={styles.infoPrincipal}>
+            <View style={styles.nombreRow}>
+
+              <Text style={styles.nombre}>
                 {nombre}
               </Text>
 
@@ -382,58 +338,43 @@ export const DetalleRepartidor = () => {
 
             {/* TELÉFONO */}
 
-            <View
-              style={styles.infoRow}
-            >
+            <View style={styles.infoRow}>
               <Ionicons
                 name="call-outline"
                 size={14}
                 color="#888"
               />
 
-              <Text
-                style={styles.infoText}
-              >
-                {telefono ||
-                  'No disponible'}
+              <Text style={styles.infoText}>
+                {telefono || 'No disponible'}
               </Text>
             </View>
 
             {/* CORREO */}
 
-            <View
-              style={styles.infoRow}
-            >
+            <View style={styles.infoRow}>
               <Ionicons
                 name="mail-outline"
                 size={14}
                 color="#888"
               />
 
-              <Text
-                style={styles.infoText}
-              >
-                {correo ||
-                  'No disponible'}
+              <Text style={styles.infoText}>
+                {correo || 'No disponible'}
               </Text>
             </View>
 
             {/* CIUDAD */}
 
-            <View
-              style={styles.infoRow}
-            >
+            <View style={styles.infoRow}>
               <Ionicons
                 name="location-outline"
                 size={14}
                 color="#888"
               />
 
-              <Text
-                style={styles.infoText}
-              >
-                {ciudad ||
-                  'No especificada'}
+              <Text style={styles.infoText}>
+                {ciudad || 'No especificada'}
               </Text>
             </View>
           </View>
@@ -441,50 +382,29 @@ export const DetalleRepartidor = () => {
 
         {/* RESUMEN */}
 
-        <View
-          style={styles.resumen}
-        >
-          <View
-            style={
-              styles.resumenItem
-            }
-          >
+        <View style={styles.resumen}>
+          <View style={styles.resumenItem}>
             <Ionicons
               name="cube-outline"
               size={18}
               color="#B90F0F"
             />
 
-            <Text
-              style={
-                styles.resumenText
-              }
-            >
-              {pedidos || 0} pedidos
-              asignados
+            <Text style={styles.resumenText}>
+              {pedidos || 0} pedidos asignados
             </Text>
           </View>
 
-          <View
-            style={styles.divisor}
-          />
+          <View style={styles.divisor} />
 
-          <View
-            style={
-              styles.resumenItem
-            }
-          >
+          <View style={styles.resumenItem}>
             <Ionicons
               name="calendar-outline"
               size={18}
               color="#B90F0F"
             />
 
-            <Text
-              style={
-                styles.resumenText
-              }
-            >
+            <Text style={styles.resumenText}>
               Último pedido
             </Text>
           </View>
@@ -493,112 +413,61 @@ export const DetalleRepartidor = () => {
 
       {/* INFORMACIÓN PERSONAL */}
 
-      <View
-        style={styles.sectionCard}
-      >
-        <View
-          style={
-            styles.sectionHeader
-          }
-        >
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
           <Ionicons
             name="person-outline"
             size={22}
             color="#B90F0F"
           />
 
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
+          <Text style={styles.sectionTitle}>
             Información Personal
           </Text>
         </View>
 
-        {/* NOMBRE */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Nombre completo
           </Text>
 
-          <Text
-            style={styles.infoValue}
-          >
+          <Text style={styles.infoValue}>
             {nombre}
           </Text>
         </View>
 
-        {/* CORREO */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Correo electrónico
           </Text>
 
-          <Text
-            style={styles.infoValue}
-          >
-            {correo ||
-              'No disponible'}
+          <Text style={styles.infoValue}>
+            {correo || 'No disponible'}
           </Text>
         </View>
 
-        {/* TELÉFONO */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Teléfono
           </Text>
 
-          <Text
-            style={styles.infoValue}
-          >
-            {telefono ||
-              'No disponible'}
+          <Text style={styles.infoValue}>
+            {telefono || 'No disponible'}
           </Text>
         </View>
 
-        {/* CIUDAD */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Ciudad
           </Text>
 
-          <Text
-            style={styles.infoValue}
-          >
-            {ciudad ||
-              'No especificada'}
+          <Text style={styles.infoValue}>
+            {ciudad || 'No especificada'}
           </Text>
         </View>
 
-        {/* ESTADO */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Estado
           </Text>
 
@@ -632,173 +501,93 @@ export const DetalleRepartidor = () => {
           </View>
         </View>
 
-        {/* FECHA */}
-
-        <View
-          style={styles.infoItem}
-        >
-          <Text
-            style={styles.infoLabel}
-          >
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>
             Fecha de registro
           </Text>
 
-          <Text
-            style={styles.infoValue}
-          >
-            {formatDate(
-              fechaRegistro
-            )}
+          <Text style={styles.infoValue}>
+            {formatDate(fechaRegistro)}
           </Text>
         </View>
       </View>
 
       {/* INFORMACIÓN VEHÍCULO */}
 
-      <View
-        style={styles.sectionCard}
-      >
-        <View
-          style={
-            styles.sectionHeader
-          }
-        >
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
           <Ionicons
             name="car-outline"
             size={22}
             color="#B90F0F"
           />
 
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
+          <Text style={styles.sectionTitle}>
             Información del Vehículo
           </Text>
         </View>
 
         {vehiculo ? (
           <>
-            {/* TIPO */}
-
-            <View
-              style={styles.infoItem}
-            >
-              <Text
-                style={
-                  styles.infoLabel
-                }
-              >
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>
                 Tipo
               </Text>
 
-              <Text
-                style={
-                  styles.infoValue
-                }
-              >
+              <Text style={styles.infoValue}>
                 {vehiculo.tipo ||
                   'No especificado'}
               </Text>
             </View>
 
-            {/* PLACA */}
-
-            <View
-              style={styles.infoItem}
-            >
-              <Text
-                style={
-                  styles.infoLabel
-                }
-              >
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>
                 Placa
               </Text>
 
-              <Text
-                style={
-                  styles.infoValue
-                }
-              >
+              <Text style={styles.infoValue}>
                 {vehiculo.placa ||
                   'No disponible'}
               </Text>
             </View>
 
-            {/* MODELO */}
-
-            <View
-              style={styles.infoItem}
-            >
-              <Text
-                style={
-                  styles.infoLabel
-                }
-              >
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>
                 Modelo
               </Text>
 
-              <Text
-                style={
-                  styles.infoValue
-                }
-              >
+              <Text style={styles.infoValue}>
                 {vehiculo.modelo ||
                   'No especificado'}
               </Text>
             </View>
 
-            {/* COLOR */}
-
-            <View
-              style={styles.infoItem}
-            >
-              <Text
-                style={
-                  styles.infoLabel
-                }
-              >
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>
                 Color
               </Text>
 
-              <Text
-                style={
-                  styles.infoValue
-                }
-              >
+              <Text style={styles.infoValue}>
                 {vehiculo.color ||
                   'No especificado'}
               </Text>
             </View>
           </>
         ) : (
-          <View
-            style={
-              styles.emptyContainer
-            }
-          >
+          <View style={styles.emptyContainer}>
             <Ionicons
               name="car-outline"
               size={48}
               color="#CCC"
             />
 
-            <Text
-              style={
-                styles.emptyText
-              }
-            >
+            <Text style={styles.emptyText}>
               Sin vehículo asignado
             </Text>
 
-            <Text
-              style={
-                styles.emptySubtext
-              }
-            >
-              Este repartidor no tiene
-              un vehículo registrado
+            <Text style={styles.emptySubtext}>
+              Este repartidor no tiene un
+              vehículo registrado
             </Text>
           </View>
         )}
@@ -816,9 +605,7 @@ export const DetalleRepartidor = () => {
           color="#FFF"
         />
 
-        <Text
-          style={styles.textoEdit}
-        >
+        <Text style={styles.textoEdit}>
           Editar Repartidor
         </Text>
       </TouchableOpacity>

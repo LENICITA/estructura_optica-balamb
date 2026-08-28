@@ -99,15 +99,29 @@ export class ProductService {
 
   // ===== BUSCAR PRODUCTOS =====
   async buscarProductos(query: string): Promise<ProductModel[]> {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>(`/inventario/productos/buscar?q=${encodeURIComponent(query)}`);
-    const data = response.data;
+     const response = await apiClient.get<{
+      success: boolean;
+      query?: string;
+      count?: number;
+      productos?: any[];
+      message?: string;
+    }>(
+    `/inventario/productos/buscar?q=${encodeURIComponent(query)}`
+  );
 
-    if (!data.success) {
-      throw new Error(data.message || 'Error al buscar productos');
-    }
+  const data = response.data;
 
-    return ProductModel.fromJSONArray(data.data || []);
+  console.log('Busqueda:', query);
+  console.log('Resultados:', data.productos);
+
+  if (!data.success) {
+    throw new Error(
+      data.message || 'Error al buscar productos'
+    );
   }
+
+  return ProductModel.fromJSONArray(data.productos || []);
+}
 
   // ===== FILTRAR PRODUCTOS =====
   async filtrarProductos(filtros: {
