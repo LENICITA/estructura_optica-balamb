@@ -36,6 +36,7 @@ import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
 import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
 import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen';
 import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
+import { ContactoScreen } from '../features/home/screens/ContactoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -211,6 +212,14 @@ export default function AppNavigator() {
                    </ClientLayout>
                )}
            </Stack.Screen>
+              
+              <Stack.Screen name="Contacto">
+               {() => (
+                     <ClientLayout>
+                      <ContactoScreen />
+                      </ClientLayout>
+                      )}
+                    </Stack.Screen>
 
            <Stack.Screen name="DetalleProductoCliente">
                 {({ navigation, route }) => (
