@@ -23,26 +23,21 @@ export interface FormulaResponse {
 }
 
 // ============================================================
-// SERVICIO DE FÓRMULA
+// SERVICIO DE FORMULA
 // ============================================================
 
 export class FormulaService {
 
   // ==========================================================
-  // OBTENER TODAS LAS FÓRMULAS
+  // OBTENER TODAS LAS FORMULAS
   // ==========================================================
 
   async getTodasLasFormulas(): Promise<FormulaModel[]> {
-    const response =
-      await apiClient.get<FormulaResponse>('/formulas/admin/todas');
-
+    const response = await apiClient.get<FormulaResponse>('/formulas/admin/todas');
     const data = response.data;
 
     if (!data.success) {
-      throw new Error(
-        data.message ||
-        'Error al obtener fórmulas'
-      );
+      throw new Error(data.message || 'Error al obtener formulas');
     }
 
     return Array.isArray(data.data)
@@ -51,28 +46,22 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // OBTENER FÓRMULAS DE UN USUARIO
+  // OBTENER FORMULAS DE UN USUARIO
   // ==========================================================
 
-  async getFormulasByUsuario(
-    id_usuario: number
-  ): Promise<FormulaModel[]> {
-    console.log('📋 Service - Obteniendo fórmulas para usuario:', id_usuario);
+  async getFormulasByUsuario(id_usuario: number): Promise<FormulaModel[]> {
+    console.log('Service - Obteniendo formulas para usuario:', id_usuario);
 
     if (!id_usuario) {
       throw new Error('El id_usuario es obligatorio.');
     }
 
     try {
-      const response = await apiClient.get<FormulaResponse>(
-        '/formulas/mis-formulas'
-      );
-
+      const response = await apiClient.get<FormulaResponse>('/formulas/mis-formulas');
       const data = response.data;
-      console.log('📋 Service - Respuesta completa:', data);
 
       if (!data.success) {
-        throw new Error(data.message || 'Error al obtener fórmulas del usuario');
+        throw new Error(data.message || 'Error al obtener formulas del usuario');
       }
 
       const formulas = Array.isArray(data.data) ? data.data : [];
@@ -81,12 +70,7 @@ export class FormulaService {
         const source = item?.dataValues ?? item;
         const formulaData = {
           ...source,
-          id_formula: Number(
-            source?.id_formula ??
-            source?.id_Formula ??
-            source?.id ??
-            0
-          ),
+          id_formula: Number(source?.id_formula ?? source?.id_Formula ?? source?.id ?? 0),
         };
         return FormulaModel.fromJSON(formulaData);
       });
@@ -104,25 +88,19 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // OBTENER UNA FÓRMULA POR ID
+  // OBTENER UNA FORMULA POR ID
   // ==========================================================
 
-  async getFormulaById(
-    id_formula: number
-  ): Promise<FormulaModel | null> {
-
+  async getFormulaById(id_formula: number): Promise<FormulaModel | null> {
     if (!id_formula) {
       throw new Error('El id_formula es obligatorio.');
     }
 
-    const response = await apiClient.get<FormulaResponse>(
-      `/formulas/${id_formula}`
-    );
-
+    const response = await apiClient.get<FormulaResponse>(`/formulas/${id_formula}`);
     const data = response.data;
 
     if (!data.success) {
-      throw new Error(data.message || 'Error al obtener la fórmula');
+      throw new Error(data.message || 'Error al obtener la formula');
     }
 
     if (!data.data) {
@@ -133,43 +111,38 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // CREAR FÓRMULA
+  // CREAR FORMULA
   // ==========================================================
 
-  async crearFormula(
-    data: CrearFormulaData
-  ): Promise<{
+  async crearFormula(data: CrearFormulaData): Promise<{
     success: boolean;
     message: string;
     id_formula?: number;
     data?: FormulaModel;
   }> {
     try {
-      console.log('📤 Service - Creando fórmula con datos:', {
+      console.log('Service - Creando formula con datos:', {
         id_usuario: data.id_usuario,
         condicion: data.condicion,
         observaciones: data.observaciones,
         tieneImagen: !!data.imagen_formula,
       });
 
-      // ✅ Validaciones
       if (!data.id_usuario) {
         return { success: false, message: 'El usuario es obligatorio.' };
       }
       if (!data.condicion) {
-        return { success: false, message: 'La condición es obligatoria.' };
+        return { success: false, message: 'La condicion es obligatoria.' };
       }
       if (!data.imagen_formula) {
-        return { success: false, message: 'La imagen de la fórmula es obligatoria.' };
+        return { success: false, message: 'La imagen de la formula es obligatoria.' };
       }
 
-      // ✅ CREAR FormData
       const formData = new FormData();
 
       formData.append('condicion', data.condicion);
       formData.append('observaciones', data.observaciones || '');
 
-      // ✅ AGREGAR IMAGEN como archivo
       const uri = data.imagen_formula;
       const uriParts = uri.split('.');
       const fileType = uriParts[uriParts.length - 1] || 'jpg';
@@ -180,48 +153,46 @@ export class FormulaService {
       else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
       else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
 
-      // @ts-ignore
-      formData.append('imagen', {
+      (formData as any).append('imagen', {
         uri: uri,
         name: fileName,
         type: mimeType,
       });
 
-      console.log('📤 Service - Enviando FormData con imagen:', fileName);
+      console.log('Service - Enviando FormData con imagen:', fileName);
 
-      // ✅ ENVIAR
       const response = await apiClient.post('/formulas', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      console.log('✅ Service - Respuesta del backend:', response.data);
+      console.log('Service - Respuesta del backend:', response.data);
 
       const result = response.data;
 
       if (!result.success) {
         return {
           success: false,
-          message: result.message || 'Error al crear la fórmula',
+          message: result.message || 'Error al crear la formula',
         };
       }
 
       return {
         success: true,
-        message: result.message || 'Fórmula creada exitosamente.',
+        message: result.message || 'Formula creada exitosamente.',
         id_formula: result.data?.id_formula || result.data?.id,
         data: result.data,
       };
 
     } catch (error: any) {
-      console.error('❌ Error en FormulaService.crearFormula:', error);
+      console.error('Error en FormulaService.crearFormula:', error);
       
-      let errorMessage = 'No fue posible crear la fórmula.';
+      let errorMessage = 'No fue posible crear la formula.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.status === 400) {
-        errorMessage = 'Datos inválidos. Verifica la imagen y los campos.';
+        errorMessage = 'Datos invalidos. Verifica la imagen y los campos.';
       } else if (error.response?.status === 413) {
         errorMessage = 'La imagen es demasiado grande.';
       }
@@ -234,70 +205,63 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // ELIMINAR FÓRMULA
+  // ELIMINAR FORMULA
   // ==========================================================
 
-  async eliminarFormula(
-    id_formula: number
-  ): Promise<{
+  async eliminarFormula(id_formula: number): Promise<{
     success: boolean;
     message: string;
   }> {
-    console.log('🗑️ Service - Eliminando fórmula ID:', id_formula);
-    console.log('🗑️ Service - Tipo de ID:', typeof id_formula);
+    console.log('Service - Eliminando formula ID:', id_formula);
 
     try {
-      // ✅ Validación estricta
       if (!id_formula) {
         return {
           success: false,
-          message: 'El ID de la fórmula es requerido',
+          message: 'El ID de la formula es requerido',
         };
       }
 
-      // ✅ Asegurar que sea un número
       const idNumber = Number(id_formula);
       if (isNaN(idNumber) || idNumber <= 0) {
         return {
           success: false,
-          message: 'ID de fórmula inválido',
+          message: 'ID de formula invalido',
         };
       }
 
-      // ✅ Enviar DELETE a la URL correcta
       const response = await apiClient.delete(`/formulas/${idNumber}`);
-
-      console.log('✅ Service - Respuesta del backend:', response.data);
+      console.log('Service - Respuesta del backend:', response.data);
 
       const result = response.data;
 
       if (result.success === false) {
         return {
           success: false,
-          message: result.message || 'Error al eliminar la fórmula',
+          message: result.message || 'Error al eliminar la formula',
         };
       }
 
       return {
         success: true,
-        message: result.message || 'Fórmula eliminada exitosamente',
+        message: result.message || 'Formula eliminada exitosamente',
       };
 
     } catch (error: any) {
-      console.error('❌ Error en FormulaService.eliminarFormula:', error);
+      console.error('Error en FormulaService.eliminarFormula:', error);
       
-      let errorMessage = 'No fue posible eliminar la fórmula.';
+      let errorMessage = 'No fue posible eliminar la formula.';
       
       if (error.response) {
-        console.log('📊 Error response:', error.response.status);
-        console.log('📊 Error data:', error.response.data);
+        console.log('Error response:', error.response.status);
+        console.log('Error data:', error.response.data);
         
         if (error.response.status === 404) {
-          errorMessage = 'La fórmula no existe o ya fue eliminada.';
+          errorMessage = 'La formula no existe o ya fue eliminada.';
         } else if (error.response.status === 403) {
-          errorMessage = 'No tienes permiso para eliminar esta fórmula.';
+          errorMessage = 'No tienes permiso para eliminar esta formula.';
         } else if (error.response.status === 400) {
-          errorMessage = error.response.data?.message || 'Solo puedes eliminar fórmulas en estado Pendiente.';
+          errorMessage = error.response.data?.message || 'Solo puedes eliminar formulas en estado Pendiente.';
         } else if (error.response.data?.message) {
           errorMessage = error.response.data.message;
         }
@@ -313,136 +277,118 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // ACTUALIZAR ESTADO DE FÓRMULA
+  // ACTUALIZAR ESTADO DE FORMULA
   // ==========================================================
 
   async actualizarEstadoFormula(
-    id_formula: number,
-    estado: EstadoFormula
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data?: FormulaModel;
-  }> {
-
-    try {
-
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El id_formula es obligatorio.',
-        };
-      }
-
-      if (!estado) {
-        return {
-          success: false,
-          message: 'El estado es obligatorio.',
-        };
-      }
-
-      const estadosValidos: EstadoFormula[] = [
-        'PENDIENTE',
-        'APROBADO',
-        'RECHAZADO',
-      ];
-
-      if (!estadosValidos.includes(estado)) {
-        return {
-          success: false,
-          message: 'El estado de la fórmula no es válido.',
-        };
-      }
-
-      const response = await apiClient.put<FormulaResponse>(
-        `/formulas/${id_formula}/estado`,
-        { estado: estado }
-      );
-
-      const result = response.data;
-
-      return {
-        success: result.success ?? true,
-        message: result.message ?? 'Estado actualizado exitosamente.',
-        data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
-      };
-
-    } catch (error: any) {
-      console.error('Error en FormulaService.actualizarEstadoFormula:', error);
+  id_formula: number,
+  estado: string  // ✅ Cambiar de EstadoFormula a string
+): Promise<{
+  success: boolean;
+  message: string;
+  data?: FormulaModel;
+}> {
+  try {
+    if (!id_formula) {
       return {
         success: false,
-        message: error.response?.data?.message || 'No fue posible actualizar el estado.',
+        message: 'El id_formula es obligatorio.',
       };
     }
-  }
 
-  // ==========================================================
-  // ACTUALIZAR COSTO DE FÓRMULA
-  // ==========================================================
-
-  async actualizarCostoFormula(
-    id_formula: number,
-    costo: number
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data?: FormulaModel;
-  }> {
-
-    try {
-
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El id_formula es obligatorio.',
-        };
-      }
-
-      if (costo < 0) {
-        return {
-          success: false,
-          message: 'El costo no puede ser negativo.',
-        };
-      }
-
-      const response = await apiClient.put<FormulaResponse>(
-        `/formulas/${id_formula}`,
-        { costo: costo }
-      );
-
-      const result = response.data;
-
-      return {
-        success: result.success ?? true,
-        message: result.message ?? 'Costo actualizado exitosamente.',
-        data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
-      };
-
-    } catch (error: any) {
-      console.error('Error en FormulaService.actualizarCostoFormula:', error);
+    if (!estado) {
       return {
         success: false,
-        message: error.response?.data?.message || 'No fue posible actualizar el costo.',
+        message: 'El estado es obligatorio.',
       };
     }
-  }
 
-  // ==========================================================
-  // OBTENER FÓRMULAS POR ESTADO
-  // ==========================================================
-
-  async getFormulasByEstado(
-    estado: EstadoFormula
-  ): Promise<FormulaModel[]> {
-
-    const response = await apiClient.get<FormulaResponse>(
-      `/formulas/estado/${estado}`
+    const response = await apiClient.put<FormulaResponse>(
+      `/formulas/${id_formula}/estado`,
+      { estado: estado }
     );
 
+    const result = response.data;
+
+    return {
+      success: result.success ?? true,
+      message: result.message ?? 'Estado actualizado exitosamente.',
+      data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
+    };
+  } catch (error: any) {
+    console.error('Error en FormulaService.actualizarEstadoFormula:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'No fue posible actualizar el estado.',
+    };
+  }
+}
+
+
+  // ============================================================
+// ACTUALIZAR COSTO DE FORMULA
+// ============================================================
+
+async actualizarCostoFormula(
+  id_formula: number,
+  costo: number
+): Promise<{
+  success: boolean;
+  message: string;
+  data?: FormulaModel;
+}> {
+  try {
+    if (!id_formula) {
+      return {
+        success: false,
+        message: 'El id_formula es obligatorio.',
+      };
+    }
+
+    if (costo < 0) {
+      return {
+        success: false,
+        message: 'El costo no puede ser negativo.',
+      };
+    }
+
+    if (costo === 0) {
+      return {
+        success: false,
+        message: 'El costo debe ser mayor a 0.',
+      };
+    }
+
+    const response = await apiClient.put<FormulaResponse>(
+      `/formulas/${id_formula}/precio`,
+      { costo: costo }
+    );
+
+    const result = response.data;
+
+    return {
+      success: result.success ?? true,
+      message: result.message ?? 'Costo actualizado exitosamente.',
+      data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
+    };
+  } catch (error: any) {
+    console.error('Error en FormulaService.actualizarCostoFormula:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'No fue posible actualizar el costo.',
+    };
+  }
+}
+  // ==========================================================
+  // OBTENER FORMULAS POR ESTADO
+  // ==========================================================
+
+  async getFormulasByEstado(estado: EstadoFormula): Promise<FormulaModel[]> {
+    const response = await apiClient.get<FormulaResponse>(`/formulas/estado/${estado}`);
     const data = response.data;
 
     if (!data.success) {
-      throw new Error(data.message || 'Error al obtener fórmulas por estado');
+      throw new Error(data.message || 'Error al obtener formulas por estado');
     }
 
     return Array.isArray(data.data)
@@ -451,7 +397,7 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // OBTENER FÓRMULAS PENDIENTES
+  // OBTENER FORMULAS PENDIENTES
   // ==========================================================
 
   async getFormulasPendientes(): Promise<FormulaModel[]> {
@@ -459,7 +405,7 @@ export class FormulaService {
   }
 
   // ==========================================================
-  // ESTADÍSTICAS DE FÓRMULAS
+  // ESTADISTICAS DE FORMULAS
   // ==========================================================
 
   async getEstadisticasFormulas(): Promise<{
@@ -468,7 +414,6 @@ export class FormulaService {
     aprobadas: number;
     rechazadas: number;
   }> {
-
     const response = await apiClient.get<{
       success: boolean;
       message?: string;
@@ -483,7 +428,7 @@ export class FormulaService {
     const data = response.data;
 
     if (!data.success) {
-      throw new Error(data.message || 'Error al obtener estadísticas');
+      throw new Error(data.message || 'Error al obtener estadisticas');
     }
 
     return data.data;

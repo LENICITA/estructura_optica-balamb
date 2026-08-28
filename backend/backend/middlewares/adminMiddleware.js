@@ -35,6 +35,10 @@ export const adminMiddleware = async (req, res, next) => {
         }
 
         console.log('Admin autorizado:', usuario.nombre_completo);
+
+        // ✅ Pasar el usuario COMPLETO (con roles) al siguiente middleware
+        req.user = usuario;
+
         next();
 
     } catch (error) {

@@ -6,36 +6,39 @@ import * as formulaController from '../controllers/formulaController.js';
 
 const router = express.Router();
 
+// ============================================
 // RUTAS PARA CLIENTE (requieren token)
+// ============================================
 
-// Subir fórmula (cliente)
-router.post('/', authMiddleware,upload.single('imagen'), formulaController.subirFormula);
+// Subir formula (cliente)
+router.post('/', authMiddleware, upload.single('imagen'), formulaController.subirFormula);
 
-//Eliminar fórmula (cliente dueño)
-
+// Eliminar formula (cliente dueño)
 router.delete('/:id', authMiddleware, formulaController.eliminarFormula);
 
-// Ver mis fórmulas (cliente)
+// Ver mis formulas (cliente)
 router.get('/mis-formulas', authMiddleware, formulaController.obtenerMisFormulas);
 
-// Ver fórmula por ID (cliente dueño)
-router.get('/:id', authMiddleware, formulaController.obtenerFormulaPorId);
+// Ver formula por ID (cliente dueño O ADMIN)
+router.get('/:id', authMiddleware, adminMiddleware, formulaController.obtenerFormulaPorId);
 
-// Verificar si fórmula está aprobada (cliente dueño)
+// Verificar si formula esta aprobada (cliente dueño)
 router.get('/:id/verificar', authMiddleware, formulaController.verificarFormulaAprobada);
 
+// ============================================
 // RUTAS PARA ADMIN (requieren token + admin)
+// ============================================
 
-// Ver todas las fórmulas (admin)
+// Ver todas las formulas (admin)
 router.get('/admin/todas', authMiddleware, adminMiddleware, formulaController.obtenerTodasLasFormulas);
 
-// Ver fórmulas pendientes (admin)
+// Ver formulas pendientes (admin)
 router.get('/admin/pendientes', authMiddleware, adminMiddleware, formulaController.obtenerFormulasPendientes);
 
-// Asignar precio a fórmula (admin)
+// Asignar precio a formula (admin)
 router.put('/:id/precio', authMiddleware, adminMiddleware, formulaController.asignarPrecioFormula);
 
-// Cambiar estado de fórmula (admin)
+// Cambiar estado de formula (admin)
 router.put('/:id/estado', authMiddleware, adminMiddleware, formulaController.cambiarEstadoFormula);
 
 export default router;

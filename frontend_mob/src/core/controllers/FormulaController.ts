@@ -14,13 +14,11 @@ export class FormulaController {
   // CLIENTE
   // ============================================
 
-  async getFormulasByUsuario(
-    id_usuario: number
-  ): Promise<FormulaModel[]> {
+  async getFormulasByUsuario(id_usuario: number): Promise<FormulaModel[]> {
     try {
-      console.log('📋 Controller - getFormulasByUsuario:', id_usuario);
+      console.log('Controller - getFormulasByUsuario:', id_usuario);
       const result = await this.formulaService.getFormulasByUsuario(id_usuario);
-      console.log('📋 Controller - Fórmulas obtenidas:', result.length);
+      console.log('Controller - Formulas obtenidas:', result.length);
       return result;
     } catch (error) {
       console.error('Error en getFormulasByUsuario:', error);
@@ -28,11 +26,9 @@ export class FormulaController {
     }
   }
 
-  async getFormulaById(
-    id: number
-  ): Promise<FormulaModel | null> {
+  async getFormulaById(id: number): Promise<FormulaModel | null> {
     try {
-      console.log('📋 Controller - getFormulaById:', id);
+      console.log('Controller - getFormulaById:', id);
       const result = await this.formulaService.getFormulaById(id);
       return result;
     } catch (error) {
@@ -53,43 +49,39 @@ export class FormulaController {
     id_formula?: number;
   }> {
     try {
-      console.log('📤 Controller - crearFormula:', data);
+      console.log('Controller - crearFormula:', data);
 
       if (!data.id_usuario || !data.condicion || !data.imagen_formula) {
         return {
           success: false,
-          message: 'Usuario, condición e imagen de la fórmula son requeridos',
+          message: 'Usuario, condicion e imagen de la formula son requeridos',
         };
       }
 
       const response = await this.formulaService.crearFormula(data);
-
-      console.log('📊 Controller - Respuesta creación:', response);
+      console.log('Controller - Respuesta creacion:', response);
 
       return response;
-
     } catch (error: any) {
       console.error('Error en crearFormula:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al crear la fórmula',
+        message: error.response?.data?.message || 'Error al crear la formula',
       };
     }
   }
 
-  async eliminarFormula(
-    id_formula: number
-  ): Promise<{
+  async eliminarFormula(id_formula: number): Promise<{
     success: boolean;
     message: string;
   }> {
     try {
-      console.log('🗑️ Controller - eliminarFormula ID:', id_formula);
+      console.log('Controller - eliminarFormula ID:', id_formula);
 
       if (!id_formula) {
         return {
           success: false,
-          message: 'El ID de la fórmula es requerido',
+          message: 'El ID de la formula es requerido',
         };
       }
 
@@ -97,21 +89,19 @@ export class FormulaController {
       if (isNaN(idNumber) || idNumber <= 0) {
         return {
           success: false,
-          message: 'ID de fórmula inválido',
+          message: 'ID de formula invalido',
         };
       }
 
       const response = await this.formulaService.eliminarFormula(idNumber);
-
-      console.log('📊 Controller - Respuesta eliminación:', response);
+      console.log('Controller - Respuesta eliminacion:', response);
 
       return response;
-
     } catch (error: any) {
-      console.error('❌ Error en eliminarFormula:', error);
+      console.error('Error en eliminarFormula:', error);
       return {
         success: false,
-        message: error?.message || 'Error al eliminar la fórmula',
+        message: error?.message || 'Error al eliminar la formula',
       };
     }
   }
@@ -129,53 +119,42 @@ export class FormulaController {
     }
   }
 
+  async getFormulasPendientes(): Promise<FormulaModel[]> {
+    try {
+      return await this.formulaService.getFormulasPendientes();
+    } catch (error) {
+      console.error('Error en getFormulasPendientes:', error);
+      return [];
+    }
+  }
+
   async actualizarEstadoFormula(
     id_formula: number,
-    estado: EstadoFormula
+    estado: string
   ): Promise<{
     success: boolean;
     message: string;
     data?: FormulaModel;
   }> {
     try {
-      const estadosPermitidos: EstadoFormula[] = [
-        'PENDIENTE',
-        'APROBADO',
-        'RECHAZADO',
-      ];
+      console.log('Controller - actualizarEstadoFormula:', { id_formula, estado });
 
       if (!id_formula) {
         return {
           success: false,
-          message: 'El ID de la fórmula es requerido',
+          message: 'El ID de la formula es requerido',
         };
       }
 
-      if (!estadosPermitidos.includes(estado)) {
-        return {
-          success: false,
-          message: 'Estado de fórmula no válido',
-        };
-      }
-
-      const response = await this.formulaService.actualizarEstadoFormula(
-        id_formula,
-        estado
-      );
-
-      if (!response.success) {
-        return {
-          success: false,
-          message: response.message || 'Error al actualizar el estado',
-        };
-      }
+      const response = await this.formulaService.actualizarEstadoFormula(id_formula, estado);
 
       return {
-        success: true,
-        message: response.message || 'Estado actualizado exitosamente',
+        success: response.success,
+        message: response.message || (response.success
+          ? 'Estado actualizado exitosamente'
+          : 'Error al actualizar el estado'),
         data: response.data,
       };
-
     } catch (error: any) {
       console.error('Error en actualizarEstadoFormula:', error);
       return {
@@ -191,12 +170,15 @@ export class FormulaController {
   ): Promise<{
     success: boolean;
     message: string;
+    data?: FormulaModel;
   }> {
     try {
+      console.log('Controller - actualizarCostoFormula:', { id_formula, costo });
+
       if (!id_formula) {
         return {
           success: false,
-          message: 'El ID de la fórmula es requerido',
+          message: 'El ID de la formula es requerido',
         };
       }
 
@@ -207,23 +189,50 @@ export class FormulaController {
         };
       }
 
-      const response = await this.formulaService.actualizarCostoFormula(
-        id_formula,
-        costo
-      );
+      if (costo === 0) {
+        return {
+          success: false,
+          message: 'El costo debe ser mayor a 0',
+        };
+      }
+
+      const response = await this.formulaService.actualizarCostoFormula(id_formula, costo);
 
       return {
         success: response.success,
         message: response.message || (response.success
           ? 'Costo actualizado exitosamente'
           : 'Error al actualizar el costo'),
+        data: response.data,
       };
-
     } catch (error: any) {
       console.error('Error en actualizarCostoFormula:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Error al actualizar el costo',
+      };
+    }
+  }
+
+  // ============================================
+  // ESTADISTICAS
+  // ============================================
+
+  async getEstadisticasFormulas(): Promise<{
+    total: number;
+    pendientes: number;
+    aprobadas: number;
+    rechazadas: number;
+  }> {
+    try {
+      return await this.formulaService.getEstadisticasFormulas();
+    } catch (error) {
+      console.error('Error en getEstadisticasFormulas:', error);
+      return {
+        total: 0,
+        pendientes: 0,
+        aprobadas: 0,
+        rechazadas: 0,
       };
     }
   }

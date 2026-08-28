@@ -1,9 +1,10 @@
+// backend/controllers/formulaController.js
 import FormulaModelo from '../models/formula.js';
 import { obtenerUrlImagen } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';
 
 // ============================================
-// CLIENTE - SUBIR FÓRMULA
+// CLIENTE - SUBIR FORMULA
 // ============================================
 export const subirFormula = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ export const subirFormula = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'La imagen de la fórmula es requerida'
+        message: 'La imagen de la formula es requerida'
       });
     }
 
@@ -28,7 +29,7 @@ export const subirFormula = async (req, res) => {
     if (!condicionesValidas.includes(condicion)) {
       return res.status(400).json({
         success: false,
-        message: 'Condición inválida'
+        message: 'Condicion invalida'
       });
     }
 
@@ -48,22 +49,23 @@ export const subirFormula = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Fórmula subida exitosamente. Esperando revisión del administrador',
+      message: 'Formula subida exitosamente. Esperando revision del administrador',
       data: formulaConImagen
     });
 
   } catch (error) {
-    console.error('Error al subir fórmula:', error);
+    console.error('Error al subir formula:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al subir la fórmula',
+      message: 'Error al subir la formula',
       error: error.message
     });
   }
 };
 
-// NUEVO: CLIENTE - ELIMINAR SU FÓRMULA
-
+// ============================================
+// CLIENTE - ELIMINAR SU FORMULA
+// ============================================
 export const eliminarFormula = async (req, res) => {
   try {
     const { id } = req.params;
@@ -74,28 +76,24 @@ export const eliminarFormula = async (req, res) => {
     if (!formula) {
       return res.status(404).json({
         success: false,
-        message: 'Fórmula no encontrada'
+        message: 'Formula no encontrada'
       });
     }
 
-    // Verificar que sea de este usuario
     if (formula.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
-        message: 'No puedes eliminar una fórmula que no te pertenece'
+        message: 'No puedes eliminar una formula que no te pertenece'
       });
     }
 
-    // Solo puede eliminar si está Pendiente
     if (formula.estado !== 'Pendiente') {
       return res.status(400).json({
         success: false,
-        message: 'Solo puedes eliminar fórmulas en estado Pendiente'
+        message: 'Solo puedes eliminar formulas en estado Pendiente'
       });
     }
 
-    // ELIMINAR IMAGEN DE CLOUDINARY
-  
     if (formula.imagen_formula) {
       try {
         const urlParts = formula.imagen_formula.split('/');
@@ -111,21 +109,21 @@ export const eliminarFormula = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Fórmula eliminada exitosamente'
+      message: 'Formula eliminada exitosamente'
     });
 
   } catch (error) {
-    console.error('Error al eliminar fórmula:', error);
+    console.error('Error al eliminar formula:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al eliminar la fórmula',
+      message: 'Error al eliminar la formula',
       error: error.message
     });
   }
 };
 
 // ============================================
-// CLIENTE - VER MIS FÓRMULAS
+// CLIENTE - VER MIS FORMULAS
 // ============================================
 export const obtenerMisFormulas = async (req, res) => {
   try {
@@ -145,40 +143,59 @@ export const obtenerMisFormulas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas:', error);
+    console.error('Error al obtener formulas:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener tus fórmulas',
+      message: 'Error al obtener tus formulas',
       error: error.message
     });
   }
 };
 
 // ============================================
-// CLIENTE/ADMIN - VER FÓRMULA POR ID
+// CLIENTE/ADMIN - VER FORMULA POR ID (CORREGIDO)
 // ============================================
 export const obtenerFormulaPorId = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
 
+    console.log('Usuario ID:', usuario.id);
+    console.log('Roles del usuario:', JSON.stringify(usuario.roles, null, 2));
+
     const formula = await FormulaModelo.obtenerPorId(id);
 
     if (!formula) {
       return res.status(404).json({
         success: false,
-        message: 'Fórmula no encontrada'
+        message: 'Formula no encontrada'
       });
     }
 
-    const esAdmin = usuario.roles?.includes('ADMIN') || false;
-        
-        if (!esAdmin && formula.id_usuario !== usuario.id) {
-            return res.status(403).json({
-                success: false,
-                message: 'No tienes permiso para ver esta fórmula'
-            });
+    // Verificar si el usuario es ADMIN correctamente
+    let esAdmin = false;
+    if (Array.isArray(usuario.roles)) {
+      esAdmin = usuario.roles.some(rol => {
+        if (typeof rol === 'string') {
+          return rol.toUpperCase() === 'ADMIN';
         }
+        if (rol && typeof rol === 'object') {
+          return rol.nombre?.toUpperCase() === 'ADMIN' || 
+                 rol.rol?.toUpperCase() === 'ADMIN';
+        }
+        return false;
+      });
+    }
+
+    console.log('Es Admin:', esAdmin);
+    console.log('Usuario ID formula:', formula.id_usuario);
+
+    if (!esAdmin && formula.id_usuario !== usuario.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para ver esta formula'
+      });
+    }
 
     const formulaConImagen = {
       ...formula,
@@ -191,17 +208,17 @@ export const obtenerFormulaPorId = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmula:', error);
+    console.error('Error al obtener formula:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener la fórmula',
+      message: 'Error al obtener la formula',
       error: error.message
     });
   }
 };
 
 // ============================================
-// ADMIN - VER TODAS LAS FÓRMULAS
+// ADMIN - VER TODAS LAS FORMULAS
 // ============================================
 export const obtenerTodasLasFormulas = async (req, res) => {
   try {
@@ -219,17 +236,17 @@ export const obtenerTodasLasFormulas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas:', error);
+    console.error('Error al obtener formulas:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener las fórmulas',
+      message: 'Error al obtener las formulas',
       error: error.message
     });
   }
 };
 
 // ============================================
-// ADMIN - VER FÓRMULAS PENDIENTES
+// ADMIN - VER FORMULAS PENDIENTES
 // ============================================
 export const obtenerFormulasPendientes = async (req, res) => {
   try {
@@ -247,17 +264,17 @@ export const obtenerFormulasPendientes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas pendientes:', error);
+    console.error('Error al obtener formulas pendientes:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener fórmulas pendientes',
+      message: 'Error al obtener formulas pendientes',
       error: error.message
     });
   }
 };
 
 // ============================================
-// ADMIN - ASIGNAR PRECIO A FÓRMULA
+// ADMIN - ASIGNAR PRECIO A FORMULA
 // ============================================
 export const asignarPrecioFormula = async (req, res) => {
   try {
@@ -282,7 +299,7 @@ export const asignarPrecioFormula = async (req, res) => {
     if (!formula) {
       return res.status(404).json({
         success: false,
-        message: 'Fórmula no encontrada'
+        message: 'Formula no encontrada'
       });
     }
 
@@ -306,14 +323,14 @@ export const asignarPrecioFormula = async (req, res) => {
     console.error('Error al asignar precio:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al asignar precio a la fórmula',
+      message: 'Error al asignar precio a la formula',
       error: error.message
     });
   }
 };
 
 // ============================================
-// ADMIN - CAMBIAR ESTADO DE FÓRMULA
+// ADMIN - CAMBIAR ESTADO DE FORMULA
 // ============================================
 export const cambiarEstadoFormula = async (req, res) => {
   try {
@@ -324,7 +341,7 @@ export const cambiarEstadoFormula = async (req, res) => {
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado inválido. Debe ser: Pendiente, Aprobado o Rechazado'
+        message: 'Estado invalido. Debe ser: Pendiente, Aprobado o Rechazado'
       });
     }
 
@@ -332,7 +349,7 @@ export const cambiarEstadoFormula = async (req, res) => {
     if (!formula) {
       return res.status(404).json({
         success: false,
-        message: 'Fórmula no encontrada'
+        message: 'Formula no encontrada'
       });
     }
 
@@ -355,14 +372,14 @@ export const cambiarEstadoFormula = async (req, res) => {
     console.error('Error al cambiar estado:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al cambiar estado de la fórmula',
+      message: 'Error al cambiar estado de la formula',
       error: error.message
     });
   }
 };
 
 // ============================================
-// CLIENTE - VER SI UNA FÓRMULA ESTÁ APROBADA
+// CLIENTE - VER SI UNA FORMULA ESTA APROBADA
 // ============================================
 export const verificarFormulaAprobada = async (req, res) => {
   try {
@@ -374,14 +391,14 @@ export const verificarFormulaAprobada = async (req, res) => {
     if (!formula) {
       return res.status(404).json({
         success: false,
-        message: 'Fórmula no encontrada'
+        message: 'Formula no encontrada'
       });
     }
 
     if (formula.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
-        message: 'No tienes permiso para verificar esta fórmula'
+        message: 'No tienes permiso para verificar esta formula'
       });
     }
 
@@ -399,10 +416,10 @@ export const verificarFormulaAprobada = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar fórmula:', error);
+    console.error('Error al verificar formula:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al verificar la fórmula',
+      message: 'Error al verificar la formula',
       error: error.message
     });
   }
