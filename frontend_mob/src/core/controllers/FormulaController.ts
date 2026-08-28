@@ -139,9 +139,9 @@ export class FormulaController {
   }> {
     try {
       const estadosPermitidos: EstadoFormula[] = [
-        'PENDIENTE',
-        'APROBADO',
-        'RECHAZADO',
+        'Pendiente',
+        'Aprobado',
+        'Rechazado',
       ];
 
       if (!id_formula) {

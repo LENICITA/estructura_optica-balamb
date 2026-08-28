@@ -17,7 +17,6 @@ import { FormulaModel } from '@/core/models/FormulaModel';
 
 export const DetalleFormula = () => {
 
-
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
 
@@ -25,6 +24,7 @@ export const DetalleFormula = () => {
 
     const [formula, setFormula] = useState<FormulaModel | null>(null);
     const [loading, setLoading] = useState(true);
+    const [costo, setCosto] = useState('');
 
     const formulaController = new FormulaController();
 
@@ -56,6 +56,79 @@ export const DetalleFormula = () => {
         }
     };
 
+    const cambiarCosto = async () => {
+        try {
+            setLoading(true);
+
+            if (!id_formula) {
+                console.error('No se encontro id de formula');
+                return;
+            }
+
+            if (!costo.trim()) {
+                console.error('No se ingreso el costo de la formula');
+                return;
+            }
+
+            const resultadoCosto = await formulaController.actualizarCostoFormula(
+                Number(id_formula),
+                Number(costo),
+            );
+
+            if (resultadoCosto.success) {
+                const resultadoEstado = await formulaController.actualizarEstadoFormula(
+                    Number(id_formula),
+                    'Aprobado'
+                );
+
+                if (resultadoEstado.success) {
+                    setCosto('');
+                    await cargarFormula();
+                    console.log('Fórmula aprobada exitosamente');
+                } else {
+                    console.error('Error al aprobar la fórmula:', resultadoEstado.message);
+                }
+            } else {
+                console.error(resultadoCosto.message);
+            }
+        } catch (error) {
+            console.error('Error al cargar valor de formula', error);
+        } finally {
+            setLoading(false)
+        }
+    };
+
+    const renderCostoSection = () => {
+        const tieneCosto = formula?.costo !== undefined && 
+                           formula?.costo !== null && 
+                           formula?.costo > 0;
+
+        if (tieneCosto) {
+            return (
+                <View style={styles.costoContainer}>
+                    <Text style={styles.costoTexto}>${formula.costo}</Text>
+                </View>
+            );
+        }
+
+        return (
+            <>
+                <Text style={styles.sinCosto}>Sin costo asignado</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Ingrese el costo"
+                    keyboardType="numeric"
+                    value={costo}
+                    onChangeText={setCosto}
+                />
+                <TouchableOpacity style={styles.botonEdit} onPress={cambiarCosto}>
+                    <Ionicons name="create-outline" size={20} color="#FFF" />
+                    <Text style={styles.textoEdit}>Asignar Valor</Text>
+                </TouchableOpacity>
+            </>
+        );
+    };
+
     return (
         <ScrollView 
             style={styles.container}
@@ -73,7 +146,8 @@ export const DetalleFormula = () => {
             <View style={styles.card}>
                 <View style={styles.headerCard}>
                     <Ionicons name="document-outline" size={28} color={COLORS.primary} style={styles.iconCard}/>
-                    <Text>Datos de la formula</Text>
+                    <Text>Datos de la formula #{id_formula}</Text>
+
                 </View>
                 <View>
                     <View style={styles.imagenContainer}>
@@ -98,24 +172,8 @@ export const DetalleFormula = () => {
                     </View>
 
                     <View style={styles.datoFormula}>
-                        <Text style={styles.titulo}>Asignar precio:</Text>
-
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Valor"
-                            keyboardType="numeric"
-                        />
-
-                        <TouchableOpacity style={styles.botonEdit}>
-                            <Ionicons
-                                name="create-outline"
-                                size={20}
-                                color="#FFF"
-                            />
-                            <Text style={styles.textoEdit}>
-                            Asignar Valor
-                            </Text>
-                        </TouchableOpacity>
+                        <Text style={styles.titulo}>Costo:</Text>
+                        {renderCostoSection()}
                     </View>
                 </View>
             </View>
@@ -158,7 +216,6 @@ const styles = StyleSheet.create({
     },
     iconCard: {
         padding: 5,
-
     },
     headerCard: {
         flexDirection: 'row',
@@ -189,7 +246,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginVertical: 15,
     },
-
     imagen: {
         width: "100%",
         height: "100%",
@@ -202,6 +258,26 @@ const styles = StyleSheet.create({
     },
     texto: {
         marginBottom: 5,
+    },
+    costoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E8F5E9',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 4,
+    },
+    costoTexto: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+        marginLeft: 8,
+    },
+    sinCosto: {
+        color: '#F44336',
+        fontStyle: 'italic',
+        marginBottom: 8,
+        fontSize: 14,
     },
     input: {
         marginTop: 5,

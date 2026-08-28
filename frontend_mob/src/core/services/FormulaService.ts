@@ -342,9 +342,9 @@ export class FormulaService {
       }
 
       const estadosValidos: EstadoFormula[] = [
-        'PENDIENTE',
-        'APROBADO',
-        'RECHAZADO',
+        'Pendiente',
+        'Aprobado',
+        'Rechazado',
       ];
 
       if (!estadosValidos.includes(estado)) {
@@ -406,7 +406,7 @@ export class FormulaService {
       }
 
       const response = await apiClient.put<FormulaResponse>(
-        `/formulas/${id_formula}`,
+        `/formulas/${id_formula}/precio`,
         { costo: costo }
       );
 
@@ -455,7 +455,7 @@ export class FormulaService {
   // ==========================================================
 
   async getFormulasPendientes(): Promise<FormulaModel[]> {
-    return this.getFormulasByEstado('PENDIENTE');
+    return this.getFormulasByEstado('Pendiente');
   }
 
   // ==========================================================
