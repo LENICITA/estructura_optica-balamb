@@ -213,6 +213,18 @@ export const Header = () => {
       route: 'Principal',
     });
 
+const role = getMainRole();
+  const esCliente = role === 'CLIENTE';
+
+  if (!isAuthenticated || esCliente) {
+    items.push({
+      id: 'contacto',
+      label: 'Enviar mensaje de contacto',
+      icon: 'chatbubble-outline',
+      route: 'ContactoScreen',
+    });
+  }
+
     // SI ESTÁ AUTENTICADO
 
     if (isAuthenticated && user) {

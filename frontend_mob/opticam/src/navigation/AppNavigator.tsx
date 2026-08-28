@@ -15,14 +15,20 @@ import { ChatBot } from '../shared/components/chatbot/ChatBot';
 // ===== SCREENS =====
 import { Principal } from '../features/home/screens/Principal';
 import { ContactoScreen } from '../features/home/screens/ContactoScreen';
+// ===== SCREENS AUTH =====
 import { Iniciosesion } from '../features/auth/screens/Iniciosesion';
 import { AutoRegistro } from '../features/auth/screens/AutoRegistro';
 import { RecuperarContraseña } from '../features/auth/screens/RecuperarContraseña';
 import { RestablecerContraseña } from '../features/auth/screens/RestablecerContraseña';
+// ===== SCREENS CLIENTE =====
 import { PrincipalCliente } from '../features/client/screens/PrincipalCliente';
 import { PerfilCliente } from '../features/client/screens/PerfilCliente';
 import { CatalogoCliente } from '../features/client/screens/CatalogoCliente';
 import { DetalleProductoCliente } from '../features/client/screens/DetalleProductoCliente';
+import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
+import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
+import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen';
+// ===== SCREENS ADMIN =====
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
 import DashboardRepartidores from '../features/admin/screens/DashboardRepartidores';
@@ -31,6 +37,9 @@ import EditarRepartidor from '../features/admin/screens/EditarRepartidor';
 import { RegistrarRepartidor } from '../features/admin/screens/RegistrarRepartidor';
 import { CatalogoAdmin } from '../features/admin/screens/CatalogoAdmin';
 import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoAdmin';
+import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
+import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
+// ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
 
@@ -161,6 +170,22 @@ export default function AppNavigator() {
                )}
               </Stack.Screen>
 
+              <Stack.Screen name='GestionarFormulas'>
+                            {() => (
+                              <UserLayout>
+                                <GestionarFormulas />
+                              </UserLayout>
+                            )}
+                          </Stack.Screen>
+
+                          <Stack.Screen name="DetalleFormula">
+                            {() => (
+                              <UserLayout>
+                                <DetalleFormula />
+                              </UserLayout>
+                            )}
+                          </Stack.Screen>
+
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (
                 <ClientLayout>
@@ -192,6 +217,30 @@ export default function AppNavigator() {
                     </ClientLayout>
                 )}
             </Stack.Screen>
+
+            <Stack.Screen name="MisFormulasScreen">
+                          {({ navigation }) => (
+                            <ClientLayout>
+                              <MisFormulasScreen navigation={navigation} />
+                            </ClientLayout>
+                          )}
+                        </Stack.Screen>
+
+                        <Stack.Screen name="DetalleFormulaCliente">
+                          {() => (
+                            <ClientLayout>
+                              <DetalleFormulaCliente />
+                            </ClientLayout>
+                          )}
+                        </Stack.Screen>
+
+                        <Stack.Screen name="CrearFormulaScreen">
+                          {({ navigation }) => (
+                            <ClientLayout>
+                              <CrearFormulaScreen navigation={navigation} />
+                            </ClientLayout>
+                          )}
+                        </Stack.Screen>
 
             <Stack.Screen name="PrincipalRepartidor">
               {({ navigation }) => (

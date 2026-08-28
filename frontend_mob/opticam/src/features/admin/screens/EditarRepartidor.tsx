@@ -595,24 +595,7 @@ function EditarRepartidor({
 
         setFormModificado(false);
 
-        /*
-         * IMPORTANTE:
-         *
-         * reset elimina la pantalla actual y las anteriores
-         * de la pila de navegación.
-         *
-         * Por eso después de guardar NO se puede regresar
-         * con "Atrás" nuevamente a EditarRepartidor.
-         */
-
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'DashboardRepartidores',
-            },
-          ],
-        });
+        navigation.goBack();
 
       } catch (error: any) {
         console.error(
@@ -664,11 +647,7 @@ function EditarRepartidor({
             color="#B90F0F"
           />
 
-          <Text
-            style={
-              styles.statusBadgeText
-            }
-          >
+          <Text style={styles.statusBadgeText}>
             Editando:{' '}
             {formData.datosPersonales
               .nombre_completo ||
@@ -678,16 +657,10 @@ function EditarRepartidor({
 
         <View style={styles.formContainer}>
 
-          {/* =====================================
-              DATOS PERSONALES
-          ===================================== */}
+          {/* DATOS PERSONALES */}
 
           <View style={styles.sectionHeader}>
-            <View
-              style={
-                styles.sectionIconContainer
-              }
-            >
+            <View style={styles.sectionIconContainer}>
               <Ionicons
                 name="person"
                 size={20}
@@ -695,22 +668,12 @@ function EditarRepartidor({
               />
             </View>
 
-            <Text
-              style={
-                styles.sectionTitle
-              }
-            >
+            <Text style={styles.sectionTitle}>
               Datos Personales
             </Text>
 
-            <View
-              style={styles.sectionBadge}
-            >
-              <Text
-                style={
-                  styles.sectionBadgeText
-                }
-              >
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>
                 *
               </Text>
             </View>
@@ -721,20 +684,12 @@ function EditarRepartidor({
             {/* NOMBRE */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Nombre completo
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -772,25 +727,15 @@ function EditarRepartidor({
               </View>
 
               {errores.nombre_completo && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
-                    {
-                      errores.nombre_completo
-                    }
+                  <Text style={styles.errorText}>
+                    {errores.nombre_completo}
                   </Text>
                 </View>
               )}
@@ -803,11 +748,7 @@ function EditarRepartidor({
                 Teléfono
               </Text>
 
-              <View
-                style={
-                  styles.inputWrapper
-                }
-              >
+              <View style={styles.inputWrapper}>
                 <Ionicons
                   name="call-outline"
                   size={20}
@@ -838,20 +779,12 @@ function EditarRepartidor({
             {/* EMAIL */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Email
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -891,22 +824,14 @@ function EditarRepartidor({
               </View>
 
               {errores.email && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.email}
                   </Text>
                 </View>
@@ -916,20 +841,12 @@ function EditarRepartidor({
             {/* DOCUMENTO */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Documento
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -968,22 +885,14 @@ function EditarRepartidor({
               </View>
 
               {errores.documento && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.documento}
                   </Text>
                 </View>
@@ -993,20 +902,12 @@ function EditarRepartidor({
             {/* CIUDAD */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Ciudad
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -1044,22 +945,14 @@ function EditarRepartidor({
               </View>
 
               {errores.ciudad && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.ciudad}
                   </Text>
                 </View>
@@ -1121,12 +1014,8 @@ function EditarRepartidor({
               </Text>
 
               <TouchableOpacity
-                style={
-                  styles.inputWrapper
-                }
-                onPress={
-                  abrirCalendario
-                }
+                style={styles.inputWrapper}
+                onPress={abrirCalendario}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -1159,27 +1048,17 @@ function EditarRepartidor({
               </TouchableOpacity>
 
               {mostrarCalendario && (
-                <View
-                  style={
-                    styles.calendarContainer
-                  }
-                >
+                <View style={styles.calendarContainer}>
                   <DateTimePicker
-                    value={
-                      fechaSeleccionada
-                    }
+                    value={fechaSeleccionada}
                     mode="date"
                     display={
                       Platform.OS === 'ios'
                         ? 'spinner'
                         : 'calendar'
                     }
-                    onChange={
-                      handleFechaChange
-                    }
-                    maximumDate={
-                      new Date()
-                    }
+                    onChange={handleFechaChange}
+                    maximumDate={new Date()}
                     locale="es-CO"
                     themeVariant="light"
                   />
@@ -1190,9 +1069,7 @@ function EditarRepartidor({
                         styles.calendarDoneButton
                       }
                       onPress={() =>
-                        setMostrarCalendario(
-                          false
-                        )
+                        setMostrarCalendario(false)
                       }
                     >
                       <Text
@@ -1215,11 +1092,7 @@ function EditarRepartidor({
                 Estado
               </Text>
 
-              <View
-                style={
-                  styles.pickerWrapper
-                }
-              >
+              <View style={styles.pickerWrapper}>
                 <Ionicons
                   name="radio-button-on-outline"
                   size={20}
@@ -1245,15 +1118,9 @@ function EditarRepartidor({
                   {ESTADOS_REPARTIDOR.map(
                     estado => (
                       <Picker.Item
-                        key={
-                          estado.value
-                        }
-                        label={
-                          estado.label
-                        }
-                        value={
-                          estado.value
-                        }
+                        key={estado.value}
+                        label={estado.label}
+                        value={estado.value}
                       />
                     )
                   )}
@@ -1262,16 +1129,10 @@ function EditarRepartidor({
             </View>
           </View>
 
-          {/* =====================================
-              VEHÍCULO
-          ===================================== */}
+          {/* VEHÍCULO */}
 
           <View style={styles.sectionHeader}>
-            <View
-              style={
-                styles.sectionIconContainer
-              }
-            >
+            <View style={styles.sectionIconContainer}>
               <Ionicons
                 name="car"
                 size={20}
@@ -1279,22 +1140,12 @@ function EditarRepartidor({
               />
             </View>
 
-            <Text
-              style={
-                styles.sectionTitle
-              }
-            >
+            <Text style={styles.sectionTitle}>
               Datos del Vehículo
             </Text>
 
-            <View
-              style={styles.sectionBadge}
-            >
-              <Text
-                style={
-                  styles.sectionBadgeText
-                }
-              >
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>
                 *
               </Text>
             </View>
@@ -1305,20 +1156,12 @@ function EditarRepartidor({
             {/* TIPO */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Tipo de vehículo
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -1355,15 +1198,9 @@ function EditarRepartidor({
                   {TIPOS_VEHICULO.map(
                     tipo => (
                       <Picker.Item
-                        key={
-                          tipo.value
-                        }
-                        label={
-                          tipo.label
-                        }
-                        value={
-                          tipo.value
-                        }
+                        key={tipo.value}
+                        label={tipo.label}
+                        value={tipo.value}
                       />
                     )
                   )}
@@ -1371,22 +1208,14 @@ function EditarRepartidor({
               </View>
 
               {errores.tipo && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.tipo}
                   </Text>
                 </View>
@@ -1396,20 +1225,12 @@ function EditarRepartidor({
             {/* MODELO */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Modelo
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -1447,22 +1268,14 @@ function EditarRepartidor({
               </View>
 
               {errores.modelo && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.modelo}
                   </Text>
                 </View>
@@ -1472,20 +1285,12 @@ function EditarRepartidor({
             {/* PLACA */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Placa
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -1537,58 +1342,39 @@ function EditarRepartidor({
               </View>
 
               {errores.placa && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.placa}
                   </Text>
                 </View>
               )}
 
-              <Text
-                style={styles.hintText}
-              >
+              <Text style={styles.hintText}>
                 <Ionicons
                   name="information-circle-outline"
                   size={14}
                   color="#666"
                 />
                 {' '}
-                La placa debe ser única en el
-                sistema
+                La placa debe ser única en el sistema
               </Text>
             </View>
 
             {/* COLOR */}
 
             <View style={styles.inputGroup}>
-              <View
-                style={
-                  styles.labelContainer
-                }
-              >
+              <View style={styles.labelContainer}>
                 <Text style={styles.label}>
                   Color
                 </Text>
 
-                <Text
-                  style={
-                    styles.requiredStar
-                  }
-                >
+                <Text style={styles.requiredStar}>
                   *
                 </Text>
               </View>
@@ -1626,22 +1412,14 @@ function EditarRepartidor({
               </View>
 
               {errores.color && (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
+                <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle"
                     size={14}
                     color="#B90F0F"
                   />
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
+                  <Text style={styles.errorText}>
                     {errores.color}
                   </Text>
                 </View>
@@ -1649,15 +1427,9 @@ function EditarRepartidor({
             </View>
           </View>
 
-          {/* =====================================
-              BOTONES
-          ===================================== */}
+          {/* BOTONES */}
 
-          <View
-            style={
-              styles.buttonContainer
-            }
-          >
+          <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[
                 styles.button,
@@ -1673,11 +1445,7 @@ function EditarRepartidor({
                 color="#666"
               />
 
-              <Text
-                style={
-                  styles.cancelButtonText
-                }
-              >
+              <Text style={styles.cancelButtonText}>
                 Cancelar
               </Text>
             </TouchableOpacity>
@@ -1692,22 +1460,14 @@ function EditarRepartidor({
               activeOpacity={0.8}
             >
               {loading ? (
-                <View
-                  style={
-                    styles.loadingContainer
-                  }
-                >
+                <View style={styles.loadingContainer}>
                   <Ionicons
                     name="reload"
                     size={20}
                     color="#fff"
                   />
 
-                  <Text
-                    style={
-                      styles.saveButtonText
-                    }
-                  >
+                  <Text style={styles.saveButtonText}>
                     Guardando...
                   </Text>
                 </View>
@@ -1719,11 +1479,7 @@ function EditarRepartidor({
                     color="#fff"
                   />
 
-                  <Text
-                    style={
-                      styles.saveButtonText
-                    }
-                  >
+                  <Text style={styles.saveButtonText}>
                     Guardar Cambios
                   </Text>
                 </>
@@ -1732,32 +1488,20 @@ function EditarRepartidor({
           </View>
 
           {formModificado && (
-            <View
-              style={
-                styles.modifiedBadge
-              }
-            >
+            <View style={styles.modifiedBadge}>
               <Ionicons
                 name="pencil"
                 size={16}
                 color="#B90F0F"
               />
 
-              <Text
-                style={
-                  styles.modifiedText
-                }
-              >
+              <Text style={styles.modifiedText}>
                 Tienes cambios sin guardar
               </Text>
             </View>
           )}
 
-          <View
-            style={
-              styles.infoContainer
-            }
-          >
+          <View style={styles.infoContainer}>
             <View style={styles.infoRow}>
               <Ionicons
                 name="information-circle"
@@ -1765,9 +1509,7 @@ function EditarRepartidor({
                 color="#666"
               />
 
-              <Text
-                style={styles.infoText}
-              >
+              <Text style={styles.infoText}>
                 Los campos con * son obligatorios
               </Text>
             </View>
@@ -1794,7 +1536,6 @@ const styles = StyleSheet.create({
   },
 
   statusBadge: {
-    marginTop: 58,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,

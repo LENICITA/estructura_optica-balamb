@@ -32,6 +32,7 @@ export const CatalogoCliente = ({ navigation }: Props) => {
 
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
+  const [buscando, setBuscando] = useState(false);
 
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
@@ -40,7 +41,8 @@ export const CatalogoCliente = ({ navigation }: Props) => {
   const [categoriaSeleccionada, setCategoriaSeleccionada] =
     useState<string>('Todos');
 
-  const [orden, setOrden] = useState('Nuevo');
+  const [mostrarOrden, setMostrarOrden] = useState(false);
+    const [ordenSeleccionado, setOrdenSeleccionado] = useState('Nuevo');
 
   // CARGAR PRODUCTOS
 
@@ -56,7 +58,8 @@ export const CatalogoCliente = ({ navigation }: Props) => {
       const data = await productController.getProductos();
 
       setProductos(data);
-      setProductosFiltrados(data);
+      const ordenados = [...data].sort((a, b) => b.id_producto - a.id_producto);
+            setProductosFiltrados(ordenados);
     } catch (error) {
       console.error('Error cargando productos:', error);
     } finally {
@@ -79,17 +82,213 @@ export const CatalogoCliente = ({ navigation }: Props) => {
     setBusqueda('');
   };
 
+useEffect(() => {
+
+    const texto = busqueda.trim();
+
+    // volver a mostrar los productos cargados
+    if (texto === '') {
+
+      if (categoriaSeleccionada === 'Todos') {
+
+        // Reordenar según el orden seleccionado
+        const ordenados = [...productos].sort((a, b) => {
+          switch (ordenSeleccionado) {
+            case 'Nuevo':
+              return b.id_producto - a.id_producto;
+            case 'Precio: menor a mayor':
+              return a.precio - b.precio;
+            case 'Precio: mayor a menor':
+              return b.precio - a.precio;
+            case 'Nombre A-Z':
+              return a.nombre.localeCompare(b.nombre);
+            default:
+              return 0;
+          }
+        });
+        setProductosFiltrados(ordenados);
+
+      } else {
+
+        const filtrados = productos.filter(
+          producto =>
+            producto.tipo_categoria === categoriaSeleccionada
+        );
+        // Reordenar según el orden seleccionado
+        const ordenados = [...filtrados].sort((a, b) => {
+          switch (ordenSeleccionado) {
+            case 'Nuevo':
+              return b.id_producto - a.id_producto;
+            case 'Precio: menor a mayor':
+              return a.precio - b.precio;
+            case 'Precio: mayor a menor':
+              return b.precio - a.precio;
+            case 'Nombre A-Z':
+              return a.nombre.localeCompare(b.nombre);
+            default:
+              return 0;
+          }
+        });
+        setProductosFiltrados(ordenados);
+      }
+
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+
+      try {
+
+        setBuscando(true);
+
+        console.log('Buscando producto en backend:', texto);
+
+        const resultados =
+          await productController.buscarProductos(texto);
+
+        console.log(
+          'Resultados encontrados:',
+          resultados.length
+        );
+
+        // Aplicar también la categoría seleccionada
+        if (categoriaSeleccionada === 'Todos') {
+
+          // Reordenar según el orden seleccionado
+          const ordenados = [...resultados].sort((a, b) => {
+            switch (ordenSeleccionado) {
+              case 'Nuevo':
+                return b.id_producto - a.id_producto;
+              case 'Precio: menor a mayor':
+                return a.precio - b.precio;
+              case 'Precio: mayor a menor':
+                return b.precio - a.precio;
+              case 'Nombre A-Z':
+                return a.nombre.localeCompare(b.nombre);
+              default:
+                return 0;
+            }
+          });
+          setProductosFiltrados(ordenados);
+
+        } else {
+
+          const filtrados = resultados.filter(
+            producto =>
+              producto.tipo_categoria === categoriaSeleccionada
+          );
+          // Reordenar según el orden seleccionado
+          const ordenados = [...filtrados].sort((a, b) => {
+            switch (ordenSeleccionado) {
+              case 'Nuevo':
+                return b.id_producto - a.id_producto;
+              case 'Precio: menor a mayor':
+                return a.precio - b.precio;
+              case 'Precio: mayor a menor':
+                return b.precio - a.precio;
+              case 'Nombre A-Z':
+                return a.nombre.localeCompare(b.nombre);
+              default:
+                return 0;
+            }
+          });
+          setProductosFiltrados(ordenados);
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Error buscando productos:',
+          error
+        );
+
+        setProductosFiltrados([]);
+
+      } finally {
+
+        setBuscando(false);
+
+      }
+
+    }, 400);
+
+    return () => clearTimeout(timeout);
+
+  }, [busqueda, productos, categoriaSeleccionada, ordenSeleccionado]);
+
   const filtrarPorCategoria = (categoria: string) => {
       setCategoriaSeleccionada(categoria);
       setMostrarCategorias(false);
 
-      if (categoria === 'Todos') {
-        setProductosFiltrados(productos);
-      } else {
-        const filtrados = productos.filter(p => p.tipo_categoria === categoria);
-        setProductosFiltrados(filtrados);
-      }
-    };
+      let productosBase = [...productos];
+
+      if (categoria === 'Todos') {const ordenados = [...productosBase].sort((a, b) => {
+      switch (ordenSeleccionado) {
+          case 'Nuevo':
+            return b.id_producto - a.id_producto;
+          case 'Precio: menor a mayor':
+            return a.precio - b.precio;
+          case 'Precio: mayor a menor':
+            return b.precio - a.precio;
+          case 'Nombre A-Z':
+            return a.nombre.localeCompare(b.nombre);
+          default:
+            return 0;
+        }
+      });
+      setProductosFiltrados(ordenados);
+    } else {
+      const filtrados = productosBase.filter(p => p.tipo_categoria === categoria);
+      // Reordenar según el orden seleccionado
+      const ordenados = [...filtrados].sort((a, b) => {
+        switch (ordenSeleccionado) {
+          case 'Nuevo':
+            return b.id_producto - a.id_producto;
+          case 'Precio: menor a mayor':
+            return a.precio - b.precio;
+          case 'Precio: mayor a menor':
+            return b.precio - a.precio;
+          case 'Nombre A-Z':
+            return a.nombre.localeCompare(b.nombre);
+          default:
+            return 0;
+        }
+      });
+      setProductosFiltrados(ordenados);
+    }
+  };
+
+const ordenarProductos = (tipo: string) => {
+    setOrdenSeleccionado(tipo);
+    setMostrarOrden(false);
+
+    let productosBase = [...productos];
+
+    if (categoriaSeleccionada !== 'Todos') {
+          productosBase = productosBase.filter(p => p.tipo_categoria === categoriaSeleccionada);
+        }
+
+    let ordenados = [];
+
+    switch (tipo) {
+          case 'Nuevo':
+            ordenados = productosBase.sort((a, b) => b.id_producto - a.id_producto);
+            break;
+          case 'Precio: menor a mayor':
+            ordenados = productosBase.sort((a, b) => a.precio - b.precio);
+            break;
+          case 'Precio: mayor a menor':
+            ordenados = productosBase.sort((a, b) => b.precio - a.precio);
+            break;
+          case 'Nombre A-Z':
+            ordenados = productosBase.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            break;
+          default:
+            ordenados = productosBase;
+        }
+
+        setProductosFiltrados(ordenados);
+      };
 
   // NAVEGACIÓN
 
@@ -311,44 +510,48 @@ export const CatalogoCliente = ({ navigation }: Props) => {
           {/* ORDENAR */}
 
           <TouchableOpacity
-            style={styles.orderButton}
-            onPress={() => {}}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="swap-vertical-outline"
-              size={16}
-              color={COLORS.black}
-            />
+                      style={styles.orderButton}
+                      onPress={() => setMostrarOrden(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name="swap-vertical-outline"
+                        size={16}
+                        color={COLORS.black}
+                      />
 
-            <Text style={styles.orderText}>
-              {orden}
-            </Text>
+                      <Text style={styles.orderText}>
+                        {ordenSeleccionado}
+                      </Text>
 
-            <Ionicons
-              name="chevron-down"
-              size={15}
-              color={COLORS.black}
-            />
-          </TouchableOpacity>
+                      <Ionicons
+                        name="chevron-down"
+                        size={15}
+                        color={COLORS.black}
+                      />
+                    </TouchableOpacity>
 
-        </View>
+                  </View>
 
-      </View>
+                </View>
 
       {/* RESULTADOS */}
 
       <View style={styles.resultsHeader}>
-
-        <Text style={styles.resultsText}>
-          Mostrando{' '}
-          <Text style={styles.resultsNumber}>
-            {productosFiltrados.length}
-          </Text>{' '}
-          de {productos.length} productos
-        </Text>
-
-      </View>
+              <Text style={styles.resultsText}>
+                {buscando ? (
+                  'Buscando...'
+                ) : (
+                  <>
+                    Mostrando{' '}
+                    <Text style={styles.resultsNumber}>
+                      {productosFiltrados.length}
+                    </Text>{' '}
+                    de {productos.length} productos
+                  </>
+                )}
+              </Text>
+            </View>
 
       {/* PRODUCTOS */}
 
@@ -619,6 +822,56 @@ export const CatalogoCliente = ({ navigation }: Props) => {
         </View>
 
       </Modal>
+
+      {/* ============================================
+                🟢 NUEVO: MODAL ORDENAMIENTO
+            ============================================ */}
+
+            <Modal
+              visible={mostrarOrden}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setMostrarOrden(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.filterModal}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Ordenar por</Text>
+                    <TouchableOpacity onPress={() => setMostrarOrden(false)}>
+                      <Ionicons name="close" size={24} color={COLORS.black} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {[
+                    { label: 'Nuevo', value: 'Nuevo' },
+                    { label: 'Precio: menor a mayor', value: 'Precio: menor a mayor' },
+                    { label: 'Precio: mayor a menor', value: 'Precio: mayor a menor' },
+                    { label: 'Nombre A-Z', value: 'Nombre A-Z' },
+                  ].map((opcion) => (
+                    <TouchableOpacity
+                      key={opcion.value}
+                      style={[
+                        styles.categoriaItem,
+                        ordenSeleccionado === opcion.value && styles.categoriaItemActive,
+                      ]}
+                      onPress={() => ordenarProductos(opcion.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.categoriaItemText,
+                          ordenSeleccionado === opcion.value && styles.categoriaItemTextActive,
+                        ]}
+                      >
+                        {opcion.label}
+                      </Text>
+                      {ordenSeleccionado === opcion.value && (
+                        <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </Modal>
 
     </View>
   );
