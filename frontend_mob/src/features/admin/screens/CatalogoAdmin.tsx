@@ -47,10 +47,8 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   const [orden, setOrden] = useState('Nuevo');
 
-
-  // ==========================================
   // CARGAR PRODUCTOS
-  // ==========================================
+
   const cargarProductos = async () => {
     try {
 
@@ -89,10 +87,8 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
     }
   };
 
-
-  // ==========================================
   // CARGAR CATEGORÍAS
-  // ==========================================
+
   const cargarCategorias = async () => {
 
     try {
@@ -108,10 +104,8 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
     }
   };
 
-
-  // ==========================================
   // RECARGAR CADA VEZ QUE SE VUELVE AL CATÁLOGO
-  // ==========================================
+
   useFocusEffect(
     useCallback(() => {
 
@@ -121,16 +115,13 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
     }, [categoriaSeleccionada])
   );
 
-
-  // ==========================================
   // BÚSQUEDA CON BACKEND
-  // ==========================================
+
   useEffect(() => {
 
     const texto = busqueda.trim();
 
-    // Si el buscador está vacío,
-    // volvemos a mostrar los productos cargados
+    // volver a mostrar los productos cargados
     if (texto === '') {
 
       if (categoriaSeleccionada === 'Todos') {
@@ -150,9 +141,6 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
       return;
     }
 
-
-    // Esperamos 400 ms antes de consultar el backend.
-    // Esto evita hacer una petición por cada letra.
     const timeout = setTimeout(async () => {
 
       try {
@@ -217,150 +205,83 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   };
 
-
-  // ==========================================
   // FILTRAR POR CATEGORÍA
-  // ==========================================
+
+  
   const filtrarPorCategoria = (categoria: string) => {
-
     setCategoriaSeleccionada(categoria);
-
     setMostrarCategorias(false);
 
+    if (categoria === 'Todos') {
+      setProductosFiltrados(productos);
+    } else {
+      const filtrados = productos.filter(p => p.tipo_categoria === categoria);
+      setProductosFiltrados(filtrados);
+    }
   };
 
-
-  // ==========================================
-  // VER DETALLE
-  // ==========================================
+  // NAVEGACIÓN
   const verDetalle = (producto: ProductModel) => {
-
     navigation.navigate(
       'DetalleProductoAdmin' as never,
       {
         id_producto: Number(producto.id_producto),
       } as never
     );
-
   };
 
-
-  // ==========================================
-  // CREAR PRODUCTO
-  // ==========================================
+  // crear producto
   const irACrearProducto = () => {
-
-    navigation.navigate(
-      'CrearProductoAdmin' as never
-    );
-
+    navigation.navigate('CrearProductoAdmin' as never);
   };
 
-
-  // ==========================================
-  // EDITAR PRODUCTO
-  // ==========================================
+  // editar producto
   const irAEditarProducto = (producto: ProductModel) => {
-
-    navigation.navigate(
-      'EditarProductoAdmin' as never,
-      {
-        id_producto: Number(producto.id_producto),
-      } as never
-    );
-
+    navigation.navigate('EditarProductoAdmin' as never, {
+      id_producto: Number(producto.id_producto),
+    } as never);
   };
 
-
-  // ==========================================
-  // ELIMINAR PRODUCTO DESDE CATÁLOGO
-  // ==========================================
+  //  Eliminar producto (con confirmación)
   const eliminarProducto = (producto: ProductModel) => {
-
     Alert.alert(
       'Eliminar producto',
       `¿Estás seguro de eliminar "${producto.nombre}"?`,
       [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-
+        { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Eliminar',
           style: 'destructive',
-
           onPress: async () => {
-
             try {
-
               setLoading(true);
-
-              const response =
-                await productController.eliminarProducto(
-                  producto.id_producto
-                );
-
-
-              if (response.success) {
-
-                await cargarProductos();
-
-                Alert.alert(
-                  'Éxito',
-                  'Producto eliminado correctamente'
-                );
-
-              } else {
-
-                Alert.alert(
-                  'Error',
-                  response.message ||
-                  'Error al eliminar'
-                );
-
-              }
-
-            } catch (error) {
-
-              Alert.alert(
-                'Error',
-                'No se pudo eliminar el producto'
+              const response = await productController.eliminarProducto(
+                producto.id_producto
               );
-
+              if (response.success) {
+                Alert.alert('Éxito', 'Producto eliminado correctamente');
+                cargarProductos();
+              } else {
+                Alert.alert('Error', response.message || 'Error al eliminar');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar el producto');
               console.error(error);
-
             } finally {
-
               setLoading(false);
-
             }
-
           },
         },
       ]
     );
-
   };
 
-
-  // ==========================================
-  // RENDER PRODUCTO
-  // ==========================================
-  const renderProducto = ({
-    item,
-  }: {
-    item: ProductModel;
-  }) => {
-
+  // RENDER PRODUCTO - Con botones de Admin
+  const renderProducto = ({ item }: { item: ProductModel }) => {
     const imagenProducto =
-      item.imagen_url ||
-      item.imagen_thumbnail ||
-      item.imagen;
-
+      item.imagen_url || item.imagen_thumbnail || item.imagen;
 
     return (
-
       <View style={styles.productCard}>
 
         {/* IMAGEN */}
@@ -369,129 +290,75 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
           activeOpacity={0.9}
           onPress={() => verDetalle(item)}
         >
-
           {imagenProducto ? (
-
             <Image
               source={{ uri: imagenProducto }}
               style={styles.productImage}
               resizeMode="contain"
             />
-
           ) : (
-
             <View style={styles.noImage}>
-
-              <Ionicons
-                name="image-outline"
-                size={30}
-                color={COLORS.gray}
-              />
-
+              <Ionicons name="image-outline" size={30} color={COLORS.gray} />
             </View>
-
           )}
-
         </TouchableOpacity>
-
 
         {/* INFORMACIÓN */}
         <View style={styles.productInfo}>
 
-          <Text
-            style={styles.productName}
-            numberOfLines={1}
-          >
+          <Text style={styles.productName} numberOfLines={1}>
             {item.nombre}
           </Text>
 
-          <Text style={styles.productBrand}>
-            {item.marca}
-          </Text>
-
+          <Text style={styles.productBrand}>{item.marca}</Text>
           <Text style={styles.productCategory}>
             {item.tipo_categoria || 'Producto'}
           </Text>
-
-          <Text style={styles.productPrice}>
-            {item.precioFormateado}
-          </Text>
+          <Text style={styles.productPrice}>{item.precioFormateado}</Text>
 
         </View>
 
-
-        {/* ACCIONES ADMIN */}
-        <View style={styles.adminActions}>
-
-          {/* EDITAR */}
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => irAEditarProducto(item)}
-            activeOpacity={0.8}
-          >
-
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color={COLORS.primary}
-            />
-
-          </TouchableOpacity>
+          {/* ACCIONES ADMIN */}
+          <View style={styles.adminActions}>
 
 
-          {/* ELIMINAR */}
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => eliminarProducto(item)}
-            activeOpacity={0.8}
-          >
+            {/* EDITAR */}
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => irAEditarProducto(item)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="create-outline" size={18} color={COLORS.primary} />
+            </TouchableOpacity>
 
-            <Ionicons
-              name="trash-outline"
-              size={18}
-              color={COLORS.error}
-            />
+            {/* ELIMINAR */}
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => eliminarProducto(item)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+            </TouchableOpacity>
 
-          </TouchableOpacity>
+          </View>
 
         </View>
 
-      </View>
     );
-
   };
 
-
-  // ==========================================
-  // LOADING INICIAL
-  // ==========================================
+  // LOADING
   if (loading) {
-
     return (
-
       <View style={styles.loadingContainer}>
-
-        <ActivityIndicator
-          size="large"
-          color={COLORS.primary}
-        />
-
-        <Text style={styles.loadingText}>
-          Cargando productos...
-        </Text>
-
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Cargando productos...</Text>
       </View>
-
     );
-
   }
 
-
-  // ==========================================
   // PANTALLA
-  // ==========================================
   return (
-
     <View style={styles.container}>
 
       {/* CABECERA */}
@@ -499,13 +366,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
         {/* BUSCADOR */}
         <View style={styles.searchContainer}>
-
-          <Ionicons
-            name="search-outline"
-            size={19}
-            color={COLORS.gray}
-          />
-
+          <Ionicons name="search-outline" size={19} color={COLORS.gray} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar productos..."
@@ -513,498 +374,229 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             value={busqueda}
             onChangeText={setBusqueda}
             maxLength={100}
-            autoCapitalize="none"
-            autoCorrect={false}
           />
-
-
-          {/* INDICADOR DE BÚSQUEDA */}
-          {buscando && (
-
-            <ActivityIndicator
-              size="small"
-              color={COLORS.primary}
-              style={styles.searchLoading}
-            />
-
-          )}
-
-
-          {/* LIMPIAR */}
-          {!buscando && busqueda.length > 0 && (
-
-            <TouchableOpacity
-              onPress={limpiarBusqueda}
-            >
-
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={COLORS.gray}
-              />
-
+          {busqueda.length > 0 && (
+            <TouchableOpacity onPress={limpiarBusqueda}>
+              <Ionicons name="close-circle" size={18} color={COLORS.gray} />
             </TouchableOpacity>
-
           )}
 
-
-          {/* FILTROS */}
           <TouchableOpacity
             style={styles.filterIconButton}
             onPress={() => setMostrarFiltros(true)}
           >
-
-            <Ionicons
-              name="options-outline"
-              size={19}
-              color={COLORS.black}
-            />
-
+            <Ionicons name="options-outline" size={19} color={COLORS.black} />
           </TouchableOpacity>
-
         </View>
-
 
         {/* BOTONES */}
         <View style={styles.toolsRow}>
 
+          {/* CATEGORÍAS */}
           <View style={styles.topRow}>
-
-            {/* CATEGORÍAS */}
-            <TouchableOpacity
-              style={styles.categoriesButton}
-              onPress={() => setMostrarCategorias(true)}
-              activeOpacity={0.8}
-            >
-
-              <Ionicons
-                name="grid-outline"
-                size={17}
-                color={COLORS.primary}
-              />
-
-              <Text style={styles.categoriesButtonText}>
-                Categorías
-              </Text>
-
-            </TouchableOpacity>
-
-
-            {/* CREAR PRODUCTO */}
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={irACrearProducto}
-              activeOpacity={0.8}
-            >
-
-              <Ionicons
-                name="add-circle-outline"
-                size={17}
-                color={COLORS.white}
-              />
-
-              <Text style={styles.addButtonText}>
-                Crear Producto
-              </Text>
-
-            </TouchableOpacity>
-
-          </View>
-
-
-          {/* ORDENAR */}
           <TouchableOpacity
-            style={styles.orderButton}
-            onPress={() => {}}
+            style={styles.categoriesButton}
+            onPress={() => setMostrarCategorias(true)}
             activeOpacity={0.8}
           >
+            <Ionicons name="grid-outline" size={17} color={COLORS.primary} />
+            <Text style={styles.categoriesButtonText}>Categorías</Text>
+          </TouchableOpacity>
 
-            <Ionicons
-              name="swap-vertical-outline"
-              size={16}
-              color={COLORS.black}
-            />
+          {/* BOTÓN AGREGAR PRODUCTO */}
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={irACrearProducto}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add-circle-outline" size={17} color={COLORS.white} />
+            <Text style={styles.addButtonText}>Crear Producto</Text>
+          </TouchableOpacity>
+          </View>
 
-            <Text style={styles.orderText}>
-              {orden}
-            </Text>
-
-            <Ionicons
-              name="chevron-down"
-              size={15}
-              color={COLORS.black}
-            />
-
+          {/* ORDENAR */}
+          <TouchableOpacity style={styles.orderButton} onPress={() => {}} activeOpacity={0.8}>
+            <Ionicons name="swap-vertical-outline" size={16} color={COLORS.black} />
+            <Text style={styles.orderText}>{orden}</Text>
+            <Ionicons name="chevron-down" size={15} color={COLORS.black} />
           </TouchableOpacity>
 
         </View>
 
       </View>
 
-
       {/* RESULTADOS */}
       <View style={styles.resultsHeader}>
-
         <Text style={styles.resultsText}>
-
           Mostrando{' '}
-
           <Text style={styles.resultsNumber}>
             {productosFiltrados.length}
-          </Text>
-
-          {' '}de {productos.length} productos
-
+          </Text>{' '}
+          de {productos.length} productos
         </Text>
-
       </View>
-
 
       {/* PRODUCTOS */}
       {productosFiltrados.length === 0 ? (
-
         <View style={styles.emptyContainer}>
-
-          <Ionicons
-            name="search-outline"
-            size={50}
-            color={COLORS.gray}
-          />
-
-          <Text style={styles.emptyTitle}>
-            No encontramos productos
-          </Text>
-
-          <Text style={styles.emptyText}>
-            Intenta con otro término de búsqueda.
-          </Text>
-
+          <Ionicons name="search-outline" size={50} color={COLORS.gray} />
+          <Text style={styles.emptyTitle}>No encontramos productos</Text>
+          <Text style={styles.emptyText}>Intenta con otro término de búsqueda.</Text>
         </View>
-
       ) : (
-
         <FlatList
           data={productosFiltrados}
-          keyExtractor={(item) =>
-            item.id_producto.toString()
-          }
+          keyExtractor={(item) => item.id_producto.toString()}
           renderItem={renderProducto}
           numColumns={1}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
         />
-
       )}
 
-
-      {/* ========================================== */}
       {/* MODAL CATEGORÍAS */}
-      {/* ========================================== */}
-
       <Modal
         visible={mostrarCategorias}
         transparent
         animationType="slide"
-        onRequestClose={() =>
-          setMostrarCategorias(false)
-        }
+        onRequestClose={() => setMostrarCategorias(false)}
       >
-
         <View style={styles.modalOverlay}>
-
           <View style={styles.filterModal}>
-
             <View style={styles.modalHeader}>
-
-              <Text style={styles.modalTitle}>
-                Categorías
-              </Text>
-
-              <TouchableOpacity
-                onPress={() =>
-                  setMostrarCategorias(false)
-                }
-              >
-
-                <Ionicons
-                  name="close"
-                  size={24}
-                  color={COLORS.black}
-                />
-
+              <Text style={styles.modalTitle}>Categorías</Text>
+              <TouchableOpacity onPress={() => setMostrarCategorias(false)}>
+                <Ionicons name="close" size={24} color={COLORS.black} />
               </TouchableOpacity>
-
             </View>
 
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-            >
-
-              {/* TODOS */}
+            <ScrollView showsVerticalScrollIndicator={false}>
               <TouchableOpacity
                 style={[
                   styles.categoriaItem,
-                  categoriaSeleccionada === 'Todos' &&
-                    styles.categoriaItemActive,
+                  categoriaSeleccionada === 'Todos' && styles.categoriaItemActive,
                 ]}
-                onPress={() =>
-                  filtrarPorCategoria('Todos')
-                }
+                onPress={() => filtrarPorCategoria('Todos')}
               >
-
                 <Text
                   style={[
                     styles.categoriaItemText,
-                    categoriaSeleccionada === 'Todos' &&
-                      styles.categoriaItemTextActive,
+                    categoriaSeleccionada === 'Todos' && styles.categoriaItemTextActive,
                   ]}
                 >
                   Todos
                 </Text>
-
                 {categoriaSeleccionada === 'Todos' && (
-
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={COLORS.primary}
-                  />
-
+                  <Ionicons name="checkmark" size={20} color={COLORS.primary} />
                 )}
-
               </TouchableOpacity>
 
-
-              {/* CATEGORÍAS */}
               {categorias.map((categoria) => (
-
                 <TouchableOpacity
                   key={categoria}
                   style={[
                     styles.categoriaItem,
-                    categoriaSeleccionada === categoria &&
-                      styles.categoriaItemActive,
+                    categoriaSeleccionada === categoria && styles.categoriaItemActive,
                   ]}
-                  onPress={() =>
-                    filtrarPorCategoria(categoria)
-                  }
+                  onPress={() => filtrarPorCategoria(categoria)}
                 >
-
                   <Text
                     style={[
                       styles.categoriaItemText,
-                      categoriaSeleccionada === categoria &&
-                        styles.categoriaItemTextActive,
+                      categoriaSeleccionada === categoria && styles.categoriaItemTextActive,
                     ]}
                   >
                     {categoria}
                   </Text>
-
                   {categoriaSeleccionada === categoria && (
-
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={COLORS.primary}
-                    />
-
+                    <Ionicons name="checkmark" size={20} color={COLORS.primary} />
                   )}
-
                 </TouchableOpacity>
-
               ))}
-
             </ScrollView>
-
           </View>
-
         </View>
-
       </Modal>
 
-
-      {/* ========================================== */}
       {/* MODAL FILTROS */}
-      {/* ========================================== */}
-
       <Modal
         visible={mostrarFiltros}
         transparent
         animationType="slide"
-        onRequestClose={() =>
-          setMostrarFiltros(false)
-        }
+        onRequestClose={() => setMostrarFiltros(false)}
       >
-
         <View style={styles.modalOverlay}>
-
           <View style={styles.filterModal}>
-
             <View style={styles.modalHeader}>
-
-              <Text style={styles.modalTitle}>
-                Filtrar productos
-              </Text>
-
-              <TouchableOpacity
-                onPress={() =>
-                  setMostrarFiltros(false)
-                }
-              >
-
-                <Ionicons
-                  name="close"
-                  size={24}
-                  color={COLORS.black}
-                />
-
+              <Text style={styles.modalTitle}>Filtrar productos</Text>
+              <TouchableOpacity onPress={() => setMostrarFiltros(false)}>
+                <Ionicons name="close" size={24} color={COLORS.black} />
               </TouchableOpacity>
-
             </View>
 
-
             {/* PRECIO */}
-            <Text style={styles.filterTitle}>
-              Precio
-            </Text>
-
+            <Text style={styles.filterTitle}>Precio</Text>
             <View style={styles.priceInputs}>
-
               <View style={styles.priceInputContainer}>
-
-                <Text style={styles.priceLabel}>
-                  Mínimo
-                </Text>
-
+                <Text style={styles.priceLabel}>Mínimo</Text>
                 <TextInput
                   style={styles.priceInput}
                   placeholder="$0"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
                 />
-
               </View>
-
-
               <View style={styles.priceInputContainer}>
-
-                <Text style={styles.priceLabel}>
-                  Máximo
-                </Text>
-
+                <Text style={styles.priceLabel}>Máximo</Text>
                 <TextInput
                   style={styles.priceInput}
                   placeholder="$500.000"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
                 />
-
               </View>
-
             </View>
 
-
             {/* MARCA */}
-            <Text style={styles.filterTitle}>
-              Marca
-            </Text>
-
+            <Text style={styles.filterTitle}>Marca</Text>
             <TouchableOpacity style={styles.selectButton}>
-
-              <Text style={styles.selectText}>
-                Seleccionar marca
-              </Text>
-
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color={COLORS.gray}
-              />
-
+              <Text style={styles.selectText}>Seleccionar marca</Text>
+              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
             </TouchableOpacity>
-
 
             {/* MATERIAL */}
-            <Text style={styles.filterTitle}>
-              Material
-            </Text>
-
+            <Text style={styles.filterTitle}>Material</Text>
             <TouchableOpacity style={styles.selectButton}>
-
-              <Text style={styles.selectText}>
-                Seleccionar material
-              </Text>
-
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color={COLORS.gray}
-              />
-
+              <Text style={styles.selectText}>Seleccionar material</Text>
+              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
             </TouchableOpacity>
-
 
             {/* COLOR */}
-            <Text style={styles.filterTitle}>
-              Color
-            </Text>
-
+            <Text style={styles.filterTitle}>Color</Text>
             <TouchableOpacity style={styles.selectButton}>
-
-              <Text style={styles.selectText}>
-                Seleccionar color
-              </Text>
-
-              <Ionicons
-                name="chevron-down"
-                size={18}
-                color={COLORS.gray}
-              />
-
+              <Text style={styles.selectText}>Seleccionar color</Text>
+              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
             </TouchableOpacity>
-
 
             {/* BOTONES */}
             <View style={styles.modalActions}>
-
-              <TouchableOpacity
-                style={styles.clearFiltersButton}
-              >
-
-                <Text style={styles.clearFiltersText}>
-                  Limpiar
-                </Text>
-
+              <TouchableOpacity style={styles.clearFiltersButton}>
+                <Text style={styles.clearFiltersText}>Limpiar</Text>
               </TouchableOpacity>
-
-
               <TouchableOpacity
                 style={styles.applyFiltersButton}
-                onPress={() =>
-                  setMostrarFiltros(false)
-                }
+                onPress={() => setMostrarFiltros(false)}
               >
-
-                <Text style={styles.applyFiltersText}>
-                  Aplicar filtros
-                </Text>
-
+                <Text style={styles.applyFiltersText}>Aplicar filtros</Text>
               </TouchableOpacity>
-
             </View>
-
           </View>
-
         </View>
-
       </Modal>
 
     </View>
-
   );
 };
-
 
 const styles = StyleSheet.create({
 
@@ -1041,10 +633,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
 
-  searchLoading: {
-    marginRight: 7,
-  },
-
   filterIconButton: {
     marginLeft: 7,
     paddingLeft: 9,
@@ -1058,12 +646,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-  },
+topRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 10,
+},
 
   categoriesButton: {
     flexDirection: 'row',
@@ -1084,6 +672,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  //  BOTÓN AGREGAR
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1147,24 +736,24 @@ const styles = StyleSheet.create({
 
   productCard: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginBottom: 10,
-    alignItems: 'center',
-    padding: 10,
+      backgroundColor: COLORS.white,
+      borderRadius: 12,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: '#E5E5E5',
+      marginBottom: 10,
+      alignItems: 'center',
+      padding: 10,
   },
 
   imageContainer: {
     width: 100,
-    height: 100,
-    backgroundColor: '#FAFAFA',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    marginRight: 12,
+      height: 100,
+      backgroundColor: '#FAFAFA',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      marginRight: 12,
   },
 
   productImage: {
@@ -1179,7 +768,7 @@ const styles = StyleSheet.create({
 
   productInfo: {
     flex: 1,
-    paddingVertical: 4,
+      paddingVertical: 4,
   },
 
   productName: {
@@ -1208,34 +797,35 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
+  // ACCIONES ADMIN
   adminActions: {
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginLeft: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginLeft: 8,
   },
 
   editButton: {
-    width: 36,
-    height: 36,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.white,
+     width: 36,
+      height: 36,
+      borderWidth: 1,
+      borderColor: COLORS.primary,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: COLORS.white,
   },
 
   deleteButton: {
     width: 36,
-    height: 36,
-    borderWidth: 1,
-    borderColor: COLORS.error,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.white,
+      height: 36,
+      borderWidth: 1,
+      borderColor: COLORS.error,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: COLORS.white,
   },
 
   loadingContainer: {

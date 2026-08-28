@@ -18,7 +18,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000
-const HOST = process.env.HOST || '192.168.0.5';
+const HOST = process.env.HOST || '192.168.0.4';
 
 // Middlewares
 app.use(cors());
@@ -46,7 +46,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
     try {
         await sequelize.authenticate();
         console.log('Conexión a la base de datos establecida');
