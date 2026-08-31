@@ -204,7 +204,7 @@ export const PrincipalAdmin = ({ navigation }: Props) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('AdminFormulas')}
+        onPress={() => navigation.navigate('GestionarFormulas')}
       >
         <View style={styles.buttonContent}>
           <View style={styles.buttonLeft}>
@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F4F6',
     padding: 16,
+    marginBottom: 16,
   },
   loadingContainer: {
     flex: 1,

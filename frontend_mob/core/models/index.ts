@@ -5,3 +5,4 @@ export * from './DistribucionModel';
 export * from './PedidoModel';
 export * from './ProductModel';
 export * from './MensajeContacto';
+export * from './FormulaModel';

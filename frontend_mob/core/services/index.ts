@@ -7,3 +7,4 @@ export * from './PedidoService';
 export * from './ProductService';
 export * from './DistribucionService';
 export * from './ContactoService';
+export * from './FormulaService';

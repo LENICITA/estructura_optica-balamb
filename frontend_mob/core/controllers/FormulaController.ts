@@ -18,9 +18,9 @@ export class FormulaController {
     id_usuario: number
   ): Promise<FormulaModel[]> {
     try {
-      console.log('📋 Controller - getFormulasByUsuario:', id_usuario);
+      console.log(' Controller - getFormulasByUsuario:', id_usuario);
       const result = await this.formulaService.getFormulasByUsuario(id_usuario);
-      console.log('📋 Controller - Fórmulas obtenidas:', result.length);
+      console.log(' Controller - Fórmulas obtenidas:', result.length);
       return result;
     } catch (error) {
       console.error('Error en getFormulasByUsuario:', error);
@@ -32,7 +32,7 @@ export class FormulaController {
     id: number
   ): Promise<FormulaModel | null> {
     try {
-      console.log('📋 Controller - getFormulaById:', id);
+      console.log(' Controller - getFormulaById:', id);
       const result = await this.formulaService.getFormulaById(id);
       return result;
     } catch (error) {
@@ -53,7 +53,7 @@ export class FormulaController {
     id_formula?: number;
   }> {
     try {
-      console.log('📤 Controller - crearFormula:', data);
+      console.log(' Controller - crearFormula:', data);
 
       if (!data.id_usuario || !data.condicion || !data.imagen_formula) {
         return {
@@ -64,7 +64,7 @@ export class FormulaController {
 
       const response = await this.formulaService.crearFormula(data);
 
-      console.log('📊 Controller - Respuesta creación:', response);
+      console.log(' Controller - Respuesta creación:', response);
 
       return response;
 
@@ -84,7 +84,7 @@ export class FormulaController {
     message: string;
   }> {
     try {
-      console.log('🗑️ Controller - eliminarFormula ID:', id_formula);
+      console.log('Controller - eliminarFormula ID:', id_formula);
 
       if (!id_formula) {
         return {
@@ -103,12 +103,12 @@ export class FormulaController {
 
       const response = await this.formulaService.eliminarFormula(idNumber);
 
-      console.log('📊 Controller - Respuesta eliminación:', response);
+      console.log('Controller - Respuesta eliminación:', response);
 
       return response;
 
     } catch (error: any) {
-      console.error('❌ Error en eliminarFormula:', error);
+      console.error('Error en eliminarFormula:', error);
       return {
         success: false,
         message: error?.message || 'Error al eliminar la fórmula',
@@ -139,9 +139,9 @@ export class FormulaController {
   }> {
     try {
       const estadosPermitidos: EstadoFormula[] = [
-        'PENDIENTE',
-        'APROBADO',
-        'RECHAZADO',
+        'Pendiente',
+        'Aprobado',
+        'Rechazado',
       ];
 
       if (!id_formula) {

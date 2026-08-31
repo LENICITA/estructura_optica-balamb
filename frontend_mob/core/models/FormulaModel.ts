@@ -1,6 +1,6 @@
 // src/core/models/FormulaModel.ts
 
-export type EstadoFormula = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+export type EstadoFormula = 'Pendiente' | 'Aprobado' | 'Rechazado';
 
 export interface Formula {
   id_formula: number;
@@ -41,8 +41,8 @@ export class FormulaModel implements Formula {
     this.nombre_completo = data.nombre_completo;
     this.telefono = data.telefono;
     this.email = data.email;
-    
-    console.log('🏗️ FormulaModel creado:', {
+
+    console.log(' FormulaModel creado:', {
       id_formula: this.id_formula,
       condicion: this.condicion,
       estado: this.estado
@@ -58,9 +58,9 @@ export class FormulaModel implements Formula {
 
   get estadoTexto(): string {
     switch (this.estado) {
-      case 'APROBADO':
+      case 'Aprobado':
         return 'Aprobado';
-      case 'RECHAZADO':
+      case 'Rechazado':
         return 'Rechazado';
       default:
         return 'Pendiente';
@@ -68,12 +68,12 @@ export class FormulaModel implements Formula {
   }
 
   static fromJSON(data: any): FormulaModel {
-    console.log('🔄 fromJSON - Datos recibidos:', data);
+    console.log(' fromJSON - Datos recibidos:', data);
 
     // Si Sequelize manda dataValues, usarlo
     const source = data?.dataValues ?? data ?? {};
 
-    console.log('🔄 fromJSON - Datos normalizados:', source);
+    console.log(' fromJSON - Datos normalizados:', source);
 
     const idFormula = Number(
       source.id_formula ??
@@ -82,7 +82,7 @@ export class FormulaModel implements Formula {
       0
     );
 
-    console.log('🔄 fromJSON - ID final:', idFormula);
+    console.log(' fromJSON - ID final:', idFormula);
 
     return new FormulaModel({
       id_formula: idFormula,
@@ -92,7 +92,7 @@ export class FormulaModel implements Formula {
       observaciones: source.observaciones ?? source.descripcion ?? '',
       fecha_creacion: source.fecha_creacion ?? source.fecha ?? new Date().toISOString().split('T')[0],
       costo: Number(source.costo ?? 0),
-      estado: (source.estado ?? 'PENDIENTE').toUpperCase() as EstadoFormula,
+      estado: (source.estado ?? 'Pendiente') as EstadoFormula,
       nombre_completo: source.nombre_completo,
       telefono: source.telefono,
       email: source.email,
