@@ -174,12 +174,17 @@ const Inventario = {
     try {
       const where = {};
 
-      if (filtros.precio_min) {
-        where.precio = { [Op.gte]: parseFloat(filtros.precio_min) };
-      }
-      if (filtros.precio_max) {
-        where.precio = { ...where.precio, [Op.lte]: parseFloat(filtros.precio_max) };
-      }
+      if (filtros.precio_min !== undefined && filtros.precio_min !== null) {
+      where.precio = { 
+        [Op.gte]: sequelize.literal(Number(filtros.precio_min)) 
+      };
+    }
+    if (filtros.precio_max !== undefined && filtros.precio_max !== null) {
+      where.precio = { 
+        ...where.precio, 
+        [Op.lte]: sequelize.literal(Number(filtros.precio_max)) 
+      };
+    }
       if (filtros.marca) {
         where.marca = filtros.marca;
       }
