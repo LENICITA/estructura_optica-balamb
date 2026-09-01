@@ -141,15 +141,20 @@ export class ProductService {
     if (filtros.material) params.material = filtros.material;
     if (filtros.id_categoria !== undefined) params.id_categoria = filtros.id_categoria;
 
-    const response = await apiClient.get<{ success: boolean; data: any[] }>('/inventario/productos/filtros', { params });
-    const data = response.data;
+    const response = await apiClient.get<{
+        success: boolean;
+        productos?: any[];
+        count?: number;
+      }>('/inventario/productos/filtros', { params });
+
+      const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al filtrar productos');
     }
 
-    return ProductModel.fromJSONArray(data.data || []);
-  }
+    return ProductModel.fromJSONArray(data.productos || []);
+    }
 
   // ===== OBTENER PRODUCTOS POR CATEGORÍA =====
   async getProductosByCategoria(id_categoria: number): Promise<ProductModel[]> {
@@ -177,14 +182,14 @@ export class ProductService {
 
   // ===== OBTENER MARCAS ÚNICAS =====
   async getMarcas(): Promise<string[]> {
-    const response = await apiClient.get<{ success: boolean; data: string[] }>('/inventario/marcas');
+    const response = await apiClient.get<{ success: boolean; marcas: string[] }>('/inventario/marcas');
     const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al obtener marcas');
     }
 
-    return data.data || [];
+    return data.marcas || [];
   }
 
   // ===== OBTENER COLORES ÚNICOS =====

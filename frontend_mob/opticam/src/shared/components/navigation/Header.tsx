@@ -310,7 +310,7 @@ const role = getMainRole();
           id: 'carrito',
           label: 'Carrito',
           icon: 'cart-outline',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         });
 
 

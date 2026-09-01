@@ -52,7 +52,7 @@ export const BottomNavigation = () => {
           label: 'Carrito',
           icon: 'cart-outline',
           activeIcon: 'cart',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         },
         {
           label: 'Pedidos',

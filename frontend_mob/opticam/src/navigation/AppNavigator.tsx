@@ -28,6 +28,8 @@ import { DetalleProductoCliente } from '../features/client/screens/DetalleProduc
 import { MisFormulasScreen } from '@/features/client/screens/MisFormulasScreen';
 import { DetalleFormulaCliente } from '@/features/client/screens/DetalleFormulaCliente';
 import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen';
+import { CarritoCliente } from '../features/client/screens/CarritoCliente';
+import { CrearPedidoCliente } from '../features/client/screens/CrearPedidoCliente';
 // ===== SCREENS ADMIN =====
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
@@ -241,6 +243,22 @@ export default function AppNavigator() {
                             </ClientLayout>
                           )}
                         </Stack.Screen>
+
+                        <Stack.Screen name="CarritoCliente">
+                                      {() => (
+                                        <UserLayout>
+                                          <CarritoCliente />
+                                        </UserLayout>
+                                      )}
+                                    </Stack.Screen>
+
+          <Stack.Screen name="CrearPedidoCliente">
+                          {({ navigation, route }) => (
+                              <ClientLayout>
+                                <CrearPedidoCliente navigation={navigation} route={route} />
+                              </ClientLayout>
+                          )}
+                      </Stack.Screen>
 
             <Stack.Screen name="PrincipalRepartidor">
               {({ navigation }) => (
