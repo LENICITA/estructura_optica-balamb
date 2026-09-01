@@ -1,32 +1,7 @@
-// Archivo enrutador
+// App.tsx
+import React from 'react';
+import AppNavigator from './src/navigation/AppNavigator';
 
-import * as React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RegisterScreen } from './src/presentation/views/register/Register';
-
-export type RootStackParamList = {
-  RegisterScreen: undefined;
+export default function App() {
+  return <AppNavigator />;
 }
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-// ruta de registro
-const App = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen
-          name="RegisterScreen"
-          component={RegisterScreen}
-          options={{
-            headerShown: true,
-            title: "Registro",
-          }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-};
-
-export default App;
