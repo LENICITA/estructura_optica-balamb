@@ -1,3 +1,5 @@
+// src/features/admin/screens/CatalogoAdmin.tsx
+
 import React, { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -56,6 +58,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
   const [mostrarMateriales, setMostrarMateriales] = useState(false);
   const [mostrarColores, setMostrarColores] = useState(false);
   const [aplicandoFiltros, setAplicandoFiltros] = useState(false);
+  const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
   // CARGAR PRODUCTOS
 
@@ -166,6 +169,12 @@ const ordenarProductos = (tipo: string) => {
 
     const texto = busqueda.trim();
 
+    // Si hay filtros aplicados y no hay búsqueda, conservar
+    // exactamente los resultados devueltos por el backend.
+    if (filtrosAplicados && texto === '') {
+      return;
+    }
+
     // volver a mostrar los productos cargados
     if (texto === '') {
 
@@ -238,7 +247,7 @@ const ordenarProductos = (tipo: string) => {
 
     return () => clearTimeout(timeout);
 
-  }, [busqueda, productos, categoriaSeleccionada]);
+  }, [busqueda, productos, categoriaSeleccionada, filtrosAplicados]);
 
 
   // ==========================================
@@ -307,15 +316,13 @@ const ordenarProductos = (tipo: string) => {
 
       const resultados = await productController.filtrarProductos(filtros);
 
-      let resultadosFinales = resultados;
+      console.log('Productos que devuelve el controlador:', resultados);
+      console.log('Cantidad de productos filtrados:', resultados.length);
 
-      if (categoriaSeleccionada !== 'Todos') {
-        resultadosFinales = resultados.filter(
-          p => p.tipo_categoria === categoriaSeleccionada
-        );
-      }
-
-      setProductosFiltrados(resultadosFinales);
+      // IMPORTANTE: el backend ya aplicó los filtros.
+      // No volver a filtrar aquí porque podría eliminar resultados válidos.
+      setFiltrosAplicados(true);
+      setProductosFiltrados(resultados);
       setMostrarFiltros(false);
     } catch (error) {
       console.error('Error aplicando filtros:', error);
@@ -326,6 +333,7 @@ const ordenarProductos = (tipo: string) => {
   };
 
   const limpiarFiltros = () => {
+    setFiltrosAplicados(false);
     setPrecioMin('');
     setPrecioMax('');
     setMarcaSeleccionada('');

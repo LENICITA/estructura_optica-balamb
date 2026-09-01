@@ -226,8 +226,18 @@ export const CatalogoCliente = ({ navigation }: Props) => {
         ...(colorSeleccionado ? { color: colorSeleccionado } : {}),
       };
 
-      setFiltrosAplicados(nuevosFiltros);
+      console.log('Filtros enviados al controlador:', nuevosFiltros);
 
+      // Consultar directamente al backend y mostrar EXACTAMENTE los resultados
+      // que devuelve el controlador. No se vuelven a reemplazar por
+      // `productos` mientras estos filtros estén activos.
+      const resultados = await productController.filtrarProductos(nuevosFiltros);
+
+      console.log('Productos que devuelve el controlador:', resultados);
+      console.log('Cantidad de productos filtrados:', resultados.length);
+
+      setFiltrosAplicados(nuevosFiltros);
+      setProductosFiltrados(aplicarOrden(resultados));
       setMostrarFiltros(false);
     } catch (error) {
       console.error('Error aplicando filtros:', error);
@@ -241,6 +251,7 @@ export const CatalogoCliente = ({ navigation }: Props) => {
     setMaterialSeleccionado('');
     setColorSeleccionado('');
     setFiltrosAplicados({});
+    setProductosFiltrados(aplicarOrden(productos));
     setMostrarFiltros(false);
   };
 
@@ -252,6 +263,13 @@ export const CatalogoCliente = ({ navigation }: Props) => {
 
 useEffect(() => {
     const texto = busqueda.trim();
+
+    // IMPORTANTE: cuando no hay búsqueda y acabamos de aplicar filtros,
+    // conservar los resultados que devolvió el backend. El efecto anterior
+    // volvía a cargar `productos` y sobrescribía la lista filtrada.
+    if (texto === '' && Object.keys(filtrosAplicados).length > 0) {
+      return;
+    }
 
     const cargarResultados = async () => {
       try {
