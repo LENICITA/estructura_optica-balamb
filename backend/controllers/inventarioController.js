@@ -90,14 +90,16 @@ export const getProductoById = async (req, res) => {
 export const filtrarProductos = async (req, res) => {
   try {
     const filtros = {
-      precio_min: req.query.precio_min,
-      precio_max: req.query.precio_max,
+      precio_min: req.query.precio_min ? parseFloat(req.query.precio_min) : undefined,
+      precio_max: req.query.precio_max ? parseFloat(req.query.precio_max) : undefined,
       marca: req.query.marca,
       color: req.query.color,
       material: req.query.material,
       id_categoria: req.query.id_categoria,
       busqueda: req.query.q
     };
+
+    console.log(' Filtros recibidos (convertidos):', filtros);
 
     const results = await Inventario.filtrar(filtros);
 
