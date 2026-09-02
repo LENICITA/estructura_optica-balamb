@@ -318,7 +318,7 @@ const role = getMainRole();
           id: 'control-pedido',
           label: 'Mis Pedidos',
           icon: 'cube-outline',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         });
 
       }

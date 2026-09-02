@@ -58,7 +58,7 @@ export const BottomNavigation = () => {
           label: 'Pedidos',
           icon: 'cube-outline',
           activeIcon: 'cube',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         },
         {
           label: 'Perfil',
