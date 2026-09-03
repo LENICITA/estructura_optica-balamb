@@ -41,8 +41,8 @@ export class FormulaModel implements Formula {
     this.nombre_completo = data.nombre_completo;
     this.telefono = data.telefono;
     this.email = data.email;
-    
-    console.log('🏗️ FormulaModel creado:', {
+
+    console.log(' FormulaModel creado:', {
       id_formula: this.id_formula,
       condicion: this.condicion,
       estado: this.estado
@@ -68,12 +68,12 @@ export class FormulaModel implements Formula {
   }
 
   static fromJSON(data: any): FormulaModel {
-    console.log('🔄 fromJSON - Datos recibidos:', data);
+    console.log(' fromJSON - Datos recibidos:', data);
 
     // Si Sequelize manda dataValues, usarlo
     const source = data?.dataValues ?? data ?? {};
 
-    console.log('🔄 fromJSON - Datos normalizados:', source);
+    console.log(' fromJSON - Datos normalizados:', source);
 
     const idFormula = Number(
       source.id_formula ??
@@ -82,7 +82,7 @@ export class FormulaModel implements Formula {
       0
     );
 
-    console.log('🔄 fromJSON - ID final:', idFormula);
+    console.log(' fromJSON - ID final:', idFormula);
 
     return new FormulaModel({
       id_formula: idFormula,

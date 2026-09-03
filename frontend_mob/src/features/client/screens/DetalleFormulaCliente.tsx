@@ -57,7 +57,7 @@ export const DetalleFormulaCliente = () => {
     };
 
     return (
-        <ScrollView 
+        <ScrollView
             style={styles.container}
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator={false}

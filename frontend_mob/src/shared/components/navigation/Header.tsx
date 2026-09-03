@@ -11,6 +11,8 @@ import {
   Dimensions,
   SafeAreaView,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -211,6 +213,18 @@ export const Header = () => {
       route: 'Principal',
     });
 
+const role = getMainRole();
+  const esCliente = role === 'CLIENTE';
+
+  if (!isAuthenticated || esCliente) {
+    items.push({
+      id: 'contacto',
+      label: 'Enviar mensaje de contacto',
+      icon: 'chatbubble-outline',
+      route: 'ContactoScreen',
+    });
+  }
+
     // SI ESTÁ AUTENTICADO
 
     if (isAuthenticated && user) {
@@ -296,7 +310,7 @@ export const Header = () => {
           id: 'carrito',
           label: 'Carrito',
           icon: 'cart-outline',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         });
 
 
@@ -304,7 +318,7 @@ export const Header = () => {
           id: 'control-pedido',
           label: 'Mis Pedidos',
           icon: 'cube-outline',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         });
 
       }
@@ -342,6 +356,16 @@ export const Header = () => {
 
   return (
     <>
+
+    {/* ===============================================
+            STATUS BAR
+        =============================================== */}
+        <StatusBar
+          backgroundColor={COLORS.black}
+          barStyle="light-content"
+          translucent={false}
+        />
+
       {/* ===============================================
           HEADER
       =============================================== */}
@@ -602,6 +626,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
 
     paddingVertical: 10,
+
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
 
     minHeight: 60,
 

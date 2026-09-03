@@ -1,6 +1,7 @@
 // src/features/admin/screens/CatalogoAdmin.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import {
   View,
   Text,
@@ -15,7 +16,9 @@ import {
   Alert,
 } from 'react-native';
 
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+
 import { ProductController } from '../../../core/controllers/ProductController';
 import { ProductModel } from '../../../core/models/ProductModel';
 import { COLORS } from '../../../shared/constants/colors';
@@ -33,48 +36,269 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
+  const [buscando, setBuscando] = useState(false);
 
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
+
+  const [mostrarMarcas, setMostrarMarcas] = useState(false);
+    const [marcas, setMarcas] = useState<string[]>([]);
+    const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('Todas');
 
   const [categorias, setCategorias] = useState<string[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] =
     useState<string>('Todos');
 
-  const [orden, setOrden] = useState('Nuevo');
+  const [mostrarOrden, setMostrarOrden] = useState(false);
+    const [ordenSeleccionado, setOrdenSeleccionado] = useState('Nuevo');
+
+    const [precioMin, setPrecioMin] = useState('');
+    const [precioMax, setPrecioMax] = useState('');
 
   // CARGAR PRODUCTOS
-  useEffect(() => {
-    cargarProductos();
-    cargarCategorias();
-  }, []);
 
   const cargarProductos = async () => {
     try {
+
       setLoading(true);
+
       const data = await productController.getProductos();
+
       setProductos(data);
-      setProductosFiltrados(data);
+
+      const ordenados = [...data].sort((a, b) => b.id_producto - a.id_producto);
+
+      // Aplicar filtro de categoría Y marca
+      if (busqueda.trim() === '') {
+
+        if (categoriaSeleccionada === 'Todos' && marcaSeleccionada === 'Todas') {
+                  setProductosFiltrados(ordenados);
+                } else {
+                  let filtrados = [...ordenados];
+                  if (categoriaSeleccionada !== 'Todos') {
+                    filtrados = filtrados.filter(
+                      producto => producto.tipo_categoria === categoriaSeleccionada
+                    );
+                  }
+                  if (marcaSeleccionada !== 'Todas') {
+                    filtrados = filtrados.filter(
+                      producto => producto.marca === marcaSeleccionada
+                    );
+                  }
+                  setProductosFiltrados(filtrados);
+                }
+              }
+
     } catch (error) {
+
       console.error('Error cargando productos:', error);
+
     } finally {
+
       setLoading(false);
+
     }
   };
+
+  // CARGAR CATEGORÍAS
 
   const cargarCategorias = async () => {
+
     try {
+
       const data = await productController.getCategorias();
+
       setCategorias(data);
+
     } catch (error) {
+
       console.error('Error cargando categorías:', error);
+
     }
   };
 
-  // BÚSQUEDA
-  const limpiarBusqueda = () => {
-    setBusqueda('');
+const cargarMarcas = async () => {
+    try {
+      const data = await productController.getMarcas();
+      setMarcas(data);
+    } catch (error) {
+      console.error('Error cargando marcas:', error);
+    }
   };
+
+const ordenarProductos = (tipo: string) => {
+    setOrdenSeleccionado(tipo);
+    setMostrarOrden(false);
+
+    let productosBase = [...productos];
+
+    // Aplicar filtro de categoría si está seleccionada
+    if (categoriaSeleccionada !== 'Todos') {
+          productosBase = productosBase.filter(p => p.tipo_categoria === categoriaSeleccionada);
+        }
+        if (marcaSeleccionada !== 'Todas') {
+          productosBase = productosBase.filter(p => p.marca === marcaSeleccionada);
+        }
+
+    let ordenados = [];
+
+    switch (tipo) {
+      case 'Nuevo':
+        ordenados = productosBase.sort((a, b) => b.id_producto - a.id_producto);
+        break;
+      case 'Precio: menor a mayor':
+        ordenados = productosBase.sort((a, b) => a.precio - b.precio);
+        break;
+      case 'Precio: mayor a menor':
+        ordenados = productosBase.sort((a, b) => b.precio - a.precio);
+        break;
+      case 'Nombre A-Z':
+        ordenados = productosBase.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        break;
+      default:
+        ordenados = productosBase;
+    }
+
+    setProductosFiltrados(ordenados);
+  };
+
+const aplicarFiltrosAvanzados = async () => {
+    try {
+      setLoading(true);
+
+      const filtros: any = {};
+      if (precioMin && !isNaN(Number(precioMin))) {
+            filtros.precio_min = Number(precioMin);
+          }
+          if (precioMax && !isNaN(Number(precioMax))) {
+            filtros.precio_max = Number(precioMax);
+          }
+
+          console.log('Filtros enviados al backend:', filtros);
+
+          const resultados = await productController.filtrarProductos(filtros);
+          console.log(' Productos encontrados:', resultados.length);
+          console.log(' Datos de productos:', resultados);
+          setProductosFiltrados(resultados);
+          setMostrarFiltros(false);
+        } catch (error) {
+          console.error('Error aplicando filtros:', error);
+          Alert.alert('Error', 'Error al aplicar filtros');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+  // impiar filtros
+  const limpiarFiltros = () => {
+    setPrecioMin('');
+    setPrecioMax('');
+    cargarProductos();
+    setMostrarFiltros(false);
+  };
+
+  // RECARGAR CADA VEZ QUE SE VUELVE AL CATÁLOGO
+
+  useFocusEffect(
+      useCallback(() => {
+        cargarProductos();
+        cargarCategorias();
+        cargarMarcas();
+      }, [categoriaSeleccionada])
+    );
+
+  // BÚSQUEDA CON BACKEND
+
+  useEffect(() => {
+
+    const texto = busqueda.trim();
+
+    // volver a mostrar los productos cargados
+    if (texto === '') {
+
+      if (categoriaSeleccionada === 'Todos') {
+
+        setProductosFiltrados(productos);
+
+      } else {
+
+        const filtrados = productos.filter(
+          producto =>
+            producto.tipo_categoria === categoriaSeleccionada
+        );
+
+        setProductosFiltrados(filtrados);
+      }
+
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+
+      try {
+
+        setBuscando(true);
+
+        console.log('Buscando producto en backend:', texto);
+
+        const resultados =
+          await productController.buscarProductos(texto);
+
+        console.log(
+          'Resultados encontrados:',
+          resultados.length
+        );
+
+
+        // Aplicar también la categoría seleccionada
+        if (categoriaSeleccionada === 'Todos') {
+
+          setProductosFiltrados(resultados);
+
+        } else {
+
+          const filtrados = resultados.filter(
+            producto =>
+              producto.tipo_categoria === categoriaSeleccionada
+          );
+
+          setProductosFiltrados(filtrados);
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Error buscando productos:',
+          error
+        );
+
+        setProductosFiltrados([]);
+
+      } finally {
+
+        setBuscando(false);
+
+      }
+
+    }, 400);
+
+
+    return () => clearTimeout(timeout);
+
+  }, [busqueda, productos, categoriaSeleccionada]);
+
+
+  // ==========================================
+  // LIMPIAR BÚSQUEDA
+  // ==========================================
+  const limpiarBusqueda = () => {
+
+    setBusqueda('');
+
+  };
+
+  // FILTRAR POR CATEGORÍA
+
 
   const filtrarPorCategoria = (categoria: string) => {
     setCategoriaSeleccionada(categoria);
@@ -84,6 +308,18 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
       setProductosFiltrados(productos);
     } else {
       const filtrados = productos.filter(p => p.tipo_categoria === categoria);
+      setProductosFiltrados(filtrados);
+    }
+  };
+
+const filtrarPorMarca = (marca: string) => {
+    setMarcaSeleccionada(marca);
+    setMostrarMarcas(false);
+
+    if (marca === 'Todas') {
+      setProductosFiltrados(productos);
+    } else {
+      const filtrados = productos.filter(p => p.marca === marca);
       setProductosFiltrados(filtrados);
     }
   };
@@ -100,7 +336,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   // crear producto
   const irACrearProducto = () => {
-    navigation.navigate('CrearProductoAdmin' as never);
+    navigation.navigate('CrearProducto' as never);
   };
 
   // editar producto
@@ -261,6 +497,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         <View style={styles.toolsRow}>
 
           {/* CATEGORÍAS */}
+          <View style={styles.topRow}>
           <TouchableOpacity
             style={styles.categoriesButton}
             onPress={() => setMostrarCategorias(true)}
@@ -270,6 +507,16 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             <Text style={styles.categoriesButtonText}>Categorías</Text>
           </TouchableOpacity>
 
+          {/*Botón Marcas */}
+                      <TouchableOpacity
+                        style={styles.marcasButton}
+                        onPress={() => setMostrarMarcas(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="pricetag-outline" size={17} color={COLORS.white} />
+                        <Text style={styles.marcasButtonText}>Marcas</Text>
+                      </TouchableOpacity>
+
           {/* BOTÓN AGREGAR PRODUCTO */}
           <TouchableOpacity
             style={styles.addButton}
@@ -277,19 +524,24 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             activeOpacity={0.8}
           >
             <Ionicons name="add-circle-outline" size={17} color={COLORS.white} />
-            <Text style={styles.addButtonText}>Agregar</Text>
+            <Text style={styles.addButtonText}>Crear</Text>
           </TouchableOpacity>
+          </View>
 
           {/* ORDENAR */}
-          <TouchableOpacity style={styles.orderButton} onPress={() => {}} activeOpacity={0.8}>
-            <Ionicons name="swap-vertical-outline" size={16} color={COLORS.black} />
-            <Text style={styles.orderText}>{orden}</Text>
-            <Ionicons name="chevron-down" size={15} color={COLORS.black} />
-          </TouchableOpacity>
+          <TouchableOpacity
+                      style={styles.orderButton}
+                      onPress={() => setMostrarOrden(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="swap-vertical-outline" size={16} color={COLORS.black} />
+                      <Text style={styles.orderText}>{ordenSeleccionado}</Text>
+                      <Ionicons name="chevron-down" size={15} color={COLORS.black} />
+                    </TouchableOpacity>
 
-        </View>
+                  </View>
 
-      </View>
+                </View>
 
       {/* RESULTADOS */}
       <View style={styles.resultsHeader}>
@@ -384,6 +636,70 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         </View>
       </Modal>
 
+   {/* MODAL MARCAS */}
+        <Modal
+          visible={mostrarMarcas}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setMostrarMarcas(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.filterModal}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Marcas</Text>
+                <TouchableOpacity onPress={() => setMostrarMarcas(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.black} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <TouchableOpacity
+                  style={[
+                    styles.categoriaItem,
+                    marcaSeleccionada === 'Todas' && styles.categoriaItemActive,
+                  ]}
+                  onPress={() => filtrarPorMarca('Todas')}
+                >
+                  <Text
+                    style={[
+                      styles.categoriaItemText,
+                      marcaSeleccionada === 'Todas' && styles.categoriaItemTextActive,
+                    ]}
+                  >
+                    Todas las marcas
+                  </Text>
+                  {marcaSeleccionada === 'Todas' && (
+                    <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+
+                {marcas.map((marca) => (
+                  <TouchableOpacity
+                    key={marca}
+                    style={[
+                      styles.categoriaItem,
+                      marcaSeleccionada === marca && styles.categoriaItemActive,
+                    ]}
+                    onPress={() => filtrarPorMarca(marca)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoriaItemText,
+                        marcaSeleccionada === marca && styles.categoriaItemTextActive,
+                      ]}
+                    >
+                      {marca}
+                    </Text>
+                    {marcaSeleccionada === marca && (
+                      <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
       {/* MODAL FILTROS */}
       <Modal
         visible={mostrarFiltros}
@@ -394,7 +710,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         <View style={styles.modalOverlay}>
           <View style={styles.filterModal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filtrar productos</Text>
+              <Text style={styles.modalTitle}>Filtrar por precio</Text>
               <TouchableOpacity onPress={() => setMostrarFiltros(false)}>
                 <Ionicons name="close" size={24} color={COLORS.black} />
               </TouchableOpacity>
@@ -410,6 +726,8 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
                   placeholder="$0"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
+                  value={precioMin}
+                  onChangeText={setPrecioMin}
                 />
               </View>
               <View style={styles.priceInputContainer}>
@@ -419,39 +737,20 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
                   placeholder="$500.000"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
+                  value={precioMax}
+                  onChangeText={setPrecioMax}
                 />
               </View>
             </View>
 
-            {/* MARCA */}
-            <Text style={styles.filterTitle}>Marca</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar marca</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
-            {/* MATERIAL */}
-            <Text style={styles.filterTitle}>Material</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar material</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
-            {/* COLOR */}
-            <Text style={styles.filterTitle}>Color</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar color</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
             {/* BOTONES */}
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.clearFiltersButton}>
+              <TouchableOpacity style={styles.clearFiltersButton} onPress={limpiarFiltros}>
                 <Text style={styles.clearFiltersText}>Limpiar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyFiltersButton}
-                onPress={() => setMostrarFiltros(false)}
+                onPress={aplicarFiltrosAvanzados}
               >
                 <Text style={styles.applyFiltersText}>Aplicar filtros</Text>
               </TouchableOpacity>
@@ -459,6 +758,53 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
           </View>
         </View>
       </Modal>
+
+      {/* MODAL ORDENAMIENTO */}
+            <Modal
+              visible={mostrarOrden}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setMostrarOrden(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.filterModal}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Ordenar por</Text>
+                    <TouchableOpacity onPress={() => setMostrarOrden(false)}>
+                      <Ionicons name="close" size={24} color={COLORS.black} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {[
+                    { label: 'Nuevo', value: 'Nuevo' },
+                    { label: 'Precio: menor a mayor', value: 'Precio: menor a mayor' },
+                    { label: 'Precio: mayor a menor', value: 'Precio: mayor a menor' },
+                    { label: 'Nombre A-Z', value: 'Nombre A-Z' },
+                  ].map((opcion) => (
+                    <TouchableOpacity
+                      key={opcion.value}
+                      style={[
+                        styles.categoriaItem,
+                        ordenSeleccionado === opcion.value && styles.categoriaItemActive,
+                      ]}
+                      onPress={() => ordenarProductos(opcion.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.categoriaItemText,
+                          ordenSeleccionado === opcion.value && styles.categoriaItemTextActive,
+                        ]}
+                      >
+                        {opcion.label}
+                      </Text>
+                      {ordenSeleccionado === opcion.value && (
+                        <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </Modal>
 
     </View>
   );
@@ -507,12 +853,17 @@ const styles = StyleSheet.create({
   },
 
   toolsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     marginTop: 10,
-    gap: 6,
+    gap: 8,
   },
+
+topRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 10,
+},
 
   categoriesButton: {
     flexDirection: 'row',
@@ -520,9 +871,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
     borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
   },
 
   categoriesButtonText: {
@@ -531,15 +884,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+marcasButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  marcasButtonText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
   //  BOTÓN AGREGAR
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     borderRadius: 9,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
   },
 
   addButtonText: {
@@ -551,12 +924,14 @@ const styles = StyleSheet.create({
   orderButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#D7D7D7',
     borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    width: '100%',
   },
 
   orderText: {

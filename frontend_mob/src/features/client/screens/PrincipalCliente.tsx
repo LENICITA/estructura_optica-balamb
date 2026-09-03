@@ -105,8 +105,10 @@ export const PrincipalCliente = ({ navigation }: Props) => {
 
   const irProducto = (id: number) => {
     if (!id) return;
-    navigation.navigate('DetalleProducto', { id });
-  };
+    navigation.navigate('DetalleProductoCliente' as never, {
+        id_producto: Number(id),
+      } as never);
+    };
 
   if (loading) {
     return (
@@ -131,7 +133,7 @@ export const PrincipalCliente = ({ navigation }: Props) => {
           <View style={styles.bannerButtons}>
             <TouchableOpacity
               style={styles.btnCatalogo}
-              onPress={() => navigation.navigate('Catalogo')}
+              onPress={() => navigation.navigate('CatalogoCliente')}
             >
               <Ionicons name="glasses-outline" size={20} color={COLORS.primary} />
               <Text style={styles.btnCatalogoText}>Ver Catálogo</Text>
@@ -151,10 +153,10 @@ export const PrincipalCliente = ({ navigation }: Props) => {
           <Text style={styles.sectionTitle}>Categorías destacadas</Text>
           <View style={styles.categoriasGrid}>
             {[
-              { icon: 'glasses-outline', title: 'Monturas', action: 'Catalogo' },
-              { icon: 'sunny-outline', title: 'Gafas de Sol', action: 'Catalogo' },
+              { icon: 'glasses-outline', title: 'Monturas', action: 'CatalogoCliente' },
+              { icon: 'sunny-outline', title: 'Gafas de Sol', action: 'CatalogoCliente' },
               { icon: 'document-text-outline', title: 'Fórmula Médica', action: 'MisFormulasScreen' },
-              { icon: 'trending-up-outline', title: 'Más Vendidos', action: 'Catalogo' }
+              { icon: 'trending-up-outline', title: 'Más Vendidos', action: 'CatalogoCliente' }
             ].map((cat, idx) => (
               <TouchableOpacity
                 key={idx}
@@ -173,7 +175,7 @@ export const PrincipalCliente = ({ navigation }: Props) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Productos destacados</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Catalogo')}>
+            <TouchableOpacity onPress={() => navigation.navigate('CatalogoCliente')}>
               <Text style={styles.verTodosText}>Ver todos</Text>
             </TouchableOpacity>
           </View>

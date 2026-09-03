@@ -128,8 +128,8 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
   const eliminarFormula = (formula: FormulaModel) => {
     const estadoTexto = obtenerEstadoTexto(formula.estado);
-    const mensajeAdvertencia = estadoTexto === 'Aprobado' 
-      ? '\n\nEsta fórmula está APROBADA. ¿Estás seguro de eliminarla?' 
+    const mensajeAdvertencia = estadoTexto === 'Aprobado'
+      ? '\n\nEsta fórmula está APROBADA. ¿Estás seguro de eliminarla?'
       : '';
 
     Alert.alert(
@@ -146,7 +146,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
           onPress: async () => {
             try {
               Alert.alert('Eliminando...', 'Por favor espera un momento.');
-              
+
               const response = await formulaController.eliminarFormula(formula.id_formula);
 
               if (!response.success) {
@@ -167,9 +167,9 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
               );
             } catch (error: any) {
               console.error("Error al eliminar fórmula:", error);
-              
+
               let mensajeError = "No se pudo eliminar la fórmula. Intenta nuevamente.";
-              
+
               if (error?.response?.data?.message) {
                 mensajeError = error.response.data.message;
               } else if (error?.message) {
@@ -251,7 +251,7 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
                 style={styles.formulaCard}
                 activeOpacity={0.7}
                 onPress={() => {
-                  console.log('📱 Abriendo detalle de fórmula:', item.id_formula);
+                  console.log(' Abriendo detalle de fórmula:', item.id_formula);
                   navigation.navigate('DetalleFormulaCliente', {
                     id_formula: item.id_formula,
                   });
@@ -273,10 +273,10 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
 
                 <View style={styles.cardContent}>
                   <View style={[styles.statusContainer, { backgroundColor: estadoFondo(item.estado) }]}>
-                    <Ionicons 
-                      name={obtenerIconoEstado(item.estado)} 
-                      size={28} 
-                      color={obtenerColorIcono(item.estado)} 
+                    <Ionicons
+                      name={obtenerIconoEstado(item.estado)}
+                      size={28}
+                      color={obtenerColorIcono(item.estado)}
                     />
                     <Text style={[styles.statusText, { color: obtenerColorIcono(item.estado) }]}>
                       {obtenerEstadoTexto(item.estado)}
@@ -296,8 +296,8 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
             style={styles.createButton}
             onPress={() => {
               console.log('Navegando a CrearFormula con usuario:', user?.id_usuario);
-              navigation.navigate('CrearFormulaScreen', { 
-                id_usuario: user?.id_usuario 
+              navigation.navigate('CrearFormulaScreen', {
+                id_usuario: user?.id_usuario
               });
             }}
           >

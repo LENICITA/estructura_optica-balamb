@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
-import { useAuth } from '../../auth/context/AuthContext'; // ✅ Importar useAuth
+import { useAuth } from '../../auth/context/AuthContext';
 
 const COLORS = {
   primary: '#B90F0F',
@@ -41,14 +41,14 @@ interface Props {
 
 export const CrearFormulaScreen = ({ navigation, route }: Props) => {
   const formulaController = new FormulaController();
-  const { user } = useAuth(); // ✅ Obtener usuario del contexto
+  const { user } = useAuth();
 
-  // ✅ Obtener ID de los parámetros o del contexto
+  //  Obtener ID de los parámetros o del contexto
   const idUsuario = route?.params?.id_usuario ?? user?.id_usuario;
 
-  console.log('📝 CrearFormulaScreen - ID Usuario:', idUsuario);
-  console.log('📝 CrearFormulaScreen - Route params:', route?.params);
-  console.log('📝 CrearFormulaScreen - User ID:', user?.id_usuario);
+  console.log(' CrearFormulaScreen - ID Usuario:', idUsuario);
+  console.log(' CrearFormulaScreen - Route params:', route?.params);
+  console.log(' CrearFormulaScreen - User ID:', user?.id_usuario);
 
   const hoy = new Date().toISOString().split('T')[0];
 
@@ -89,7 +89,6 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
   };
 
   const subirFormula = async () => {
-    // ✅ Validar usuario
     if (!idUsuario) {
       Alert.alert('Error', 'No se pudo identificar al usuario.');
       return;
@@ -113,7 +112,7 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
     try {
       setSubiendo(true);
 
-      console.log('📤 Enviando fórmula con usuario ID:', idUsuario);
+      console.log(' Enviando fórmula con usuario ID:', idUsuario);
 
       const resultado = await formulaController.crearFormula({
         id_usuario: Number(idUsuario),
@@ -123,7 +122,7 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
         fecha_creacion: fecha,
       });
 
-      console.log('📊 Resultado creación:', resultado);
+      console.log(' Resultado creación:', resultado);
 
       if (!resultado.success) {
         Alert.alert('Error', resultado.message);
@@ -141,7 +140,7 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
         ]
       );
     } catch (error: any) {
-      console.error('❌ Error subiendo fórmula:', error);
+      console.error(' Error subiendo fórmula:', error);
       Alert.alert('Error', error?.message || 'No fue posible subir la fórmula.');
     } finally {
       setSubiendo(false);

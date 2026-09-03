@@ -10,8 +10,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { ProductController } from '../../../core/controllers/ProductController';
 import { ProductModel } from '../../../core/models/ProductModel';
@@ -62,8 +64,40 @@ export const DetalleProductoCliente = ({ navigation, route }: Props) => {
     if (cantidad > 1) setCantidad((prev) => prev - 1);
   };
 
-  const agregarAlCarrito = () => {
-    console.log(`Agregando ${cantidad} unidad(es) de ${producto?.nombre}`);
+  const agregarAlCarrito = async () => {
+    if (!producto) return;
+
+    try {
+      const carritoGuardado = await AsyncStorage.getItem('@carrito');
+      const carrito = carritoGuardado ? JSON.parse(carritoGuardado) : [];
+
+      const indexExistente = carrito.findIndex(
+        (item: any) => item.id_producto === producto.id_producto
+      );
+
+      if (indexExistente !== -1) {
+        carrito[indexExistente].cantidad += cantidad;
+      } else {
+        carrito.push({
+          id: Date.now(),
+          id_producto: producto.id_producto,
+          nombre: producto.nombre,
+          precio: producto.precio,
+          cantidad: cantidad,
+          imagen: producto.imagen_url || producto.imagen || '',
+          color: producto.color,
+          material: producto.material,
+          seleccionado: true,
+        });
+      }
+
+      await AsyncStorage.setItem('@carrito', JSON.stringify(carrito));
+      Alert.alert(' Éxito', `${producto.nombre} agregado al carrito`);
+
+    } catch (error) {
+      console.error('Error al agregar al carrito:', error);
+      Alert.alert(' Error', 'No se pudo agregar el producto al carrito');
+    }
   };
 
   if (loading) {

@@ -1,6 +1,6 @@
 import { COLORS } from '@/shared';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
     ScrollView,
     StyleSheet,
@@ -8,12 +8,18 @@ import {
     Text,
     View,
     Image,
-    TextInput
+    TextInput,
+    Modal,
+    Dimensions,
+    PanResponder,
+    Animated,
 } from 'react-native'
 import { Ionicons} from '@expo/vector-icons';
 
 import { FormulaController } from '@/core/controllers/FormulaController';
 import { FormulaModel } from '@/core/models/FormulaModel';
+
+const { width, height } = Dimensions.get('window');
 
 export const DetalleFormula = () => {
 
@@ -25,6 +31,10 @@ export const DetalleFormula = () => {
     const [formula, setFormula] = useState<FormulaModel | null>(null);
     const [loading, setLoading] = useState(true);
     const [costo, setCosto] = useState('');
+
+    const [imagenModalVisible, setImagenModalVisible] = useState(false);
+    const scale = useRef(new Animated.Value(1)).current;
+    const lastScale = useRef(1);
 
     const formulaController = new FormulaController();
 
@@ -56,8 +66,41 @@ export const DetalleFormula = () => {
         }
     };
 
+const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (evt, gestureState) => {
+      const { dy } = gestureState;
+      const newScale = lastScale.current + (dy * 0.01);
+      if (newScale >= 0.5 && newScale <= 3) {
+        scale.setValue(newScale);
+      }
+    },
+    onPanResponderRelease: () => {
+      lastScale.current = scale._value;
+    },
+  });
+
+  const abrirImagen = () => {
+    setImagenModalVisible(true);
+    scale.setValue(1);
+    lastScale.current = 1;
+  };
+
+  const cerrarImagen = () => {
+    setImagenModalVisible(false);
+    scale.setValue(1);
+    lastScale.current = 1;
+  };
+
+
     const cambiarCosto = async () => {
         try {
+            if (formula?.estado === 'Rechazado') {
+               console.error('No se puede asignar precio a una fórmula rechazada');
+               alert('No se puede asignar precio a una fórmula rechazada');
+            return;
+            }
             setLoading(true);
 
             if (!id_formula) {
@@ -99,6 +142,16 @@ export const DetalleFormula = () => {
     };
 
     const renderCostoSection = () => {
+
+        if (formula?.estado === 'Rechazado') {
+                return (
+                    <View style={styles.rechazadoContainer}>
+                        <Ionicons name="close-circle-outline" size={24} color="#DC2626" />
+                        <Text style={styles.rechazadoTexto}>Fórmula Rechazada - No se puede asignar precio</Text>
+                    </View>
+                );
+            }
+
         const tieneCosto = formula?.costo !== undefined && 
                            formula?.costo !== null && 
                            formula?.costo > 0;
@@ -130,6 +183,7 @@ export const DetalleFormula = () => {
     };
 
     return (
+        <>
         <ScrollView 
             style={styles.container}
             contentContainerStyle={styles.contentContainer}
@@ -150,12 +204,21 @@ export const DetalleFormula = () => {
 
                 </View>
                 <View>
-                    <View style={styles.imagenContainer}>
+                    <TouchableOpacity
+                        style={styles.imagenContainer}
+                        onPress={abrirImagen}
+                        activeOpacity={0.9}
+                    >
                         <Image
                             source={{uri: formula?.imagen_formula}}
                             style={styles.imagen}
+                            resizeMode="contain"
                         />
-                    </View>
+                        <View style={styles.zoomHint}>
+                            <Ionicons name="expand-outline" size={20} color="#FFFFFF" />
+                            <Text style={styles.zoomHintText}>Toca para ampliar</Text>
+                        </View>
+                    </TouchableOpacity>
                     <View style={styles.datoFormula}>
                         <Text style={styles.titulo}>Condición:</Text>
                         <Text style={styles.texto}>{formula?.condicion}</Text>
@@ -178,6 +241,36 @@ export const DetalleFormula = () => {
                 </View>
             </View>
         </ScrollView>
+
+        <Modal
+                visible={imagenModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={cerrarImagen}
+              >
+                <View style={styles.modalContainer}>
+                  <TouchableOpacity style={styles.modalCloseButton} onPress={cerrarImagen}>
+                    <Ionicons name="close-circle" size={40} color="#FFFFFF" />
+                  </TouchableOpacity>
+
+                  <Animated.View
+                    style={[styles.modalImageContainer, { transform: [{ scale }] }]}
+                    {...panResponder.panHandlers}
+                  >
+                    <Image
+                      source={{ uri: formula?.imagen_formula }}
+                      style={styles.modalImage}
+                      resizeMode="contain"
+                    />
+                  </Animated.View>
+
+                  <View style={styles.modalHint}>
+                    <Ionicons name="hand-left-outline" size={20} color="rgba(255,255,255,0.7)" />
+                    <Text style={styles.modalHintText}>Desliza para acercar/alejar</Text>
+                  </View>
+                </View>
+              </Modal>
+               </>
     )
 }
 
@@ -311,4 +404,71 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
     },
+  rechazadoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 4,
+    gap: 8,
+  },
+  rechazadoTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  zoomHint: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  zoomHintText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
+  },
+  modalImageContainer: {
+    width: width * 0.9,
+    height: height * 0.7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalHint: {
+    position: 'absolute',
+    bottom: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  modalHintText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+  },
 })

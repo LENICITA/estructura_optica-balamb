@@ -1,4 +1,4 @@
-                                                                                                                            // src/features/admin/screens/PerfilAdmin.tsx
+// src/features/admin/screens/PerfilAdmin.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -406,7 +406,7 @@ export const PerfilAdmin = ({ navigation }: Props) => {
             {/* VER FÓRMULAS */}
             <TouchableOpacity
               style={styles.btnFormula}
-              onPress={() => navigation.navigate('FormulaAdmin')}
+              onPress={() => navigation.navigate('GestionarFormulas')}
             >
               <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
               <Text style={styles.btnFormulaText}>Ver fórmulas</Text>

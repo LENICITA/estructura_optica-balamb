@@ -1,9 +1,9 @@
 // src/core/services/UserService.ts
 import { apiClient } from './ApiClient';
-import { 
-  ProfileResponse, 
-  UpdateProfileRequest, 
-  UpdateProfileResponse 
+import {
+  ProfileResponse,
+  UpdateProfileRequest,
+  UpdateProfileResponse
 } from '../models/UserModel';
 
 export class UserService {

@@ -5,7 +5,6 @@ export interface Role {
   nombre: string;
 }
 
-// ✅ MOVER ESTAS INTERFACES AQUÍ (desde UserService)
 export interface ProfileResponse {
   success: boolean;
   data: {
