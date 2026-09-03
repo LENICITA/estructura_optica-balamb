@@ -216,10 +216,6 @@ function EditarRepartidor({
       label: 'Inactivo',
       value: 'INACTIVO',
     },
-    {
-      label: 'Suspendido',
-      value: 'SUSPENDIDO',
-    },
   ];
 
   const TIPOS_VEHICULO = [

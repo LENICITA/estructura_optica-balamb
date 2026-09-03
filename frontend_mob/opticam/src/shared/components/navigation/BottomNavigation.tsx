@@ -88,7 +88,7 @@ export const BottomNavigation = () => {
           label: 'Pedidos',
           icon: 'cart-outline',
           activeIcon: 'cart',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
         },
         {
           label: 'Repartidores',

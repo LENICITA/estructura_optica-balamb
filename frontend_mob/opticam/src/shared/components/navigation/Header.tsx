@@ -257,7 +257,7 @@ const role = getMainRole();
           id: 'admin-pedidos',
           label: 'Pedidos',
           icon: 'cart-outline',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
           admin: true,
         });
 

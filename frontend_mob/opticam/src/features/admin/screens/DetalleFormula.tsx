@@ -13,6 +13,7 @@ import {
     Dimensions,
     PanResponder,
     Animated,
+    Alert,
 } from 'react-native'
 import { Ionicons} from '@expo/vector-icons';
 
@@ -31,6 +32,7 @@ export const DetalleFormula = () => {
     const [formula, setFormula] = useState<FormulaModel | null>(null);
     const [loading, setLoading] = useState(true);
     const [costo, setCosto] = useState('');
+    const [editandoCosto, setEditandoCosto] = useState(false);
 
     const [imagenModalVisible, setImagenModalVisible] = useState(false);
     const scale = useRef(new Animated.Value(1)).current;
@@ -55,6 +57,9 @@ export const DetalleFormula = () => {
 
             if (resultado) {
                 setFormula(resultado);
+                if (resultado.costo) {
+                    setCosto(resultado.costo.toString());
+                }
             } else {
                 console.error('No se encontró la fórmula');
             }
@@ -119,6 +124,7 @@ const panResponder = PanResponder.create({
             );
 
             if (resultadoCosto.success) {
+                if (formula?.estado === 'Pendiente') {
                 const resultadoEstado = await formulaController.actualizarEstadoFormula(
                     Number(id_formula),
                     'Aprobado'
@@ -127,9 +133,15 @@ const panResponder = PanResponder.create({
                 if (resultadoEstado.success) {
                     setCosto('');
                     await cargarFormula();
+                    setEditandoCosto(false);
                     console.log('Fórmula aprobada exitosamente');
                 } else {
                     console.error('Error al aprobar la fórmula:', resultadoEstado.message);
+                }
+                } else {
+                    await cargarFormula();
+                    setEditandoCosto(false);
+                    console.log('Costo actualizado exitosamente');
                 }
             } else {
                 console.error(resultadoCosto.message);
@@ -138,6 +150,38 @@ const panResponder = PanResponder.create({
             console.error('Error al cargar valor de formula', error);
         } finally {
             setLoading(false)
+        }
+    };
+
+    const handleEditarCosto = () => {
+        if (formula?.estado === 'Aprobado') {
+            Alert.alert(
+                'Modificar Precio',
+                '¿Está seguro que desea modificar el precio de esta fórmula?',
+                [
+                    {
+                        text: 'Cancelar',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Modificar',
+                        onPress: () => setEditandoCosto(true),
+                        style: 'default',
+                    },
+                ],
+                { cancelable: false }
+            );
+        } else {
+            setEditandoCosto(true);
+        }
+    };
+
+    const cancelarEdicion = () => {
+        setEditandoCosto(false);
+        if (formula?.costo) {
+            setCosto(formula.costo.toString());
+        } else {
+            setCosto('');
         }
     };
 
@@ -152,35 +196,53 @@ const panResponder = PanResponder.create({
                 );
             }
 
-        const tieneCosto = formula?.costo !== undefined && 
-                           formula?.costo !== null && 
-                           formula?.costo > 0;
-
-        if (tieneCosto) {
-            return (
-                <View style={styles.costoContainer}>
-                    <Text style={styles.costoTexto}>${formula.costo}</Text>
-                </View>
-            );
-        }
+        if (formula?.estado === 'Aprobado' && !editandoCosto) {
+                    return (
+                        <View style={styles.costoContainer}>
+                            <View style={styles.costoDisplay}>
+                                <Text style={styles.costoTexto}>${formula.costo}</Text>
+                                <Text style={styles.costoEstado}>Aprobado</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.botonEditarCosto}
+                                onPress={handleEditarCosto}
+                            >
+                                <Ionicons name="pencil-outline" size={20} color="#2563EB" />
+                                <Text style={styles.textoEditarCosto}>Modificar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                }
 
         return (
-            <>
-                <Text style={styles.sinCosto}>Sin costo asignado</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ingrese el costo"
-                    keyboardType="numeric"
-                    value={costo}
-                    onChangeText={setCosto}
-                />
-                <TouchableOpacity style={styles.botonEdit} onPress={cambiarCosto}>
-                    <Ionicons name="create-outline" size={20} color="#FFF" />
-                    <Text style={styles.textoEdit}>Asignar Valor</Text>
-                </TouchableOpacity>
-            </>
-        );
-    };
+                    <>
+                        <Text style={styles.sinCosto}>
+                            {formula?.estado === 'Pendiente' ? 'Pendiente de asignar costo' : 'Sin costo asignado'}
+                        </Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ingrese el costo"
+                            keyboardType="numeric"
+                            value={costo}
+                            onChangeText={setCosto}
+                        />
+                        <View style={styles.botonesContainer}>
+                            <TouchableOpacity style={styles.botonEdit} onPress={cambiarCosto}>
+                                <Ionicons name="create-outline" size={20} color="#FFF" />
+                                <Text style={styles.textoEdit}>
+                                    {formula?.estado === 'Aprobado' ? 'Actualizar Precio' : 'Asignar y Aprobar'}
+                                </Text>
+                            </TouchableOpacity>
+                            {editandoCosto && (
+                                <TouchableOpacity style={styles.botonCancelar} onPress={cancelarEdicion}>
+                                    <Ionicons name="close-outline" size={20} color="#FFF" />
+                                    <Text style={styles.textoCancelar}>Cancelar</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </>
+                );
+            };
 
     return (
         <>
@@ -359,6 +421,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         marginTop: 4,
+        justifyContent: 'space-between',
     },
     costoTexto: {
         fontSize: 18,
@@ -398,6 +461,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
+        flex: 1,
     },
     textoEdit: {
         color: "#FFF",
@@ -471,4 +535,58 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 14,
   },
+costoDisplay: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    costoEstado: {
+        fontSize: 12,
+        color: '#2E7D32',
+        backgroundColor: '#C8E6C9',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+    },
+    botonEditarCosto: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        gap: 4,
+    },
+    textoEditarCosto: {
+        color: '#2563EB',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    botonesContainer: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 4,
+    },
+    botonCancelar: {
+        backgroundColor: "#6B7280",
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 4,
+        marginBottom: 5,
+        flexDirection: "row",
+        gap: 10,
+        elevation: 3,
+        shadowColor: "#6B7280",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        flex: 1,
+    },
+    textoCancelar: {
+        color: "#FFF",
+        fontSize: 16,
+        fontWeight: "700",
+    },
 })

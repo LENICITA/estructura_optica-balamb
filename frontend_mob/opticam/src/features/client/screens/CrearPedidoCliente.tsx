@@ -18,6 +18,7 @@ import { useAuth } from '../../auth/context/AuthContext';
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { FormulaModel } from '../../../core/models/FormulaModel';
+import { UserController } from '../../../core/controllers/UserController';
 
 interface CarritoItem {
   id: number;
@@ -58,6 +59,7 @@ export const CrearPedidoCliente = ({ navigation, route }: Props) => {
 
   const pedidoController = new PedidoController();
   const formulaController = new FormulaController();
+  const userController = new UserController();
 
   useEffect(() => {
     cargarDatos();
@@ -79,6 +81,8 @@ export const CrearPedidoCliente = ({ navigation, route }: Props) => {
 
       setProductos(productosData);
       calcularSubtotal(productosData);
+
+      await cargarDireccionUsuario();
 
       // Obtener fórmulas aprobadas del usuario
       if (user?.id_usuario) {
@@ -105,6 +109,25 @@ export const CrearPedidoCliente = ({ navigation, route }: Props) => {
       Alert.alert('Error', 'Error al cargar los datos');
     } finally {
       setLoading(false);
+    }
+  };
+
+const cargarDireccionUsuario = async () => {
+    try {
+      const userProfile = await userController.getProfile();
+
+      if (userProfile) {
+        if (userProfile.direccion) {
+          setDireccion(userProfile.direccion);
+        }
+        if (userProfile.ciudad) {
+          setCiudad(userProfile.ciudad);
+          const envio = calcularCostoEnvio(userProfile.ciudad);
+          setCostoEnvio(envio);
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando dirección del usuario:', error);
     }
   };
 
@@ -180,17 +203,20 @@ export const CrearPedidoCliente = ({ navigation, route }: Props) => {
         await AsyncStorage.removeItem('@carrito');
         await AsyncStorage.removeItem('carrito_seleccionado');
 
+const idPedidoCreado = result.data?.id_pedido;
+
         Alert.alert(
           ' Pedido creado',
-          'Tu pedido ha sido creado exitosamente. Puedes pagarlo ahora o después.',
+          'Tu pedido ha sido creado exitosamente. ¿Qué deseas hacer ahora?',
           [
             {
               text: 'Ver mis pedidos',
               onPress: () => navigation.navigate('MisPedidosCliente' as never),
             },
             {
-              text: 'Ir a pagar',
-              onPress: () => navigation.navigate('PagosCliente' as never, { id_pedido: result.data?.id_pedido }),
+              text: 'Pagar ahora',
+              onPress: () => navigation.navigate('PagosCliente' as never, { id_pedido: idPedidoCreado }),
+            style: 'default',
             },
           ]
         );
@@ -247,23 +273,41 @@ export const CrearPedidoCliente = ({ navigation, route }: Props) => {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Dirección de entrega</Text>
 
-        <Text style={styles.label}>Dirección *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Calle, número, barrio..."
-          placeholderTextColor="#999"
-          value={direccion}
-          onChangeText={setDireccion}
-        />
+        <View style={styles.direccionHeader}>
+                  <Text style={styles.label}>Dirección *</Text>
+                  <TouchableOpacity
+                    style={styles.cargarDireccionButton}
+                    onPress={cargarDireccionUsuario}
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={COLORS.primary} />
+                    <Text style={styles.cargarDireccionText}>Usar mi dirección guardada</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Calle, número, barrio..."
+                  placeholderTextColor="#999"
+                  value={direccion}
+                  onChangeText={setDireccion}
+                />
 
-        <Text style={styles.label}>Ciudad de envío *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej: Bogotá, Medellín..."
-          placeholderTextColor="#999"
-          value={ciudad}
-          onChangeText={handleCiudadChange}
-        />
+                <Text style={styles.label}>Ciudad de envío *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ej: Bogotá, Medellín..."
+                  placeholderTextColor="#999"
+                  value={ciudad}
+                  onChangeText={handleCiudadChange}
+                />
+
+                {/* Indicador de costo de envío */}
+                {ciudad.trim() && (
+                  <Text style={styles.costoEnvioText}>
+                    {calcularCostoEnvio(ciudad) === 0
+                      ? ' Envío gratis en Bogotá'
+                      : ` Costo de envío: $${calcularCostoEnvio(ciudad).toLocaleString()}`}
+                  </Text>
+                )}
       </View>
 
       {/* FÓRMULA */}
@@ -625,5 +669,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+direccionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cargarDireccionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  cargarDireccionText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  costoEnvioText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: -8,
+    marginBottom: 4,
+    paddingLeft: 4,
   },
 });

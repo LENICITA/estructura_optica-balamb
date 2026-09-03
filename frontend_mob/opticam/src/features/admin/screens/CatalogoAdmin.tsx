@@ -336,12 +336,12 @@ const filtrarPorMarca = (marca: string) => {
 
   // crear producto
   const irACrearProducto = () => {
-    navigation.navigate('CrearProductoAdmin' as never);
+    navigation.navigate('CrearProducto' as never);
   };
 
   // editar producto
   const irAEditarProducto = (producto: ProductModel) => {
-    navigation.navigate('EditarProductoAdmin' as never, {
+    navigation.navigate('EditarProducto' as never, {
       id_producto: Number(producto.id_producto),
     } as never);
   };
