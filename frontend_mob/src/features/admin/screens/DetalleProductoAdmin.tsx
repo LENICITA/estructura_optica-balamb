@@ -84,7 +84,7 @@ export const DetalleProductoAdmin = ({ navigation, route,}: Props) => {
 
   const irAEditarProducto = () => {
 
-    navigation.navigate('EditarProductoAdmin' as never, {
+    navigation.navigate('EditarProducto' as never, {
       id_producto: Number(id_producto),
     } as never);
 
@@ -160,7 +160,7 @@ export const DetalleProductoAdmin = ({ navigation, route,}: Props) => {
   };
 
   // LOADING
-  
+
   if (loading) {
 
     return (

@@ -386,7 +386,7 @@ const handleDateChange = (event: any, selectedDate?: Date) => {
 
             <TouchableOpacity
               style={styles.btnFormula}
-              onPress={() => navigation.navigate('Formula')}
+              onPress={() => navigation.navigate('MisFormulasScreen')}
             >
               <Ionicons name="document-text-outline" size={18} color={COLORS.primary} />
               <Text style={styles.btnFormulaText}>Mis fórmulas</Text>

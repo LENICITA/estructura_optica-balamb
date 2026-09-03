@@ -41,11 +41,19 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
+  const [mostrarMarcas, setMostrarMarcas] = useState(false);
+    const [marcas, setMarcas] = useState<string[]>([]);
+    const [marcaSeleccionada, setMarcaSeleccionada] = useState<string>('Todas');
+
   const [categorias, setCategorias] = useState<string[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] =
     useState<string>('Todos');
 
-  const [orden, setOrden] = useState('Nuevo');
+  const [mostrarOrden, setMostrarOrden] = useState(false);
+    const [ordenSeleccionado, setOrdenSeleccionado] = useState('Nuevo');
+
+    const [precioMin, setPrecioMin] = useState('');
+    const [precioMax, setPrecioMax] = useState('');
 
   // CARGAR PRODUCTOS
 
@@ -58,23 +66,28 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
       setProductos(data);
 
-      // Si no hay búsqueda, mostrar los productos normalmente
+      const ordenados = [...data].sort((a, b) => b.id_producto - a.id_producto);
+
+      // Aplicar filtro de categoría Y marca
       if (busqueda.trim() === '') {
 
-        if (categoriaSeleccionada === 'Todos') {
-
-          setProductosFiltrados(data);
-
-        } else {
-
-          const filtrados = data.filter(
-            producto =>
-              producto.tipo_categoria === categoriaSeleccionada
-          );
-
-          setProductosFiltrados(filtrados);
-        }
-      }
+        if (categoriaSeleccionada === 'Todos' && marcaSeleccionada === 'Todas') {
+                  setProductosFiltrados(ordenados);
+                } else {
+                  let filtrados = [...ordenados];
+                  if (categoriaSeleccionada !== 'Todos') {
+                    filtrados = filtrados.filter(
+                      producto => producto.tipo_categoria === categoriaSeleccionada
+                    );
+                  }
+                  if (marcaSeleccionada !== 'Todas') {
+                    filtrados = filtrados.filter(
+                      producto => producto.marca === marcaSeleccionada
+                    );
+                  }
+                  setProductosFiltrados(filtrados);
+                }
+              }
 
     } catch (error) {
 
@@ -104,16 +117,95 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
     }
   };
 
+const cargarMarcas = async () => {
+    try {
+      const data = await productController.getMarcas();
+      setMarcas(data);
+    } catch (error) {
+      console.error('Error cargando marcas:', error);
+    }
+  };
+
+const ordenarProductos = (tipo: string) => {
+    setOrdenSeleccionado(tipo);
+    setMostrarOrden(false);
+
+    let productosBase = [...productos];
+
+    // Aplicar filtro de categoría si está seleccionada
+    if (categoriaSeleccionada !== 'Todos') {
+          productosBase = productosBase.filter(p => p.tipo_categoria === categoriaSeleccionada);
+        }
+        if (marcaSeleccionada !== 'Todas') {
+          productosBase = productosBase.filter(p => p.marca === marcaSeleccionada);
+        }
+
+    let ordenados = [];
+
+    switch (tipo) {
+      case 'Nuevo':
+        ordenados = productosBase.sort((a, b) => b.id_producto - a.id_producto);
+        break;
+      case 'Precio: menor a mayor':
+        ordenados = productosBase.sort((a, b) => a.precio - b.precio);
+        break;
+      case 'Precio: mayor a menor':
+        ordenados = productosBase.sort((a, b) => b.precio - a.precio);
+        break;
+      case 'Nombre A-Z':
+        ordenados = productosBase.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        break;
+      default:
+        ordenados = productosBase;
+    }
+
+    setProductosFiltrados(ordenados);
+  };
+
+const aplicarFiltrosAvanzados = async () => {
+    try {
+      setLoading(true);
+
+      const filtros: any = {};
+      if (precioMin && !isNaN(Number(precioMin))) {
+            filtros.precio_min = Number(precioMin);
+          }
+          if (precioMax && !isNaN(Number(precioMax))) {
+            filtros.precio_max = Number(precioMax);
+          }
+
+          console.log('Filtros enviados al backend:', filtros);
+
+          const resultados = await productController.filtrarProductos(filtros);
+          console.log(' Productos encontrados:', resultados.length);
+          console.log(' Datos de productos:', resultados);
+          setProductosFiltrados(resultados);
+          setMostrarFiltros(false);
+        } catch (error) {
+          console.error('Error aplicando filtros:', error);
+          Alert.alert('Error', 'Error al aplicar filtros');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+  // impiar filtros
+  const limpiarFiltros = () => {
+    setPrecioMin('');
+    setPrecioMax('');
+    cargarProductos();
+    setMostrarFiltros(false);
+  };
+
   // RECARGAR CADA VEZ QUE SE VUELVE AL CATÁLOGO
 
   useFocusEffect(
-    useCallback(() => {
-
-      cargarProductos();
-      cargarCategorias();
-
-    }, [categoriaSeleccionada])
-  );
+      useCallback(() => {
+        cargarProductos();
+        cargarCategorias();
+        cargarMarcas();
+      }, [categoriaSeleccionada])
+    );
 
   // BÚSQUEDA CON BACKEND
 
@@ -207,7 +299,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   // FILTRAR POR CATEGORÍA
 
-  
+
   const filtrarPorCategoria = (categoria: string) => {
     setCategoriaSeleccionada(categoria);
     setMostrarCategorias(false);
@@ -216,6 +308,18 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
       setProductosFiltrados(productos);
     } else {
       const filtrados = productos.filter(p => p.tipo_categoria === categoria);
+      setProductosFiltrados(filtrados);
+    }
+  };
+
+const filtrarPorMarca = (marca: string) => {
+    setMarcaSeleccionada(marca);
+    setMostrarMarcas(false);
+
+    if (marca === 'Todas') {
+      setProductosFiltrados(productos);
+    } else {
+      const filtrados = productos.filter(p => p.marca === marca);
       setProductosFiltrados(filtrados);
     }
   };
@@ -232,12 +336,12 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
   // crear producto
   const irACrearProducto = () => {
-    navigation.navigate('CrearProductoAdmin' as never);
+    navigation.navigate('CrearProducto' as never);
   };
 
   // editar producto
   const irAEditarProducto = (producto: ProductModel) => {
-    navigation.navigate('EditarProductoAdmin' as never, {
+    navigation.navigate('EditarProducto' as never, {
       id_producto: Number(producto.id_producto),
     } as never);
   };
@@ -403,6 +507,16 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             <Text style={styles.categoriesButtonText}>Categorías</Text>
           </TouchableOpacity>
 
+          {/*Botón Marcas */}
+                      <TouchableOpacity
+                        style={styles.marcasButton}
+                        onPress={() => setMostrarMarcas(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="pricetag-outline" size={17} color={COLORS.white} />
+                        <Text style={styles.marcasButtonText}>Marcas</Text>
+                      </TouchableOpacity>
+
           {/* BOTÓN AGREGAR PRODUCTO */}
           <TouchableOpacity
             style={styles.addButton}
@@ -410,20 +524,24 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
             activeOpacity={0.8}
           >
             <Ionicons name="add-circle-outline" size={17} color={COLORS.white} />
-            <Text style={styles.addButtonText}>Crear Producto</Text>
+            <Text style={styles.addButtonText}>Crear</Text>
           </TouchableOpacity>
           </View>
 
           {/* ORDENAR */}
-          <TouchableOpacity style={styles.orderButton} onPress={() => {}} activeOpacity={0.8}>
-            <Ionicons name="swap-vertical-outline" size={16} color={COLORS.black} />
-            <Text style={styles.orderText}>{orden}</Text>
-            <Ionicons name="chevron-down" size={15} color={COLORS.black} />
-          </TouchableOpacity>
+          <TouchableOpacity
+                      style={styles.orderButton}
+                      onPress={() => setMostrarOrden(true)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="swap-vertical-outline" size={16} color={COLORS.black} />
+                      <Text style={styles.orderText}>{ordenSeleccionado}</Text>
+                      <Ionicons name="chevron-down" size={15} color={COLORS.black} />
+                    </TouchableOpacity>
 
-        </View>
+                  </View>
 
-      </View>
+                </View>
 
       {/* RESULTADOS */}
       <View style={styles.resultsHeader}>
@@ -518,6 +636,70 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         </View>
       </Modal>
 
+   {/* MODAL MARCAS */}
+        <Modal
+          visible={mostrarMarcas}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setMostrarMarcas(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.filterModal}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Marcas</Text>
+                <TouchableOpacity onPress={() => setMostrarMarcas(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.black} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <TouchableOpacity
+                  style={[
+                    styles.categoriaItem,
+                    marcaSeleccionada === 'Todas' && styles.categoriaItemActive,
+                  ]}
+                  onPress={() => filtrarPorMarca('Todas')}
+                >
+                  <Text
+                    style={[
+                      styles.categoriaItemText,
+                      marcaSeleccionada === 'Todas' && styles.categoriaItemTextActive,
+                    ]}
+                  >
+                    Todas las marcas
+                  </Text>
+                  {marcaSeleccionada === 'Todas' && (
+                    <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+
+                {marcas.map((marca) => (
+                  <TouchableOpacity
+                    key={marca}
+                    style={[
+                      styles.categoriaItem,
+                      marcaSeleccionada === marca && styles.categoriaItemActive,
+                    ]}
+                    onPress={() => filtrarPorMarca(marca)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoriaItemText,
+                        marcaSeleccionada === marca && styles.categoriaItemTextActive,
+                      ]}
+                    >
+                      {marca}
+                    </Text>
+                    {marcaSeleccionada === marca && (
+                      <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
       {/* MODAL FILTROS */}
       <Modal
         visible={mostrarFiltros}
@@ -528,7 +710,7 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
         <View style={styles.modalOverlay}>
           <View style={styles.filterModal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filtrar productos</Text>
+              <Text style={styles.modalTitle}>Filtrar por precio</Text>
               <TouchableOpacity onPress={() => setMostrarFiltros(false)}>
                 <Ionicons name="close" size={24} color={COLORS.black} />
               </TouchableOpacity>
@@ -544,6 +726,8 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
                   placeholder="$0"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
+                  value={precioMin}
+                  onChangeText={setPrecioMin}
                 />
               </View>
               <View style={styles.priceInputContainer}>
@@ -553,39 +737,20 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
                   placeholder="$500.000"
                   placeholderTextColor={COLORS.gray}
                   keyboardType="numeric"
+                  value={precioMax}
+                  onChangeText={setPrecioMax}
                 />
               </View>
             </View>
 
-            {/* MARCA */}
-            <Text style={styles.filterTitle}>Marca</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar marca</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
-            {/* MATERIAL */}
-            <Text style={styles.filterTitle}>Material</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar material</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
-            {/* COLOR */}
-            <Text style={styles.filterTitle}>Color</Text>
-            <TouchableOpacity style={styles.selectButton}>
-              <Text style={styles.selectText}>Seleccionar color</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.gray} />
-            </TouchableOpacity>
-
             {/* BOTONES */}
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.clearFiltersButton}>
+              <TouchableOpacity style={styles.clearFiltersButton} onPress={limpiarFiltros}>
                 <Text style={styles.clearFiltersText}>Limpiar</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyFiltersButton}
-                onPress={() => setMostrarFiltros(false)}
+                onPress={aplicarFiltrosAvanzados}
               >
                 <Text style={styles.applyFiltersText}>Aplicar filtros</Text>
               </TouchableOpacity>
@@ -593,6 +758,53 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
           </View>
         </View>
       </Modal>
+
+      {/* MODAL ORDENAMIENTO */}
+            <Modal
+              visible={mostrarOrden}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setMostrarOrden(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.filterModal}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Ordenar por</Text>
+                    <TouchableOpacity onPress={() => setMostrarOrden(false)}>
+                      <Ionicons name="close" size={24} color={COLORS.black} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {[
+                    { label: 'Nuevo', value: 'Nuevo' },
+                    { label: 'Precio: menor a mayor', value: 'Precio: menor a mayor' },
+                    { label: 'Precio: mayor a menor', value: 'Precio: mayor a menor' },
+                    { label: 'Nombre A-Z', value: 'Nombre A-Z' },
+                  ].map((opcion) => (
+                    <TouchableOpacity
+                      key={opcion.value}
+                      style={[
+                        styles.categoriaItem,
+                        ordenSeleccionado === opcion.value && styles.categoriaItemActive,
+                      ]}
+                      onPress={() => ordenarProductos(opcion.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.categoriaItemText,
+                          ordenSeleccionado === opcion.value && styles.categoriaItemTextActive,
+                        ]}
+                      >
+                        {opcion.label}
+                      </Text>
+                      {ordenSeleccionado === opcion.value && (
+                        <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </Modal>
 
     </View>
   );
@@ -670,6 +882,24 @@ topRow: {
     color: COLORS.primary,
     fontSize: 12,
     fontWeight: '600',
+  },
+
+marcasButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  marcasButtonText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   //  BOTÓN AGREGAR

@@ -1,9 +1,6 @@
 // src/core/models/FormulaModel.ts
 
-export type EstadoFormula =
-  | 'PENDIENTE'
-  | 'APROBADO'
-  | 'RECHAZADO';
+export type EstadoFormula = 'Pendiente' | 'Aprobado' | 'Rechazado';
 
 export interface Formula {
   id_formula: number;
@@ -14,11 +11,9 @@ export interface Formula {
   fecha_creacion: string;
   estado: EstadoFormula;
   costo: number;
-
-  // Información del cliente
-  nombre_completo?: string;
-  email?: string;
-  telefono?: string;
+  nombre_completo: string;
+  telefono: string;
+  email: string;
 }
 
 export class FormulaModel implements Formula {
@@ -30,11 +25,9 @@ export class FormulaModel implements Formula {
   fecha_creacion: string;
   estado: EstadoFormula;
   costo: number;
-
-  // Información del cliente
-  nombre_completo?: string;
-  email?: string;
-  telefono?: string;
+  nombre_completo: string;
+  telefono: string;
+  email: string;
 
   constructor(data: Formula) {
     this.id_formula = data.id_formula;
@@ -45,148 +38,64 @@ export class FormulaModel implements Formula {
     this.fecha_creacion = data.fecha_creacion;
     this.estado = data.estado;
     this.costo = data.costo;
-
-    // Información del cliente
     this.nombre_completo = data.nombre_completo;
-    this.email = data.email;
     this.telefono = data.telefono;
+    this.email = data.email;
 
-    console.log('🏗️ FormulaModel creado:', {
+    console.log(' FormulaModel creado:', {
       id_formula: this.id_formula,
-      id_usuario: this.id_usuario,
       condicion: this.condicion,
-      estado: this.estado,
-      nombre_completo: this.nombre_completo,
-      email: this.email,
-      telefono: this.telefono,
+      estado: this.estado
     });
   }
-
-  // ============================================
-  // COSTO FORMATEADO
-  // ============================================
 
   get costoFormateado(): string {
     if (!this.costo || this.costo === 0) {
       return '$0';
     }
-
     return `$${this.costo.toLocaleString('es-CO')}`;
   }
 
-  // ============================================
-  // ESTADO EN TEXTO
-  // ============================================
-
   get estadoTexto(): string {
     switch (this.estado) {
-      case 'APROBADO':
+      case 'Aprobado':
         return 'Aprobado';
-
-      case 'RECHAZADO':
+      case 'Rechazado':
         return 'Rechazado';
-
-      case 'PENDIENTE':
       default:
         return 'Pendiente';
     }
   }
 
-  // ============================================
-  // CREAR MODELO DESDE JSON
-  // ============================================
-
   static fromJSON(data: any): FormulaModel {
-    console.log(
-      '🔄 FormulaModel.fromJSON - Datos recibidos:',
-      data
-    );
+    console.log(' fromJSON - Datos recibidos:', data);
 
-    // Sequelize puede enviar dataValues
+    // Si Sequelize manda dataValues, usarlo
     const source = data?.dataValues ?? data ?? {};
 
-    console.log(
-      '🔄 FormulaModel.fromJSON - Datos normalizados:',
-      source
-    );
-
-    // ============================================
-    // ID DE LA FÓRMULA
-    // ============================================
+    console.log(' fromJSON - Datos normalizados:', source);
 
     const idFormula = Number(
       source.id_formula ??
-        source.id_Formula ??
-        source.id ??
-        0
+      source.id_Formula ??
+      source.id ??
+      0
     );
 
-    console.log(
-      '🔄 FormulaModel.fromJSON - ID final:',
-      idFormula
-    );
-
-    // ============================================
-    // CREAR MODELO
-    // ============================================
+    console.log(' fromJSON - ID final:', idFormula);
 
     return new FormulaModel({
       id_formula: idFormula,
-
-      id_usuario: Number(
-        source.id_usuario ??
-          source.usuario_id ??
-          0
-      ),
-
-      condicion:
-        source.condicion ?? '',
-
-      imagen_formula:
-        source.imagen_formula ??
-        source.imagen_url ??
-        source.imagen ??
-        '',
-
-      observaciones:
-        source.observaciones ??
-        source.descripcion ??
-        '',
-
-      fecha_creacion:
-        source.fecha_creacion ??
-        source.fecha ??
-        new Date()
-          .toISOString()
-          .split('T')[0],
-
-      costo: Number(
-        source.costo ?? 0
-      ),
-
-      estado:
-        (
-          source.estado ??
-          'PENDIENTE'
-        ).toUpperCase() as EstadoFormula,
-
-      // ========================================
-      // INFORMACIÓN DEL CLIENTE
-      // Viene del JOIN del backend
-      // ========================================
-
-      nombre_completo:
-        source.nombre_completo ??
-        source.nombre ??
-        '',
-
-      email:
-        source.email ??
-        '',
-
-      telefono:
-        source.telefono ??
-        '',
+      id_usuario: Number(source.id_usuario ?? source.usuario_id ?? 0),
+      condicion: source.condicion ?? '',
+      imagen_formula: source.imagen_formula ?? source.imagen_url ?? source.imagen ?? '',
+      observaciones: source.observaciones ?? source.descripcion ?? '',
+      fecha_creacion: source.fecha_creacion ?? source.fecha ?? new Date().toISOString().split('T')[0],
+      costo: Number(source.costo ?? 0),
+      estado: (source.estado ?? 'Pendiente') as EstadoFormula,
+      nombre_completo: source.nombre_completo,
+      telefono: source.telefono,
+      email: source.email,
     });
   }
 }

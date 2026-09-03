@@ -355,7 +355,7 @@ export const solicitarRecuperacion = async (req, res) => {
                 
                 // Enviar al admin
                 await enviarCorreoRecuperacion({
-                    emailDestino: process.env.ADMIN_EMAIL || 'opticampostman@gmail.com',
+                    emailDestino: process.env.CONTACT_EMAIL || 'opticampostman@gmail.com',
                     nombre: usuario.nombre_completo,
                     resetLink,
                     emailOriginal: usuario.email,

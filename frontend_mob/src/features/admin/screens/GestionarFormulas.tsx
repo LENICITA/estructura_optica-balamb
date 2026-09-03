@@ -1,5 +1,3 @@
-// src/screens/admin/GestionarFormulas.tsx
-
 import React, {
   useCallback,
   useMemo,
@@ -16,6 +14,7 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -48,16 +47,12 @@ export default function GestionarFormulas() {
   const [filtroEstado, setFiltroEstado] =
     useState<FiltroEstado>('TODAS');
 
-  // ============================================================
-  // CARGAR FÓRMULAS
-  // ============================================================
 
   const cargarFormulas = useCallback(async () => {
     try {
       setError(null);
 
-      const data =
-        await formulaController.getTodasLasFormulas();
+      const data = await formulaController.getTodasLasFormulas();
 
       if (!Array.isArray(data)) {
         setFormulas([]);
@@ -66,10 +61,7 @@ export default function GestionarFormulas() {
 
       setFormulas(data);
     } catch (err: any) {
-      console.error(
-        'Error cargando fórmulas:',
-        err
-      );
+      console.error('Error cargando fórmulas:', err);
 
       setError(
         err?.message ||
@@ -83,10 +75,6 @@ export default function GestionarFormulas() {
     }
   }, []);
 
-  // ============================================================
-  // CARGAR AL ENTRAR
-  // ============================================================
-
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
@@ -94,18 +82,12 @@ export default function GestionarFormulas() {
     }, [cargarFormulas])
   );
 
-  // ============================================================
-  // REFRESH
-  // ============================================================
 
   const onRefresh = () => {
     setRefreshing(true);
     cargarFormulas();
   };
 
-  // ============================================================
-  // FILTRAR
-  // ============================================================
 
   const formulasFiltradas = useMemo(() => {
     let resultado = [...formulas];
@@ -118,73 +100,44 @@ export default function GestionarFormulas() {
     }
 
     if (busqueda.trim()) {
-      const texto =
-        busqueda.toLowerCase().trim();
+      const texto = busqueda.toLowerCase().trim();
 
       resultado = resultado.filter(
         formula => {
           return (
-            String(formula.id_formula)
-              .includes(texto) ||
-
-            String(formula.id_usuario)
-              .includes(texto) ||
-
-            formula.condicion
-              ?.toLowerCase()
-              .includes(texto) ||
-
-            formula.nombre_completo
-              ?.toLowerCase()
-              .includes(texto) ||
-
-            formula.email
-              ?.toLowerCase()
-              .includes(texto) ||
-
-            formula.telefono
-              ?.toLowerCase()
-              .includes(texto)
+            String(formula.id_formula).includes(texto) ||
+            String(formula.id_usuario).includes(texto) ||
+            formula.condicion?.toLowerCase().includes(texto) ||
+            formula.nombre_completo?.toLowerCase().includes(texto) ||
+            formula.email?.toLowerCase().includes(texto) ||
+            formula.telefono?.toLowerCase().includes(texto)
           );
         }
       );
     }
 
     return resultado;
-  }, [
-    formulas,
-    busqueda,
-    filtroEstado,
-  ]);
+  }, [formulas, busqueda, filtroEstado]);
 
-  // ============================================================
-  // ESTADÍSTICAS
-  // ============================================================
 
   const totalFormulas = formulas.length;
 
   const pendientes = formulas.filter(
     formula =>
-      formula.estado === 'PENDIENTE'
+      formula.estado === 'Pendiente'
   ).length;
 
   const aprobadas = formulas.filter(
     formula =>
-      formula.estado === 'APROBADO'
+      formula.estado === 'Aprobado'
   ).length;
 
   const rechazadas = formulas.filter(
     formula =>
-      formula.estado === 'RECHAZADO'
+      formula.estado === 'Rechazado'
   ).length;
 
-  // ============================================================
-  // ABRIR DETALLE
-  // ============================================================
-
-  const abrirFormula = (
-    formula: FormulaModel
-  ) => {
+  const abrirFormula = (formula: FormulaModel) => {
     navigation.navigate(
       'DetalleFormula',
       {
@@ -193,91 +146,119 @@ export default function GestionarFormulas() {
     );
   };
 
-  // ============================================================
-  // COLOR ESTADO
-  // ============================================================
 
-  const getEstadoColor = (
-    estado: EstadoFormula
-  ) => {
+  const getEstadoColor = (estado: EstadoFormula) => {
     switch (estado) {
-      case 'APROBADO':
+      case 'Aprobado':
         return '#16A34A';
-
-      case 'RECHAZADO':
+      case 'Rechazado':
         return '#DC2626';
-
       default:
         return '#D97706';
     }
   };
 
-  // ============================================================
-  // FONDO ESTADO
-  // ============================================================
 
-  const getEstadoBackground = (
-    estado: EstadoFormula
-  ) => {
+  const getEstadoBackground = (estado: EstadoFormula) => {
     switch (estado) {
-      case 'APROBADO':
+      case 'Aprobado':
         return '#DCFCE7';
-
-      case 'RECHAZADO':
+      case 'Rechazado':
         return '#FEE2E2';
-
       default:
         return '#FEF3C7';
     }
   };
 
-  // ============================================================
-  // ICONO ESTADO
-  // ============================================================
 
-  const getEstadoIcon = (
-    estado: EstadoFormula
-  ):
+  const getEstadoIcon = (estado: EstadoFormula):
     | 'time-outline'
     | 'checkmark-circle-outline'
     | 'close-circle-outline' => {
     switch (estado) {
-      case 'APROBADO':
+      case 'Aprobado':
         return 'checkmark-circle-outline';
-
-      case 'RECHAZADO':
+      case 'Rechazado':
         return 'close-circle-outline';
-
       default:
         return 'time-outline';
     }
   };
 
-  // ============================================================
-  // RENDER FÓRMULA
-  // ============================================================
 
-  const renderFormula = ({
-    item,
-  }: {
-    item: FormulaModel;
-  }) => {
-    const estadoColor =
-      getEstadoColor(item.estado);
+  const renderFormula = ({ item }: { item: FormulaModel }) => {
+    const estado = item.estado || 'Pendiente';
+    const estadoColor = getEstadoColor(estado);
+    const estadoBackground = getEstadoBackground(estado);
+    const estadoIcon = getEstadoIcon(estado);
 
-    const estadoBackground =
-      getEstadoBackground(item.estado);
+    // Función para rechazar fórmula
+    const rechazarFormula = async () => {
+      try {
+        const resultado = await formulaController.actualizarEstadoFormula(
+          item.id_formula,
+          'Rechazado'
+        );
+
+        if (resultado.success) {
+          console.log('Fórmula rechazada correctamente');
+          cargarFormulas();
+        } else {
+          console.error('Error al rechazar:', resultado.message);
+          Alert.alert('Error', resultado.message || 'No se pudo rechazar la fórmula');
+        }
+      } catch (error) {
+        console.error('Error al rechazar fórmula:', error);
+        Alert.alert('Error', 'Ocurrió un error al rechazar la fórmula');
+      }
+    };
+
+    const mostrarMenuOpciones = () => {
+      if (estado === 'Rechazado' || estado === 'Aprobado') {
+        Alert.alert('Información', 'Esta fórmula ya ha sido procesada');
+        return;
+      }
+
+      Alert.alert(
+        'Opciones de Fórmula',
+        `¿Qué deseas hacer con la fórmula #${item.id_formula}?`,
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+          },
+          {
+            text: 'Rechazar Fórmula',
+            style: 'destructive',
+            onPress: () => {
+              Alert.alert(
+                'Confirmar Rechazo',
+                `¿Estás seguro de que deseas rechazar la fórmula #${item.id_formula}?`,
+                [
+                  {
+                    text: 'Cancelar',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Sí, Rechazar',
+                    style: 'destructive',
+                    onPress: rechazarFormula,
+                  },
+                ]
+              );
+            },
+          },
+        ]
+      );
+    };
 
     return (
       <TouchableOpacity
         style={styles.formulaCard}
         activeOpacity={0.85}
-        onPress={() =>
-          abrirFormula(item)
-        }
+        onPress={() => abrirFormula(item)}
       >
         {/* CABECERA DE LA TARJETA */}
-
         <View style={styles.cardHeader}>
           <View style={styles.formulaTitleContainer}>
             <View style={styles.formulaIcon}>
@@ -297,27 +278,20 @@ export default function GestionarFormulas() {
                 style={styles.formulaCondition}
                 numberOfLines={1}
               >
-                {item.condicion ||
-                  'Sin condición'}
+                {item.condicion || 'Sin condición'}
               </Text>
             </View>
           </View>
 
           {/* ESTADO DE LA FÓRMULA */}
-
           <View
             style={[
               styles.estadoBadge,
-              {
-                backgroundColor:
-                  estadoBackground,
-              },
+              { backgroundColor: estadoBackground },
             ]}
           >
             <Ionicons
-              name={getEstadoIcon(
-                item.estado
-              )}
+              name={estadoIcon}
               size={15}
               color={estadoColor}
             />
@@ -325,20 +299,28 @@ export default function GestionarFormulas() {
             <Text
               style={[
                 styles.estadoText,
-                {
-                  color: estadoColor,
-                },
+                { color: estadoColor },
               ]}
             >
-              {item.estadoTexto}
+              {estado}
             </Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={mostrarMenuOpciones}
+          >
+            <Ionicons
+              name="ellipsis-vertical"
+              size={18}
+              color={estado === 'Pendiente' ? '#555' : '#CCCCCC'}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.divider} />
 
         {/* CLIENTE */}
-
         <View style={styles.clienteSection}>
           <View style={styles.clienteHeader}>
             <Ionicons
@@ -354,7 +336,6 @@ export default function GestionarFormulas() {
 
           <View style={styles.clienteInfo}>
             {/* NOMBRE */}
-
             <View style={styles.infoRow}>
               <Ionicons
                 name="person-outline"
@@ -366,13 +347,11 @@ export default function GestionarFormulas() {
                 style={styles.infoText}
                 numberOfLines={1}
               >
-                {item.nombre_completo ||
-                  'Sin nombre'}
+                {item.nombre_completo || 'Sin nombre'}
               </Text>
             </View>
 
             {/* EMAIL */}
-
             <View style={styles.infoRow}>
               <Ionicons
                 name="mail-outline"
@@ -384,13 +363,11 @@ export default function GestionarFormulas() {
                 style={styles.infoText}
                 numberOfLines={1}
               >
-                {item.email ||
-                  'Sin email'}
+                {item.email || 'Sin email'}
               </Text>
             </View>
 
             {/* TELÉFONO */}
-
             <View style={styles.infoRow}>
               <Ionicons
                 name="call-outline"
@@ -402,8 +379,7 @@ export default function GestionarFormulas() {
                 style={styles.infoText}
                 numberOfLines={1}
               >
-                {item.telefono ||
-                  'Sin teléfono'}
+                {item.telefono || 'Sin teléfono'}
               </Text>
             </View>
           </View>
@@ -412,7 +388,6 @@ export default function GestionarFormulas() {
         <View style={styles.divider} />
 
         {/* INFORMACIÓN INFERIOR */}
-
         <View style={styles.bottomInfo}>
           <View style={styles.bottomItem}>
             <Ionicons
@@ -423,11 +398,7 @@ export default function GestionarFormulas() {
 
             <Text style={styles.bottomText}>
               {item.fecha_creacion
-                ? new Date(
-                    item.fecha_creacion
-                  ).toLocaleDateString(
-                    'es-CO'
-                  )
+                ? new Date(item.fecha_creacion).toLocaleDateString('es-CO')
                 : 'Sin fecha'}
             </Text>
           </View>
@@ -444,9 +415,7 @@ export default function GestionarFormulas() {
             </Text>
           </View>
 
-          <View
-            style={styles.detalleContainer}
-          >
+          <View style={styles.detalleContainer}>
             <Text style={styles.detalleText}>
               Ver
             </Text>
@@ -462,9 +431,6 @@ export default function GestionarFormulas() {
     );
   };
 
-  // ============================================================
-  // LOADING
-  // ============================================================
 
   if (loading) {
     return (
@@ -483,9 +449,6 @@ export default function GestionarFormulas() {
     );
   }
 
-  // ============================================================
-  // ERROR
-  // ============================================================
 
   if (error) {
     return (
@@ -527,15 +490,11 @@ export default function GestionarFormulas() {
     );
   }
 
-  // ============================================================
-  // PANTALLA
-  // ============================================================
 
   return (
     <SafeAreaView style={styles.container}>
 
       {/* ESTADÍSTICAS */}
-
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Ionicons
@@ -603,7 +562,6 @@ export default function GestionarFormulas() {
       </View>
 
       {/* BUSCADOR */}
-
       <View style={styles.searchContainer}>
         <Ionicons
           name="search-outline"
@@ -621,9 +579,7 @@ export default function GestionarFormulas() {
 
         {busqueda.length > 0 && (
           <TouchableOpacity
-            onPress={() =>
-              setBusqueda('')
-            }
+            onPress={() => setBusqueda('')}
           >
             <Ionicons
               name="close-circle"
@@ -635,47 +591,36 @@ export default function GestionarFormulas() {
       </View>
 
       {/* FILTROS */}
-
       <View style={styles.filtersContainer}>
         {(
           [
             ['TODAS', 'Todas'],
-            ['PENDIENTE', 'Pendientes'],
-            ['APROBADO', 'Aprobadas'],
-            ['RECHAZADO', 'Rechazadas'],
-          ] as [
-            FiltroEstado,
-            string
-          ][]
-        ).map(
-          ([valor, texto]) => (
-            <TouchableOpacity
-              key={valor}
+            ['Pendiente', 'Pendientes'],
+            ['Aprobado', 'Aprobadas'],
+            ['Rechazado', 'Rechazadas'],
+          ] as [FiltroEstado, string][]
+        ).map(([valor, texto]) => (
+          <TouchableOpacity
+            key={valor}
+            style={[
+              styles.filterButton,
+              filtroEstado === valor && styles.filterButtonActive,
+            ]}
+            onPress={() => setFiltroEstado(valor)}
+          >
+            <Text
               style={[
-                styles.filterButton,
-                filtroEstado === valor &&
-                  styles.filterButtonActive,
+                styles.filterText,
+                filtroEstado === valor && styles.filterTextActive,
               ]}
-              onPress={() =>
-                setFiltroEstado(valor)
-              }
             >
-              <Text
-                style={[
-                  styles.filterText,
-                  filtroEstado === valor &&
-                    styles.filterTextActive,
-                ]}
-              >
-                {texto}
-              </Text>
-            </TouchableOpacity>
-          )
-        )}
+              {texto}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* CONTADOR */}
-
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsText}>
           {formulasFiltradas.length}{' '}
@@ -686,12 +631,9 @@ export default function GestionarFormulas() {
       </View>
 
       {/* LISTA */}
-
       <FlatList
         data={formulasFiltradas}
-        keyExtractor={item =>
-          String(item.id_formula)
-        }
+        keyExtractor={item => String(item.id_formula)}
         renderItem={renderFormula}
         contentContainerStyle={
           formulasFiltradas.length === 0
@@ -729,17 +671,12 @@ export default function GestionarFormulas() {
   );
 }
 
-// ============================================================
-// ESTILOS
-// ============================================================
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F6F6F6',
   },
-
-  // ESTADÍSTICAS
 
   statsContainer: {
     flexDirection: 'row',
@@ -771,8 +708,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // BUSCADOR
-
   searchContainer: {
     marginHorizontal: 14,
     marginTop: 7,
@@ -791,8 +726,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#333',
   },
-
-  // FILTROS
 
   filtersContainer: {
     flexDirection: 'row',
@@ -823,8 +756,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // CONTADOR
-
   resultsContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -835,8 +766,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  // LISTA
-
   listContent: {
     paddingHorizontal: 14,
     paddingBottom: 25,
@@ -845,8 +774,6 @@ const styles = StyleSheet.create({
   emptyList: {
     flexGrow: 1,
   },
-
-  // TARJETA
 
   formulaCard: {
     backgroundColor: '#FFFFFF',
@@ -896,8 +823,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // ESTADO
-
   estadoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -913,12 +838,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+  menuButton: {
+    padding: 4,
+    marginLeft: 4,
+    borderRadius: 15,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   divider: {
     height: 1,
     backgroundColor: '#EEEEEE',
   },
-
-  // CLIENTE
 
   clienteSection: {
     paddingHorizontal: 12,
@@ -953,8 +886,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666',
   },
-
-  // PARTE INFERIOR
 
   bottomInfo: {
     minHeight: 36,
@@ -994,8 +925,6 @@ const styles = StyleSheet.create({
     color: '#B90F0F',
   },
 
-  // LOADING
-
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1007,8 +936,6 @@ const styles = StyleSheet.create({
     color: '#777',
     fontSize: 14,
   },
-
-  // ERROR
 
   errorContainer: {
     flex: 1,
@@ -1047,8 +974,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 13,
   },
-
-  // VACÍO
 
   emptyContainer: {
     alignItems: 'center',

@@ -271,6 +271,8 @@ export const obtenerPedidoPorId = async (req, res) => {
 
     const productos = await PedidoProductoModelo.obtenerPorPedido(id);
 
+    const productosData = productos || [];
+
     res.json({
       success: true,
       data: {
@@ -299,7 +301,7 @@ export const obtenerPedidoPorId = async (req, res) => {
             costo: pedido.costo_formula
           } : null
         },
-        productos
+        productos: productosData
       }
     });
 

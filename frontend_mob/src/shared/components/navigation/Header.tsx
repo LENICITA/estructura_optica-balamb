@@ -213,6 +213,18 @@ export const Header = () => {
       route: 'Principal',
     });
 
+const role = getMainRole();
+  const esCliente = role === 'CLIENTE';
+
+  if (!isAuthenticated || esCliente) {
+    items.push({
+      id: 'contacto',
+      label: 'Enviar mensaje de contacto',
+      icon: 'chatbubble-outline',
+      route: 'ContactoScreen',
+    });
+  }
+
     // SI ESTÁ AUTENTICADO
 
     if (isAuthenticated && user) {
@@ -245,7 +257,7 @@ export const Header = () => {
           id: 'admin-pedidos',
           label: 'Pedidos',
           icon: 'cart-outline',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
           admin: true,
         });
 
@@ -298,7 +310,7 @@ export const Header = () => {
           id: 'carrito',
           label: 'Carrito',
           icon: 'cart-outline',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         });
 
 
@@ -306,7 +318,7 @@ export const Header = () => {
           id: 'control-pedido',
           label: 'Mis Pedidos',
           icon: 'cube-outline',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         });
 
       }
