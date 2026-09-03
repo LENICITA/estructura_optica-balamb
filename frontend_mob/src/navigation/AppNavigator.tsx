@@ -43,6 +43,7 @@ import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoA
 import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
 import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
 import CrearProducto  from '../features/admin/screens/CrearProducto';
+import EditarProducto from '../features/admin/screens/EditarProducto';
 // ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
@@ -178,6 +179,14 @@ export default function AppNavigator() {
                 {() => (
                   <UserLayout>
                     <CrearProducto />
+                  </UserLayout>
+                )}
+              </Stack.Screen>
+
+              <Stack.Screen name="EditarProducto">
+                {() => (
+                  <UserLayout>
+                    <EditarProducto />
                   </UserLayout>
                 )}
               </Stack.Screen>

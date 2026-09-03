@@ -341,7 +341,7 @@ const filtrarPorMarca = (marca: string) => {
 
   // editar producto
   const irAEditarProducto = (producto: ProductModel) => {
-    navigation.navigate('EditarProductoAdmin' as never, {
+    navigation.navigate('EditarProducto' as never, {
       id_producto: Number(producto.id_producto),
     } as never);
   };
