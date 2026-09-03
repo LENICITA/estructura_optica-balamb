@@ -1,6 +1,8 @@
 import PagoModel from '../models/pagoModel.js';
 import sequelize from '../config/database.js';
-import boldClient from '../config/bold.js';
+import { boldClient } from '../config/bold.js';
+
+const esDesarrollo = process.env.NODE_ENV === 'development' || process.env.BOLD_MODO === 'TEST';
 
 // ========== OBTENER PAGOS POR PEDIDO ==========
 export const obtenerPagosPorPedido = async (req, res) => {
@@ -161,8 +163,53 @@ export const crearPago = async (req, res) => {
     }
 
     // ==========================================
-    // CONEXIÓN CON BOLD
+    //  SIMULAR PAGO 
     // ==========================================
+    
+    if (esDesarrollo) {
+      console.log('🔧 [MODO DESARROLLO] Simulando pago');
+
+      const bold_link = `https://bold.co/demo/pago-${id_pedido}-${Date.now()}`;
+      const payment_link = `LNK_DEMO_${Date.now()}`;
+
+      const nuevoId = await PagoModel.crear({
+        id_pedido,
+        eleccion_pago,
+        canal_pago,
+        monto,
+        bold_reference: payment_link,
+        bold_link: bold_link
+      });
+
+      console.log(` Pago #${nuevoId} creado (simulado)`);
+
+      // Auto-confirmar después de 2 segundos
+      setTimeout(async () => {
+        try {
+          await PagoModel.confirmarPago(nuevoId);
+          console.log(` Pago #${nuevoId} auto-confirmado (simulado)`);
+        } catch (err) {
+          console.error(' Error auto-confirmando pago:', err);
+        }
+      }, 2000);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Link de pago generado exitosamente (MODO SIMULADO)',
+        data: {
+          id_pago: nuevoId,
+          bold_link: bold_link,
+          bold_reference: payment_link,
+          simulado: true
+        }
+      });
+    }
+
+    // ==========================================
+    // CONEXIÓN REAL CON BOLD (PRODUCCIÓN)
+    // ==========================================
+
+    console.log('🌐 [PRODUCCIÓN] Conectando con Bold real');
 
     // Calcular IVA (19%)
     const valorIva = Math.round(monto * 0.19);
@@ -187,6 +234,8 @@ export const crearPago = async (req, res) => {
       description: `Pago ${eleccion_pago} del pedido #${id_pedido}`,
       payer_email: usuario.email || 'cliente@email.com'
     });
+
+    console.log(' Bold Response:', boldResponse.data);
 
     // Extraer datos de la respuesta de Bold
     const { payment_link, url: bold_link } = boldResponse.data.payload;
