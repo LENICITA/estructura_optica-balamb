@@ -32,6 +32,7 @@ import { CarritoCliente } from '../features/client/screens/CarritoCliente';
 import { CrearPedidoCliente } from '../features/client/screens/CrearPedidoCliente';
 import { MisPedidosCliente } from '../features/client/screens/MisPedidosCliente';
 import { PagosCliente } from '../features/client/screens/PagosCliente';
+import DetallePedidoCliente from '../features/client/screens/DetallePedidoCliente';
 // ===== SCREENS ADMIN =====
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
@@ -46,6 +47,7 @@ import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
 import { GestionarPedidosAdmin } from '../features/admin/screens/GestionarPedidosAdmin';
 import CrearProducto  from '../features/admin/screens/CrearProducto';
 import EditarProducto from '../features/admin/screens/EditarProducto';
+import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
 // ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
@@ -201,6 +203,14 @@ export default function AppNavigator() {
                           )}
                       </Stack.Screen>
 
+     <Stack.Screen name="DetallePedidosAdmin">
+                               {() => (
+                                   <UserLayout>
+                                     <DetallePedidosAdmin/>
+                                   </UserLayout>
+                               )}
+                           </Stack.Screen>
+
   <Stack.Screen name="CrearProducto">
                   {() => (
                     <UserLayout>
@@ -296,6 +306,14 @@ export default function AppNavigator() {
                                         </ClientLayout>
                                     )}
                                 </Stack.Screen>
+
+        <Stack.Screen name="DetallePedidoCliente">
+                   {() => (
+                    <ClientLayout>
+                     <DetallePedidoCliente />
+                   </ClientLayout>
+                   )}
+                  </Stack.Screen>
 
            <Stack.Screen name="PagosCliente">
                                                {({ navigation, route }) => (

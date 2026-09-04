@@ -37,6 +37,7 @@ export interface Pedido {
     costo: number;
   };
   productos?: any[];
+  repartidor_nombre?: string;
 }
 
 export class PedidoModel implements Pedido {
@@ -66,6 +67,7 @@ export class PedidoModel implements Pedido {
     costo: number;
   };
   productos?: any[];
+  repartidor_nombre?: string;
 
   constructor(data: Pedido) {
     this.id_pedido = data.id_pedido;
@@ -81,6 +83,7 @@ export class PedidoModel implements Pedido {
     this.cliente = data.cliente;
     this.formula = data.formula;
     this.productos = data.productos;
+    this.repartidor_nombre = data.repartidor_nombre;
   }
 
   get estadoDisplay(): string {
@@ -148,6 +151,7 @@ export class PedidoModel implements Pedido {
       cliente: data.cliente,
       formula: data.formula,
       productos: data.productos || [],
+      repartidor_nombre: data.repartidor_nombre || '',
     });
   }
 

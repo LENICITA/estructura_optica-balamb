@@ -18,6 +18,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
+// Agregar al inicio
+import { DistribucionController } from '../../../core/controllers/DistribucionController';
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { UserController } from '../../../core/controllers/UserController';
 import { AuthController } from '../../../core/controllers/AuthController';
@@ -62,6 +64,7 @@ export const GestionarPedidosAdmin = ({ navigation }: Props) => {
   const pedidoController = new PedidoController();
   const userController = new UserController();
   const authController = new AuthController();
+  const distribucionController = new DistribucionController();
 
   const [pedidos, setPedidos] = useState<PedidoModel[]>([]);
   const [repartidores, setRepartidores] = useState<UserModel[]>([]);
@@ -200,9 +203,10 @@ export const GestionarPedidosAdmin = ({ navigation }: Props) => {
   };
 
   const abrirDetalle = (pedido: PedidoModel) => {
-    navigation.navigate('DetallePedidoAdmin', {
-      id_pedido: pedido.id_pedido,
-    });
+     navigation.navigate('DetallePedidosAdmin', {
+    id_pedido: pedido.id_pedido,
+    esAdmin: true,
+   });
   };
 
   const formatearFecha = (fecha: string) => {
@@ -220,13 +224,74 @@ export const GestionarPedidosAdmin = ({ navigation }: Props) => {
     setMostrarRepartidores(true);
   };
 
+const handleAsignar = async (usuario: any) => {
+  if (!pedidoSeleccionado) {
+    Alert.alert('Error', 'No hay pedido seleccionado');
+    return;
+  }
+
+  // Verificar que el pedido esté en estado Pagado
+  if (pedidoSeleccionado.estado !== 'Pagado') {
+    Alert.alert(
+      'No se puede asignar',
+      `El pedido debe estar en estado "Pagado". Estado actual: ${pedidoSeleccionado.estado}`
+    );
+    setMostrarRepartidores(false);
+    return;
+  }
+
+  const nombreUsuario = usuario.nombre_completo;
+  const esAdmin = (usuario as any).esAdmin || false;
+  const tipo = esAdmin ? 'administrador (distribuidora externa)' : 'repartidor';
+
+  Alert.alert(
+    'Confirmar asignación',
+    `¿Asignar pedido #${pedidoSeleccionado.id_pedido} a ${nombreUsuario} (${tipo})?`,
+    [
+      { text: 'Cancelar', style: 'cancel', onPress: () => setMostrarRepartidores(false) },
+      {
+        text: 'Asignar',
+        onPress: async () => {
+          try {
+            const result = await distribucionController.asignarPedido({
+              id_pedido: pedidoSeleccionado.id_pedido,
+              id_usuario: usuario.id_usuario,
+              observaciones: `Asignado por ${tipo}`
+            });
+
+            if (result.success) {
+              let mensaje = `Pedido #${pedidoSeleccionado.id_pedido} asignado a ${nombreUsuario}`;
+              if (result.data?.tipo_asignacion === 'DISTRIBUIDORA_EXTERNA') {
+                mensaje += '\n\n Envío externo (fuera de Bogotá)';
+              } else {
+                mensaje += '\n\n Envío en Bogotá';
+              }
+
+              Alert.alert(' Asignación exitosa', mensaje);
+              setMostrarRepartidores(false);
+              setPedidoSeleccionado(null);
+              cargarPedidos();
+            } else {
+              Alert.alert('Error', result.message || 'No se pudo asignar el pedido');
+            }
+          } catch (error: any) {
+            console.error('Error asignando pedido:', error);
+            Alert.alert('Error', error.message || 'Error al asignar el pedido');
+            setMostrarRepartidores(false);
+          }
+        }
+      },
+    ]
+  );
+};
+
   const renderPedido = ({ item }: { item: PedidoModel }) => {
     const estado = item.estado || 'Pendiente';
     const estadoColor = getEstadoColor(estado);
     const estadoBackground = getEstadoBackground(estado);
     const estadoIcon = getEstadoIcon(estado);
    const repartidorAsignado = item.repartidor_nombre || item.repartidor?.nombre || null;
-    const puedeAsignar = estado === 'Pagado' || estado === 'En Proceso';
+    const puedeAsignar = estado === 'Pagado';
     const nombreCliente =
       item.cliente ||
       item.nombre_completo ||
@@ -507,25 +572,7 @@ export const GestionarPedidosAdmin = ({ navigation }: Props) => {
                     <TouchableOpacity
                       key={usuario.id_usuario}
                       style={styles.repartidorItem}
-                      onPress={() => {
-                        Alert.alert(
-                          'Asignar pedido',
-                          `¿Asignar pedido #${pedidoSeleccionado?.id_pedido} a ${usuario.nombre_completo}?`,
-                          [
-                            { text: 'Cancelar', style: 'cancel' },
-                            {
-                              text: 'Asignar',
-                              onPress: () => {
-                                setMostrarRepartidores(false);
-                                Alert.alert(
-                                  ' Asignado',
-                                  `Pedido #${pedidoSeleccionado?.id_pedido} asignado a ${usuario.nombre_completo}`
-                                );
-                              }
-                            }
-                          ]
-                        );
-                      }}
+                      onPress={() => handleAsignar(usuario)}
                     >
                       <Ionicons
                         name={esAdmin ? "business-outline" : "person-circle-outline"}

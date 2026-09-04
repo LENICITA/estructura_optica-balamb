@@ -283,6 +283,12 @@ export const MisFormulasScreen = ({ navigation }: Props) => {
                     </Text>
                   </View>
 
+                {item.condicion && (
+                        <Text style={styles.condicionText} numberOfLines={2}>
+                          {item.condicion}
+                        </Text>
+                      )}
+
                   <View style={styles.tapIndicator}>
                     <Ionicons name="chevron-forward-circle-outline" size={18} color="#CCCCCC" />
                     <Text style={styles.tapText}>Ver detalles</Text>
@@ -540,5 +546,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 14,
     color: '#333',
+  },
+  condicionText: {
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 10,
   },
 });
