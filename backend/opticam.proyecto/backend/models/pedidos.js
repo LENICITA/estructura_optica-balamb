@@ -130,10 +130,12 @@ const PedidoModelo = {
   obtenerTodos: async () => {
     const pedidos = await sequelize.query(
       `SELECT p.*, u.nombre_completo as cliente, u.email, u.telefono, u.ciudad,
-              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula
+              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula, r.nombre_completo as repartidor_nombre
        FROM PEDIDOS p
        JOIN USUARIOS u ON p.id_usuario = u.id_usuario
        LEFT JOIN FORMULAS f ON p.id_formula = f.id_formula
+       LEFT JOIN DISTRIBUCIONES d ON p.id_pedido = d.id_pedido AND d.estado IN ('PENDIENTE', 'EN_ENTREGA') 
+       LEFT JOIN USUARIOS r ON d.id_usuario = r.id_usuario
        WHERE p.estado NOT IN ('Pendiente', 'Cancelado')
        ORDER BY p.fecha_pedido DESC`,
       { type: sequelize.QueryTypes.SELECT }
