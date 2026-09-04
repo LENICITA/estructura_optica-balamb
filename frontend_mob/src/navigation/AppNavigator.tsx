@@ -31,6 +31,7 @@ import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen'
 import { CarritoCliente } from '../features/client/screens/CarritoCliente';
 import { CrearPedidoCliente } from '../features/client/screens/CrearPedidoCliente';
 import { MisPedidosCliente } from '../features/client/screens/MisPedidosCliente';
+import DetallePedidoCliente from '../features/client/screens/DetallePedidoCliente';
 import { PagosCliente } from '../features/client/screens/PagosCliente';
 // ===== SCREENS ADMIN =====
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
@@ -305,6 +306,14 @@ export default function AppNavigator() {
                                         </ClientLayout>
                                     )}
                                 </Stack.Screen>
+          
+          <Stack.Screen name="DetallePedidoCliente">
+           {() => (
+            <ClientLayout>
+             <DetallePedidoCliente />
+           </ClientLayout>
+           )}
+          </Stack.Screen>
 
            <Stack.Screen name="PagosCliente">
                                                {({ navigation, route }) => (

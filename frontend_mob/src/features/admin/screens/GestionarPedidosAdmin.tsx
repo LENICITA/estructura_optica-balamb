@@ -200,9 +200,10 @@ export const GestionarPedidosAdmin = ({ navigation }: Props) => {
   };
 
   const abrirDetalle = (pedido: PedidoModel) => {
-    navigation.navigate('DetallePedidoAdmin', {
-      id_pedido: pedido.id_pedido,
-    });
+     navigation.navigate('DetallePedidosAdmin', {
+    id_pedido: pedido.id_pedido,
+    esAdmin: true,
+   });
   };
 
   const formatearFecha = (fecha: string) => {

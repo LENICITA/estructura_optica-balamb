@@ -68,10 +68,18 @@ export const MisPedidosCliente = ({ navigation }: Props) => {
   };
 
   const irADetalle = (pedido: PedidoModel) => {
-    navigation.navigate('DetallePedidoCliente', {
-      id_pedido: pedido.id_pedido,
-    });
-  };
+  if (!pedido?.id_pedido) {
+    Alert.alert(
+      'Error',
+      'No se pudo identificar el pedido.'
+    );
+    return;
+  }
+
+  navigation.navigate('DetallePedidoCliente', {
+    id_pedido: Number(pedido.id_pedido),
+  });
+};
 
   const mostrarMenu = (pedido: PedidoModel) => {
     setSelectedPedido(pedido);

@@ -1,5 +1,4 @@
-
-// src/features/pedidos/screens/DetallePedido.tsx
+// src/features/pedidos/screens/DetallePedidoAdmin.tsx
 
 import React, { useCallback, useState } from 'react';
 import {
@@ -11,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 
 import {
@@ -27,13 +27,6 @@ import { COLORS } from '../../../shared/constants/colors';
 
 const pedidoController = new PedidoController();
 
-/*
- * Estados que un administrador puede consultar.
- *
- * Pendiente y Cancelado NO están incluidos porque los criterios
- * indican que el administrador solamente puede consultar pedidos
- * activos.
- */
 const ESTADOS_ACTIVOS = [
   'Abonado',
   'Listo',
@@ -47,32 +40,13 @@ export default function DetallePedido() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  /*
-   * Parámetros esperados:
-   *
-   * Cliente:
-   *
-   * navigation.navigate('DetallePedido', {
-   *   id_pedido: pedido.id_pedido,
-   *   esAdmin: false,
-   * });
-   *
-   * Administrador:
-   *
-   * navigation.navigate('DetallePedido', {
-   *   id_pedido: pedido.id_pedido,
-   *   esAdmin: true,
-   * });
-   */
-
   const { id_pedido, esAdmin = false } = route.params || {};
 
   const [pedido, setPedido] = useState<PedidoModel | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ============================================================
-  // CARGAR PEDIDO
-  // ============================================================
+  const [marcandoListo, setMarcandoListo] = useState(false);
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
   const cargarPedido = useCallback(async () => {
     if (!id_pedido) {
@@ -88,16 +62,8 @@ export default function DetallePedido() {
     try {
       setLoading(true);
 
-      // ========================================================
       // CLIENTE
-      // ========================================================
-
       if (!esAdmin) {
-        /*
-         * Primero obtenemos los pedidos del cliente.
-         * Esto permite comprobar que el pedido pertenece
-         * a su cuenta.
-         */
         const misPedidos = await pedidoController.getMisPedidos();
 
         const pedidoCliente = misPedidos.find(
@@ -115,10 +81,6 @@ export default function DetallePedido() {
           return;
         }
 
-        /*
-         * Una vez comprobada la pertenencia, obtenemos
-         * nuevamente el detalle completo.
-         */
         const detalle =
           await pedidoController.getPedidoById(
             Number(id_pedido)
@@ -138,10 +100,7 @@ export default function DetallePedido() {
         return;
       }
 
-      // ========================================================
-      // ADMINISTRADOR
-      // ========================================================
-
+      // PEDIDO
       const detalle =
         await pedidoController.getPedidoById(
           Number(id_pedido)
@@ -157,10 +116,6 @@ export default function DetallePedido() {
         return;
       }
 
-      /*
-       * El administrador únicamente puede consultar
-       * pedidos en estados activos.
-       */
       if (!ESTADOS_ACTIVOS.includes(detalle.estado)) {
         Alert.alert(
           'Pedido no disponible',
@@ -187,20 +142,91 @@ export default function DetallePedido() {
     }
   }, [id_pedido, esAdmin, navigation]);
 
-  /*
-   * Cada vez que el usuario vuelve a entrar al screen,
-   * se vuelve a consultar el pedido.
-   */
   useFocusEffect(
     useCallback(() => {
       cargarPedido();
     }, [cargarPedido])
   );
 
-  // ============================================================
-  // FUNCIONES AUXILIARES
-  // ============================================================
+  const marcarComoListo = () => {
+    if (!pedido) {
+      return;
+    }
 
+    // El pedido debe estar ABONADO
+    if (pedido.estado !== 'Abonado') {
+      Alert.alert(
+        'No se puede marcar como LISTO',
+        'El pedido debe estar en estado ABONADO.'
+      );
+
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar pedido LISTO',
+      '¿Estás seguro de que las gafas ya están listas para que el cliente pague el saldo restante?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Marcar como LISTO',
+          onPress: async () => {
+            try {
+              setMarcandoListo(true);
+
+              const resultado =
+                await pedidoController.marcarPedidoComoListo(
+                  Number(pedido.id_pedido)
+                );
+
+              if (!resultado.success) {
+                Alert.alert(
+                  'No se puede marcar como LISTO',
+                  resultado.message ||
+                    'No fue posible marcar el pedido como LISTO.'
+                );
+
+                return;
+              }
+
+              Alert.alert(
+                'Pedido actualizado',
+                resultado.message ||
+                  'El pedido ha sido marcado como LISTO.',
+                [
+                  {
+                    text: 'Aceptar',
+                    onPress: async () => {
+                      await cargarPedido();
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              console.error(
+                'Error marcando pedido como LISTO:',
+                error
+              );
+
+              Alert.alert(
+                'Error',
+                error?.response?.data?.message ||
+                  error?.message ||
+                  'No fue posible marcar el pedido como LISTO.'
+              );
+            } finally {
+              setMarcandoListo(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // FUNCIONES 
   const formatearDinero = (
     valor: number | undefined | null
   ) => {
@@ -279,11 +305,6 @@ export default function DetallePedido() {
     }
   };
 
-  /*
-   * El PedidoModel tiene su propio estadoColor.
-   * Se conserva ese color para representar el estado,
-   * mientras que el resto de la interfaz utiliza COLORS.
-   */
   const obtenerColorEstado = () => {
     if (!pedido) {
       return COLORS.gray;
@@ -292,10 +313,7 @@ export default function DetallePedido() {
     return pedido.estadoColor;
   };
 
-  // ============================================================
   // LOADING
-  // ============================================================
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -311,16 +329,12 @@ export default function DetallePedido() {
     );
   }
 
-  // ============================================================
-  // PEDIDO NO ENCONTRADO
-  // ============================================================
-
   if (!pedido) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons
           name="document-text-outline"
-          size={60}
+          size={55}
           color={COLORS.gray}
         />
 
@@ -340,32 +354,67 @@ export default function DetallePedido() {
     );
   }
 
-  // ============================================================
-  // RENDER
-  // ============================================================
-
   const colorEstado = obtenerColorEstado();
 
   return (
     <View style={styles.container}>
 
       {/* ======================================================
+          VISOR DE IMAGEN COMPLETA
+      ====================================================== */}
+
+      <Modal
+        visible={imagenAmpliada !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImagenAmpliada(null)}
+      >
+        <View style={styles.imageModalContainer}>
+
+          <TouchableOpacity
+            style={styles.imageModalClose}
+            onPress={() => setImagenAmpliada(null)}
+          >
+            <Ionicons
+              name="close"
+              size={30}
+              color={COLORS.white}
+            />
+          </TouchableOpacity>
+
+          {imagenAmpliada && (
+            <Image
+              source={{ uri: imagenAmpliada }}
+              style={styles.imageModal}
+              resizeMode="contain"
+            />
+          )}
+
+          <Text style={styles.imageModalHint}>
+            Toca × para cerrar
+          </Text>
+
+        </View>
+      </Modal>
+
+      {/* ======================================================
           HEADER
       ====================================================== */}
 
       <View style={styles.header}>
+
         <TouchableOpacity
-          style={styles.backIcon}
+          style={styles.backButtonHeader}
           onPress={() => navigation.goBack()}
         >
           <Ionicons
             name="arrow-back"
-            size={25}
+            size={23}
             color={COLORS.text}
           />
         </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
+        <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>
             Detalle del pedido
           </Text>
@@ -375,125 +424,200 @@ export default function DetallePedido() {
           </Text>
         </View>
 
-        <View style={styles.headerPlaceholder} />
+        <View style={styles.headerRight} />
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
 
         {/* ====================================================
-            ESTADO
+            PRODUCTO / ESTADO PRINCIPAL
         ==================================================== */}
 
-        <View style={styles.statusCard}>
-          <View
-            style={[
-              styles.statusIconContainer,
-              {
-                backgroundColor: `${colorEstado}20`,
-              },
-            ]}
-          >
-            <Ionicons
-              name={obtenerIconoEstado() as any}
-              size={30}
-              color={colorEstado}
-            />
+        <View style={styles.productMainCard}>
+
+          <View style={styles.mainProductInfo}>
+            <View style={styles.statusInline}>
+
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor: colorEstado,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.statusText,
+                  {
+                    color: colorEstado,
+                  },
+                ]}
+              >
+                {pedido.estadoDisplay}
+              </Text>
+
+            </View>
+
           </View>
 
-          <View style={styles.statusInfo}>
-            <Text style={styles.statusLabel}>
-              Estado del pedido
-            </Text>
-
-            <Text
-              style={[
-                styles.statusValue,
-                {
-                  color: colorEstado,
-                },
-              ]}
-            >
-              {pedido.estadoDisplay}
-            </Text>
-          </View>
         </View>
+
+        {/* ====================================================
+            ADMINISTRADOR - MARCAR COMO LISTO
+        ==================================================== */}
+
+        {esAdmin && pedido.estado === 'Abonado' && (
+          <View style={styles.readyActionCard}>
+
+            <View style={styles.readyActionInfo}>
+
+              <View style={styles.readyActionIcon}>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={24}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <View style={styles.readyActionTextContainer}>
+
+                <Text style={styles.readyActionTitle}>
+                  Pedido listo para continuar
+                </Text>
+
+                <Text style={styles.readyActionDescription}>
+                  Marca el pedido como LISTO cuando las gafas
+                  estén terminadas y el cliente pueda pagar
+                  el saldo restante.
+                </Text>
+
+              </View>
+
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.readyButton,
+                marcandoListo && styles.readyButtonDisabled,
+              ]}
+              onPress={marcarComoListo}
+              disabled={marcandoListo}
+            >
+
+              {marcandoListo ? (
+                <>
+                  <ActivityIndicator
+                    size="small"
+                    color={COLORS.white}
+                  />
+
+                  <Text style={styles.readyButtonText}>
+                    Actualizando...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={COLORS.white}
+                  />
+
+                  <Text style={styles.readyButtonText}>
+                    Marcar como LISTO
+                  </Text>
+                </>
+              )}
+
+            </TouchableOpacity>
+
+          </View>
+        )}
 
         {/* ====================================================
             INFORMACIÓN DEL PEDIDO
         ==================================================== */}
 
-        <View style={styles.card}>
+        <View style={styles.section}>
+
           <Text style={styles.sectionTitle}>
             Información del pedido
           </Text>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={COLORS.primary}
-              />
-            </View>
+          <View style={styles.simpleInfoRow}>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Fecha del pedido
-              </Text>
+            <Text style={styles.simpleInfoLabel}>
+              Fecha
+            </Text>
 
-              <Text style={styles.infoValue}>
-                {pedido.fechaFormateada}
-              </Text>
-            </View>
+            <Text style={styles.simpleInfoValue}>
+              {pedido.fechaFormateada}
+            </Text>
+
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.simpleDivider} />
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={COLORS.primary}
-              />
-            </View>
+          <View style={styles.simpleInfoRow}>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Fecha estimada
-              </Text>
+            <Text style={styles.simpleInfoLabel}>
+              Fecha estimada
+            </Text>
 
-              <Text style={styles.infoValue}>
-                {pedido.fechaEstimadaFormateada}
-              </Text>
-            </View>
+            <Text style={styles.simpleInfoValue}>
+              {pedido.fechaEstimadaFormateada}
+            </Text>
+
           </View>
+
+          <View style={styles.simpleDivider} />
+
+          <View style={styles.simpleInfoRow}>
+
+            <Text style={styles.simpleInfoLabel}>
+              Productos
+            </Text>
+
+            <Text style={styles.simpleInfoValue}>
+              {pedido.productos?.length || 0}
+            </Text>
+
+          </View>
+
         </View>
 
         {/* ====================================================
             PRODUCTOS
         ==================================================== */}
 
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Productos
-            </Text>
+        {pedido.productos &&
+        pedido.productos.length > 0 && (
+          <View style={styles.section}>
 
-            <View style={styles.productCountContainer}>
-              <Text style={styles.productCount}>
-                {pedido.productos?.length || 0}
+            <View style={styles.sectionTitleRow}>
+
+              <Text style={styles.sectionTitle}>
+                Productos
               </Text>
-            </View>
-          </View>
 
-          {pedido.productos &&
-          pedido.productos.length > 0 ? (
-            pedido.productos.map(
+              <View style={styles.countBadge}>
+
+                <Text style={styles.countBadgeText}>
+                  {pedido.productos.length}
+                </Text>
+
+              </View>
+
+            </View>
+
+            {pedido.productos.map(
               (producto: any, index: number) => {
+
                 const nombre =
                   obtenerNombreProducto(producto);
 
@@ -513,144 +637,82 @@ export default function DetallePedido() {
                       producto?.producto?.id_producto ||
                       index
                     }
-                    style={styles.productItem}
+                    style={[
+                      styles.productRow,
+                      index === 0 &&
+                        styles.productRowFirst,
+                    ]}
                   >
 
                     {imagen ? (
-                      <Image
-                        source={{ uri: imagen }}
-                        style={styles.productImage}
-                      />
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          setImagenAmpliada(imagen)
+                        }
+                      >
+                        <Image
+                          source={{ uri: imagen }}
+                          style={styles.productRowImage}
+                        />
+                      </TouchableOpacity>
                     ) : (
                       <View
                         style={
-                          styles.productImagePlaceholder
+                          styles.productRowImagePlaceholder
                         }
                       >
                         <Ionicons
                           name="cube-outline"
-                          size={27}
+                          size={25}
                           color={COLORS.gray}
                         />
                       </View>
                     )}
 
-                    <View style={styles.productInfo}>
+                    <View style={styles.productRowInfo}>
+
                       <Text
-                        style={styles.productName}
+                        style={styles.productRowName}
                         numberOfLines={2}
                       >
                         {nombre}
                       </Text>
 
                       <Text
-                        style={styles.productQuantity}
+                        style={styles.productRowQuantity}
                       >
                         Cantidad: {cantidad}
                       </Text>
 
+                    </View>
+
+                    <View style={styles.productRowPriceContainer}>
+
                       <Text
-                        style={styles.productUnitPrice}
+                        style={styles.productRowPrice}
+                      >
+                        {formatearDinero(
+                          precio *
+                            Number(cantidad)
+                        )}
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.productRowUnitPrice
+                        }
                       >
                         {formatearDinero(precio)} c/u
                       </Text>
+
                     </View>
 
-                    <Text style={styles.productPrice}>
-                      {formatearDinero(
-                        precio * Number(cantidad)
-                      )}
-                    </Text>
                   </View>
                 );
               }
-            )
-          ) : (
-            <View style={styles.noProducts}>
-              <Ionicons
-                name="cube-outline"
-                size={35}
-                color={COLORS.gray}
-              />
+            )}
 
-              <Text style={styles.noProductsText}>
-                No hay productos registrados
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* ====================================================
-            FÓRMULA
-        ==================================================== */}
-
-        {pedido.formula && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>
-              Fórmula asociada
-            </Text>
-
-            <View style={styles.formulaContainer}>
-
-              {pedido.formula.imagen_formula ? (
-                <Image
-                  source={{
-                    uri: pedido.formula.imagen_formula,
-                  }}
-                  style={styles.formulaImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.formulaPlaceholder}>
-                  <Ionicons
-                    name="eye-outline"
-                    size={35}
-                    color={COLORS.gray}
-                  />
-
-                  <Text style={styles.placeholderText}>
-                    Sin imagen
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.formulaInfo}>
-                <Text style={styles.formulaCondition}>
-                  {pedido.formula.condicion ||
-                    'Sin condición'}
-                </Text>
-
-                {pedido.formula.observaciones ? (
-                  <View
-                    style={styles.observationContainer}
-                  >
-                    <Text style={styles.infoLabel}>
-                      Observaciones
-                    </Text>
-
-                    <Text
-                      style={styles.observationText}
-                    >
-                      {pedido.formula.observaciones}
-                    </Text>
-                  </View>
-                ) : null}
-
-                <View style={styles.formulaCost}>
-                  <Text style={styles.infoLabel}>
-                    Costo de fórmula
-                  </Text>
-
-                  <Text
-                    style={styles.formulaCostValue}
-                  >
-                    {formatearDinero(
-                      pedido.formula.costo
-                    )}
-                  </Text>
-                </View>
-              </View>
-            </View>
           </View>
         )}
 
@@ -659,77 +721,87 @@ export default function DetallePedido() {
         ==================================================== */}
 
         {pedido.cliente && (
-          <View style={styles.card}>
+          <View style={styles.section}>
+
             <Text style={styles.sectionTitle}>
               Datos del cliente
             </Text>
 
-            <View style={styles.infoRow}>
-              <View style={styles.infoIcon}>
+            <View style={styles.clientRow}>
+
+              <View style={styles.clientIcon}>
                 <Ionicons
                   name="person-outline"
-                  size={20}
+                  size={19}
                   color={COLORS.primary}
                 />
               </View>
 
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
+              <View style={styles.clientContent}>
+
+                <Text style={styles.clientLabel}>
                   Nombre
                 </Text>
 
-                <Text style={styles.infoValue}>
+                <Text style={styles.clientValue}>
                   {pedido.cliente.nombre}
                 </Text>
+
               </View>
+
             </View>
 
-            <View style={styles.divider} />
+            <View style={styles.clientRow}>
 
-            <View style={styles.infoRow}>
-              <View style={styles.infoIcon}>
+              <View style={styles.clientIcon}>
                 <Ionicons
-                  name="mail-outline"
-                  size={20}
+                  name="call-outline"
+                  size={19}
                   color={COLORS.primary}
                 />
               </View>
 
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
+              <View style={styles.clientContent}>
+
+                <Text style={styles.clientLabel}>
+                  Teléfono
+                </Text>
+
+                <Text style={styles.clientValue}>
+                  {pedido.cliente.telefono}
+                </Text>
+
+              </View>
+
+            </View>
+
+            <View style={styles.clientRow}>
+
+              <View style={styles.clientIcon}>
+                <Ionicons
+                  name="mail-outline"
+                  size={19}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <View style={styles.clientContent}>
+
+                <Text style={styles.clientLabel}>
                   Correo electrónico
                 </Text>
 
                 <Text
-                  style={styles.infoValue}
+                  style={styles.clientValue}
                   numberOfLines={2}
                 >
                   {pedido.cliente.email}
                 </Text>
+
               </View>
+
             </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoIcon}>
-                <Ionicons
-                  name="call-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </View>
-
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
-                  Teléfono
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {pedido.cliente.telefono}
-                </Text>
-              </View>
-            </View>
           </View>
         )}
 
@@ -737,88 +809,179 @@ export default function DetallePedido() {
             INFORMACIÓN DE ENTREGA
         ==================================================== */}
 
-        <View style={styles.card}>
+        <View style={styles.section}>
+
           <Text style={styles.sectionTitle}>
             Información de entrega
           </Text>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Ionicons
-                name="location-outline"
-                size={21}
-                color={COLORS.primary}
-              />
-            </View>
+          <View style={styles.deliveryRow}>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
+            <Ionicons
+              name="location-outline"
+              size={20}
+              color={COLORS.primary}
+            />
+
+            <View style={styles.deliveryContent}>
+
+              <Text style={styles.deliveryLabel}>
                 Dirección
               </Text>
 
-              <Text style={styles.infoValue}>
+              <Text style={styles.deliveryValue}>
                 {pedido.direccion_entrega ||
                   'No especificada'}
               </Text>
+
             </View>
+
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.deliveryRow}>
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Ionicons
-                name="business-outline"
-                size={20}
-                color={COLORS.primary}
-              />
-            </View>
+            <Ionicons
+              name="business-outline"
+              size={20}
+              color={COLORS.primary}
+            />
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
+            <View style={styles.deliveryContent}>
+
+              <Text style={styles.deliveryLabel}>
                 Ciudad
               </Text>
 
-              <Text style={styles.infoValue}>
+              <Text style={styles.deliveryValue}>
                 {pedido.ciudad_envio ||
                   'No especificada'}
               </Text>
+
             </View>
+
           </View>
+
         </View>
 
         {/* ====================================================
-            RESUMEN DE PAGO
+            FÓRMULA ASOCIADA
         ==================================================== */}
 
-        <View style={styles.card}>
+        {pedido.formula && (
+          <View style={styles.section}>
+
+            <Text style={styles.sectionTitle}>
+              Fórmula asociada
+            </Text>
+
+            <View style={styles.formulaBox}>
+
+              {pedido.formula.imagen_formula ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    setImagenAmpliada(
+                      pedido.formula?.imagen_formula || null
+                    )
+                  }
+                >
+                  <Image
+                    source={{
+                      uri: pedido.formula.imagen_formula,
+                    }}
+                    style={styles.formulaImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              ) : null}
+
+              <View
+                style={[
+                  styles.formulaData,
+                  !pedido.formula.imagen_formula &&
+                    styles.formulaDataFull,
+                ]}
+              >
+
+                {pedido.formula.condicion ? (
+                  <Text style={styles.formulaCondition}>
+                    {pedido.formula.condicion}
+                  </Text>
+                ) : null}
+
+                {pedido.formula.observaciones ? (
+                  <View style={styles.observationBox}>
+
+                    <Text style={styles.observationLabel}>
+                      Observaciones
+                    </Text>
+
+                    <Text style={styles.observationText}>
+                      {pedido.formula.observaciones}
+                    </Text>
+
+                  </View>
+                ) : null}
+
+                <View style={styles.formulaCostRow}>
+
+                  <Text style={styles.formulaCostLabel}>
+                    Costo de fórmula
+                  </Text>
+
+                  <Text style={styles.formulaCostValue}>
+                    {formatearDinero(
+                      pedido.formula.costo
+                    )}
+                  </Text>
+
+                </View>
+
+              </View>
+
+            </View>
+
+          </View>
+        )}
+
+        {/* ====================================================
+            RESUMEN
+        ==================================================== */}
+
+        <View style={styles.section}>
+
           <Text style={styles.sectionTitle}>
             Resumen del pedido
           </Text>
 
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>
+          <View style={styles.summaryRow}>
+
+            <Text style={styles.summaryLabel}>
               Costo de envío
             </Text>
 
-            <Text style={styles.priceValue}>
+            <Text style={styles.summaryValue}>
               {formatearDinero(
                 pedido.costo_envio
               )}
             </Text>
+
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.simpleDivider} />
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>
+          <View style={styles.summaryTotalRow}>
+
+            <Text style={styles.summaryTotalLabel}>
               Total
             </Text>
 
-            <Text style={styles.totalValue}>
+            <Text style={styles.summaryTotalValue}>
               {pedido.totalFormateado}
             </Text>
+
           </View>
+
         </View>
 
         <View style={styles.bottomSpace} />
@@ -828,19 +991,20 @@ export default function DetallePedido() {
   );
 }
 
-// ================================================================
 // ESTILOS
-// ================================================================
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
 
-  // ==============================================================
-  // LOADING
-  // ==============================================================
+  clientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
 
   loadingContainer: {
     flex: 1,
@@ -851,14 +1015,10 @@ const styles = StyleSheet.create({
   },
 
   loadingText: {
-    marginTop: 12,
-    fontSize: 15,
+    marginTop: 10,
+    fontSize: 14,
     color: COLORS.text,
   },
-
-  // ==============================================================
-  // EMPTY
-  // ==============================================================
 
   emptyContainer: {
     flex: 1,
@@ -869,391 +1029,551 @@ const styles = StyleSheet.create({
   },
 
   emptyTitle: {
-    marginTop: 15,
-    fontSize: 20,
+    marginTop: 14,
+    fontSize: 19,
     fontWeight: '700',
     color: COLORS.text,
   },
 
   backButton: {
-    marginTop: 20,
+    marginTop: 18,
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingHorizontal: 28,
+    paddingVertical: 11,
+    borderRadius: 9,
   },
 
   backButtonText: {
     color: COLORS.white,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 
-  // ==============================================================
-  // HEADER
-  // ==============================================================
-
   header: {
-    height: 72,
+    height: 60,
     backgroundColor: COLORS.white,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    borderBottomColor: '#E7E7E7',
   },
 
-  backIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  backButtonHeader: {
+    width: 38,
+    height: 38,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  headerCenter: {
+  headerInfo: {
     flex: 1,
-    alignItems: 'center',
+    marginLeft: 3,
   },
 
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: COLORS.text,
   },
 
   headerSubtitle: {
-    marginTop: 2,
-    fontSize: 13,
+    fontSize: 11,
     color: COLORS.gray,
+    marginTop: 1,
   },
 
-  headerPlaceholder: {
-    width: 42,
+  headerRight: {
+    width: 38,
   },
-
-  // ==============================================================
-  // SCROLL
-  // ==============================================================
 
   scrollContent: {
-    padding: 15,
-    paddingBottom: 30,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
 
-  // ==============================================================
-  // STATUS
-  // ==============================================================
-
-  statusCard: {
+  productMainCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 14,
-    padding: 18,
+    borderRadius: 12,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
 
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-
-  statusIconContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  statusInfo: {
-    flex: 1,
-    marginLeft: 15,
-  },
-
-  statusLabel: {
-    fontSize: 13,
-    color: COLORS.gray,
-    marginBottom: 4,
-  },
-
-  statusValue: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-
-  // ==============================================================
-  // CARDS
-  // ==============================================================
-
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    padding: 17,
-    marginBottom: 15,
-
-    shadowColor: COLORS.black,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 2,
   },
 
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  productCountContainer: {
-    minWidth: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 16,
-  },
-
-  productCount: {
-    color: COLORS.white,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-
-  // ==============================================================
-  // INFORMATION ROW
-  // ==============================================================
-
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 55,
-  },
-
-  infoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FDECEC',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  infoContent: {
-    flex: 1,
-  },
-
-  infoLabel: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginBottom: 3,
-  },
-
-  infoValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#EEEEEE',
-    marginVertical: 12,
-  },
-
-  // ==============================================================
-  // PRODUCTS
-  // ==============================================================
-
-  productItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-  },
-
-  productImage: {
-    width: 68,
-    height: 68,
-    borderRadius: 10,
+  mainProductImageContainer: {
+    width: 92,
+    height: 92,
+    borderRadius: 9,
+    overflow: 'hidden',
     backgroundColor: COLORS.background,
   },
 
-  productImagePlaceholder: {
-    width: 68,
-    height: 68,
-    borderRadius: 10,
-    backgroundColor: COLORS.background,
+  mainProductImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  mainProductImagePlaceholder: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  productInfo: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
-  },
-
-  productName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 5,
-  },
-
-  productQuantity: {
-    fontSize: 13,
-    color: COLORS.gray,
-    marginBottom: 3,
-  },
-
-  productUnitPrice: {
-    fontSize: 12,
-    color: COLORS.gray,
-  },
-
-  productPrice: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-
-  noProducts: {
-    alignItems: 'center',
-    paddingVertical: 25,
-  },
-
-  noProductsText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: COLORS.gray,
-  },
-
-  // ==============================================================
-  // FORMULA
-  // ==============================================================
-
-  formulaContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-
-  formulaImage: {
-    width: 105,
-    height: 125,
-    borderRadius: 10,
-    backgroundColor: COLORS.background,
-  },
-
-  formulaPlaceholder: {
-    width: 105,
-    height: 125,
-    borderRadius: 10,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  placeholderText: {
-    marginTop: 7,
-    fontSize: 12,
-    color: COLORS.gray,
-  },
-
-  formulaInfo: {
+  mainProductInfo: {
     flex: 1,
     marginLeft: 13,
   },
 
-  formulaCondition: {
-    fontSize: 16,
+  mainProductName: {
+    fontSize: 17,
+    lineHeight: 21,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 6,
+  },
+
+  mainProductPrice: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 7,
+  },
+
+  statusInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  section: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    marginBottom: 10,
+
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+
+  sectionTitle: {
+    fontSize: 15,
     fontWeight: '800',
     color: COLORS.text,
     marginBottom: 12,
   },
 
-  observationContainer: {
-    marginBottom: 13,
-  },
-
-  observationText: {
-    fontSize: 13,
-    color: COLORS.text,
-    lineHeight: 19,
-    marginTop: 4,
-  },
-
-  formulaCost: {
-    marginTop: 2,
-  },
-
-  formulaCostValue: {
-    marginTop: 3,
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-
-  // ==============================================================
-  // PAYMENT
-  // ==============================================================
-
-  priceRow: {
+  sectionTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
 
-  priceLabel: {
-    fontSize: 14,
+  countBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    paddingHorizontal: 7,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  countBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  // INFORMACIÓN 
+  simpleInfoRow: {
+    minHeight: 32,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  simpleInfoLabel: {
+    fontSize: 13,
     color: COLORS.gray,
   },
 
-  priceValue: {
-    fontSize: 14,
+  simpleInfoValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginLeft: 15,
+  },
+
+  simpleDivider: {
+    height: 1,
+    backgroundColor: '#EEEEEE',
+    marginVertical: 5,
+  },
+
+  // PRODUCTOS
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+
+  productRowFirst: {
+    borderTopWidth: 0,
+    paddingTop: 0,
+  },
+
+  productRowImage: {
+    width: 55,
+    height: 55,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+  },
+
+  productRowImagePlaceholder: {
+    width: 55,
+    height: 55,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  productRowInfo: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 8,
+  },
+
+  productRowName: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+
+  productRowQuantity: {
+    fontSize: 11,
+    color: COLORS.gray,
+    marginTop: 3,
+  },
+
+  productRowPriceContainer: {
+    alignItems: 'flex-end',
+  },
+
+  productRowPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+
+  productRowUnitPrice: {
+    fontSize: 10,
+    color: COLORS.gray,
+    marginTop: 2,
+  },
+
+  // INFO CLIENTE
+  clientIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FDECEC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+
+  clientContent: {
+    flex: 1,
+  },
+
+  clientLabel: {
+    fontSize: 10,
+    color: COLORS.gray,
+    marginBottom: 2,
+  },
+
+  clientValue: {
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.text,
   },
 
-  totalRow: {
+  // FÓRMULA
+  formulaBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  formulaImage: {
+    width: 82,
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: COLORS.background,
+    marginRight: 10,
+  },
+
+  formulaData: {
+    flex: 1,
+  },
+
+  formulaDataFull: {
+    width: '100%',
+  },
+
+  formulaCondition: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: -3,
+  },
+
+  observationBox: {
+    marginTop: 9,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+
+  observationLabel: {
+    fontSize: 10,
+    color: COLORS.gray,
+    marginBottom: 2,
+  },
+
+  observationText: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.text,
+  },
+
+  formulaCostRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 2,
+    marginTop: 9,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
   },
 
-  totalLabel: {
-    fontSize: 19,
+  formulaCostLabel: {
+    fontSize: 11,
+    color: COLORS.gray,
+  },
+
+  formulaCostValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+
+  deliveryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 7,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+
+  deliveryContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  deliveryLabel: {
+    fontSize: 10,
+    color: COLORS.gray,
+    marginBottom: 2,
+  },
+
+  deliveryValue: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 30,
+  },
+
+  summaryLabel: {
+    fontSize: 13,
+    color: COLORS.gray,
+  },
+
+  summaryValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+
+  summaryTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+
+  summaryTotalLabel: {
+    fontSize: 17,
     fontWeight: '800',
     color: COLORS.text,
   },
 
-  totalValue: {
-    fontSize: 21,
+  summaryTotalValue: {
+    fontSize: 19,
     fontWeight: '900',
     color: COLORS.primary,
   },
 
+  // BOTÓN DE MARCAR COMO LISTO
+  readyActionCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+
+  readyActionInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+
+  readyActionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FDECEC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+
+  readyActionTextContainer: {
+    flex: 1,
+  },
+
+  readyActionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+
+  readyActionDescription: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.gray,
+  },
+
+  readyButton: {
+    minHeight: 46,
+    borderRadius: 9,
+    backgroundColor: COLORS.primary,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+  },
+
+  readyButtonDisabled: {
+    opacity: 0.6,
+  },
+
+  readyButtonText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '800',
+    marginLeft: 7,
+  },
+
+  // VISOR DE IMAGEN COMPLETA
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  imageModal: {
+    width: '100%',
+    height: '80%',
+  },
+
+  imageModalClose: {
+    position: 'absolute',
+    top: 45,
+    right: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+
+  imageModalHint: {
+    position: 'absolute',
+    bottom: 35,
+    color: COLORS.white,
+    fontSize: 12,
+    opacity: 0.7,
+  },
+
+  // ESPACIO FINAL
   bottomSpace: {
-    height: 20,
+    height: 10,
   },
 });
