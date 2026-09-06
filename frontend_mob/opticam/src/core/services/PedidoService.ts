@@ -66,7 +66,12 @@ export class PedidoService {
     }
 
     if (!data.data) return null;
-    return PedidoModel.fromJSON(data.data);
+     const pedidoData = {
+     ...(data.data.pedido || data.data),
+     productos: data.data.productos || data.data.pedido?.productos || [],
+};
+
+return PedidoModel.fromJSON(pedidoData);
   }
 
   // ===== CANCELAR PEDIDO =====

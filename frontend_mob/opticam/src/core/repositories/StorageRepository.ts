@@ -2,6 +2,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export class StorageRepository {
+  clearSession() {
+    throw new Error('Method not implemented.');
+  }
   async getToken(): Promise<string | null> {
     try {
       const token = await AsyncStorage.getItem('token');
