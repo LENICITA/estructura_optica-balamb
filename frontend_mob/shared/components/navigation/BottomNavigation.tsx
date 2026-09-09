@@ -52,13 +52,13 @@ export const BottomNavigation = () => {
           label: 'Carrito',
           icon: 'cart-outline',
           activeIcon: 'cart',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         },
         {
           label: 'Pedidos',
           icon: 'cube-outline',
           activeIcon: 'cube',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         },
         {
           label: 'Perfil',
@@ -88,7 +88,7 @@ export const BottomNavigation = () => {
           label: 'Pedidos',
           icon: 'cart-outline',
           activeIcon: 'cart',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
         },
         {
           label: 'Repartidores',

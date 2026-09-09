@@ -257,7 +257,7 @@ const role = getMainRole();
           id: 'admin-pedidos',
           label: 'Pedidos',
           icon: 'cart-outline',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
           admin: true,
         });
 
@@ -310,7 +310,7 @@ const role = getMainRole();
           id: 'carrito',
           label: 'Carrito',
           icon: 'cart-outline',
-          route: 'Carrito',
+          route: 'CarritoCliente',
         });
 
 
@@ -318,7 +318,7 @@ const role = getMainRole();
           id: 'control-pedido',
           label: 'Mis Pedidos',
           icon: 'cube-outline',
-          route: 'ControlPedido',
+          route: 'MisPedidosCliente',
         });
 
       }

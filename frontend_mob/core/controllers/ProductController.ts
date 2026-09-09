@@ -129,28 +129,59 @@ export class ProductController {
     imagen: string;
     material: string;
     color: string;
-  }): Promise<{ success: boolean; message: string; id_producto?: number }> {
+  }): Promise<{
+    success: boolean;
+    message: string;
+    id_producto?: number
+  }> {
     try {
-      if (!data.id_categoria || !data.nombre || !data.precio) {
-        return { success: false, message: 'Categoría, nombre y precio son requeridos' };
+      console.log('Controller - crearProducto:', {
+        id_categoria: data.id_categoria,
+        nombre: data.nombre,
+        tieneImagen: !!data.imagen,
+      });
+
+      // Validaciones
+      if (!data.id_categoria) {
+        return {
+          success: false,
+          message: 'La categoría es requerida'
+        };
       }
+      if (!data.nombre) {
+        return {
+          success: false,
+          message: 'El nombre es requerido'
+        };
+      }
+      if (!data.precio || data.precio <= 0) {
+        return {
+          success: false,
+          message: 'El precio debe ser mayor a 0'
+        };
+      }
+      if (!data.imagen) {
+        return {
+          success: false,
+          message: 'La imagen es requerida'
+        };
+      }
+
       const response = await this.productService.crearProducto(data);
-      if (!response.success) {
-        return { success: false, message: response.message || 'Error al crear producto' };
-      }
-      return {
-        success: true,
-        message: response.message || 'Producto creado exitosamente',
-        id_producto: response.id_producto,
-      };
+
+      console.log('Controller - Respuesta creación:', response);
+
+      return response;
+
     } catch (error: any) {
-      console.error(' Error en crearProducto:', error);
+      console.error('Error en crearProducto:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al crear producto',
+        message: error.response?.data?.message || 'Error al crear el producto',
       };
     }
   }
+
 
   async actualizarProducto(id: number, data: {
     id_categoria?: number;

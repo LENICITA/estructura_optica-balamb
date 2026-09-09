@@ -141,15 +141,20 @@ export class ProductService {
     if (filtros.material) params.material = filtros.material;
     if (filtros.id_categoria !== undefined) params.id_categoria = filtros.id_categoria;
 
-    const response = await apiClient.get<{ success: boolean; data: any[] }>('/inventario/productos/filtros', { params });
-    const data = response.data;
+    const response = await apiClient.get<{
+        success: boolean;
+        productos?: any[];
+        count?: number;
+      }>('/inventario/productos/filtros', { params });
+
+      const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al filtrar productos');
     }
 
-    return ProductModel.fromJSONArray(data.data || []);
-  }
+    return ProductModel.fromJSONArray(data.productos || []);
+    }
 
   // ===== OBTENER PRODUCTOS POR CATEGORÍA =====
   async getProductosByCategoria(id_categoria: number): Promise<ProductModel[]> {
@@ -177,14 +182,14 @@ export class ProductService {
 
   // ===== OBTENER MARCAS ÚNICAS =====
   async getMarcas(): Promise<string[]> {
-    const response = await apiClient.get<{ success: boolean; data: string[] }>('/inventario/marcas');
+    const response = await apiClient.get<{ success: boolean; marcas: string[] }>('/inventario/marcas');
     const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al obtener marcas');
     }
 
-    return data.data || [];
+    return data.marcas || [];
   }
 
   // ===== OBTENER COLORES ÚNICOS =====
@@ -216,19 +221,91 @@ export class ProductService {
   // ============================================
 
   // ===== CREAR PRODUCTO (ADMIN) =====
-  async crearProducto(data: CrearProductoRequest): Promise<{ success: boolean; message: string; id_producto?: number }> {
-    const response = await apiClient.post<ProductoResponse>('/inventario/productos', data);
-    const result = response.data;
+    async crearProducto(data: CrearProductoRequest): Promise<{
+    success: boolean;
+    message: string;
+    id_producto?: number
+  }> {
+    try {
+      console.log('Service - Creando producto con datos:', {
+        id_categoria: data.id_categoria,
+        nombre: data.nombre,
+        tieneImagen: !!data.imagen,
+      });
 
-    if (!result.success) {
-      throw new Error(result.message || 'Error al crear el producto');
+      const formData = new FormData();
+
+      formData.append('id_categoria', String(data.id_categoria));
+      formData.append('nombre', data.nombre);
+      formData.append('descripcion', data.descripcion || '');
+      formData.append('marca', data.marca || '');
+      formData.append('precio', String(data.precio));
+      formData.append('material', data.material || '');
+      formData.append('color', data.color || '');
+
+      if (data.imagen) {
+        const uri = data.imagen;
+        const uriParts = uri.split('.');
+        const fileType = uriParts[uriParts.length - 1] || 'jpg';
+        const fileName = `producto_${Date.now()}.${fileType}`;
+
+        let mimeType = 'image/jpeg';
+        if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
+        else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
+        else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
+
+        // @ts-ignore
+        formData.append('imagen', {
+          uri: uri,
+          name: fileName,
+          type: mimeType,
+        });
+
+        console.log('Service - Imagen adjuntada:', fileName);
+      }
+
+      console.log('Service - Enviando FormData...');
+
+      const response = await apiClient.post('/inventario/productos', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Service - Respuesta del backend:', response.data);
+
+      const result = response.data;
+
+      if (!result.success) {
+        return {
+          success: false,
+          message: result.message || 'Error al crear el producto',
+        };
+      }
+
+      return {
+        success: true,
+        message: result.message || 'Producto creado exitosamente',
+        id_producto: result.id_producto || result.data?.id_producto,
+      };
+
+    } catch (error: any) {
+      console.error('Error en ProductService.crearProducto:', error);
+
+      let errorMessage = 'No fue posible crear el producto.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Datos inválidos. Verifica la imagen y los campos.';
+      } else if (error.response?.status === 413) {
+        errorMessage = 'La imagen es demasiado grande.';
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+      };
     }
-
-    return {
-      success: true,
-      message: result.message || 'Producto creado exitosamente',
-      id_producto: result.data?.id_producto,
-    };
   }
 
   // ===== ACTUALIZAR PRODUCTO (ADMIN) =====
