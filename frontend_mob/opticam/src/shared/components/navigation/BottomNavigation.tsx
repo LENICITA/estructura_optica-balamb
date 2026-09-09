@@ -100,7 +100,7 @@ export const BottomNavigation = () => {
           label: 'Reportes',
           icon: 'bar-chart-outline',
           activeIcon: 'bar-chart',
-          route: 'AdminReportes',
+          route: 'ReportesAdmin',
         },
         {
           label: 'Perfil',

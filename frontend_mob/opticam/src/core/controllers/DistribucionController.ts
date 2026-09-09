@@ -162,4 +162,24 @@ export class DistribucionController {
       };
     }
   }
+
+//  REPARTIDOR - VER TODAS MIS DISTRIBUCIONES (TODOS LOS ESTADOS)
+  async getMisDistribuciones(): Promise<DistribucionModel[]> {
+    try {
+      const response = await this.distribucionService.getMisDistribuciones();
+
+      if (response?.success && response?.data) {
+        return DistribucionModel.fromJSONArray(response.data);
+      }
+
+      if (Array.isArray(response)) {
+        return DistribucionModel.fromJSONArray(response);
+      }
+
+      return [];
+    } catch (error) {
+      console.error(' Error en getMisDistribuciones:', error);
+      return [];
+    }
+  }
 }

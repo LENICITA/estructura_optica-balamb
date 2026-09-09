@@ -23,6 +23,7 @@ export interface Distribucion {
     cliente?: {
       nombre: string;
       telefono: string;
+      email: string;
       ciudad: string;
     };
   };
@@ -52,6 +53,7 @@ export class DistribucionModel implements Distribucion {
     cliente?: {
       nombre: string;
       telefono: string;
+      email: string;
       ciudad: string;
     };
   };
@@ -133,7 +135,19 @@ export class DistribucionModel implements Distribucion {
       fecha_asignacion: data.fecha_asignacion || new Date().toISOString(),
       fecha_entrega: data.fecha_entrega || null,
       observaciones: data.observaciones || null,
-      pedido: data.pedido,
+      pedido: {
+              id_pedido: data.id_pedido || 0,
+              direccion_entrega: data.direccion_entrega || '',
+              ciudad_envio: data.ciudad_envio || '',
+              total: data.total || 0,
+              fecha_estimada: data.fecha_estimada || '',
+              cliente: data.cliente_nombre ? {
+                nombre: data.cliente_nombre || '',
+                telefono: data.cliente_telefono || '',
+                email: data.cliente_email || '',
+                ciudad: data.cliente_ciudad || '',
+              } : undefined,
+            },
       repartidor: data.repartidor? {
           id: data.repartidor.id || data.repartidor.id_usuario || 0,
         nombre: data.repartidor.nombre || data.repartidor.nombre_completo || '',
