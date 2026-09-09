@@ -779,55 +779,38 @@ export const obtenerTodas = async (req, res) => {
   try {
     const distribuciones = await DistribucionModelo.obtenerTodas();
 
-    // Obtener datos con vehículo para cada distribución
-    const distribucionesConVehiculo = [];
-    for (const d of distribuciones) {
-      // Verificar si el usuario asignado es ADMIN o REPARTIDOR
-      const [usuarioAsignado] = await sequelize.query(
-        `SELECT r.nombre as rol
-         FROM USUARIOS u
-         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
-         JOIN ROLES r ON ru.id_rol = r.id_rol
-         WHERE u.id_usuario = ?`,
-        { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
-      );
-
-      let vehiculoInfo = 'N/A';
-      
-      // Si es REPARTIDOR, buscar su vehículo
-      if (usuarioAsignado?.rol === 'REPARTIDOR') {
-        const [vehiculo] = await sequelize.query(
-          `SELECT placa, tipo, modelo, color FROM VEHICULOS WHERE id_usuario = ?`,
-          { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
-        );
-        if (vehiculo) {
-          vehiculoInfo = `${vehiculo.tipo} ${vehiculo.modelo} - Placa: ${vehiculo.placa}`;
+    const distribucionesFormateadas = distribuciones.map((d) => ({
+      id_distribucion: d.id_distribucion,
+      estado: d.estado,
+      fecha_asignacion: d.fecha_asignacion,
+      fecha_entrega: d.fecha_entrega,
+      observaciones: d.observaciones,
+      pedido: {
+        id_pedido: d.id_pedido || 0,
+        direccion_entrega: d.direccion_entrega || 'Sin dirección',
+        ciudad_envio: d.ciudad_envio || 'Sin ciudad',
+        total: d.total || 0,
+        fecha_estimada: d.fecha_estimada || null,
+        cliente: {
+          nombre: d.cliente_nombre || 'Sin cliente',
+          telefono: d.cliente_telefono || '',
+          email: d.cliente_email || '',
+          ciudad: d.cliente_ciudad || '',
         }
+      },
+      repartidor: {
+        id: d.id_usuario || 0,
+        nombre: d.repartidor_nombre || 'No asignado',
+        email: d.repartidor_email || '',
+        telefono: d.repartidor_telefono || '',
+        vehiculo: d.vehiculo_tipo ? `${d.vehiculo_tipo} - ${d.vehiculo_placa || 'N/A'}` : 'N/A',
       }
+    }));
 
-      distribucionesConVehiculo.push({
-        id_distribucion: d.id_distribucion,
-        estado: d.estado,
-        fecha_asignacion: d.fecha_asignacion,
-        pedido: {
-          id_pedido: d.pedido?.id_pedido,
-          direccion_entrega: d.pedido?.direccion_entrega,
-          ciudad_envio: d.pedido?.ciudad_envio,
-          fecha_estimada: d.pedido?.fecha_estimada,
-          total: d.pedido?.total
-        },
-        repartidor: {
-          id: d.repartidor?.id_usuario,
-          nombre: d.repartidor?.nombre_completo,
-          vehiculo: vehiculoInfo  
-        }
-      });
-    }
-
-     res.json({
+    res.json({
       success: true,
-      count: distribucionesConVehiculo.length,
-      data: distribucionesConVehiculo
+      count: distribucionesFormateadas.length,
+      data: distribucionesFormateadas
     });
 
   } catch (error) {
@@ -966,6 +949,132 @@ export const obtenerDistribucionesExternas = async (req, res) => {
       success: false,
       message: 'Error al obtener distribuciones externas',
       error: error.message
+    });
+  }
+};
+// REPARTIDOR - VER TODAS MIS DISTRIBUCIONES (TODOS LOS ESTADOS)
+export const obtenerMisDistribuciones = async (req, res) => {
+  try {
+    const usuario = req.user;
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    // Verificar que sea repartidor
+    const esRepartidor = usuario.roles?.includes('REPARTIDOR') || false;
+    if (!esRepartidor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Solo los repartidores pueden ver sus distribuciones'
+      });
+    }
+
+    // Obtener TODAS las distribuciones del repartidor
+    const distribuciones = await DistribucionModelo.obtenerPorUsuario(usuario.id);
+
+    // Enriquecer con datos del cliente y vehículo
+    const distribucionesConDetalles = [];
+    for (const d of distribuciones) {
+      // Obtener datos del cliente
+      let clienteData = null;
+      if (d.pedido) {
+        const [cliente] = await sequelize.query(
+          `SELECT nombre_completo, telefono, ciudad, email
+           FROM USUARIOS 
+           WHERE id_usuario = ?`,
+          { replacements: [d.pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        clienteData = cliente;
+      }
+
+      // Obtener vehículo del repartidor
+      let vehiculoData = null;
+      const [vehiculo] = await sequelize.query(
+        `SELECT tipo, modelo, placa, color 
+         FROM VEHICULOS 
+         WHERE id_usuario = ?`,
+        { replacements: [usuario.id], type: sequelize.QueryTypes.SELECT }
+      );
+      if (vehiculo) {
+        vehiculoData = {
+          tipo: vehiculo.tipo,
+          modelo: vehiculo.modelo,
+          placa: vehiculo.placa,
+          color: vehiculo.color,
+          descripcion: `${vehiculo.tipo} ${vehiculo.modelo} - ${vehiculo.color} - Placa: ${vehiculo.placa}`
+        };
+      }
+
+      // Obtener el rol del usuario asignado
+      const [rolAsignado] = await sequelize.query(
+        `SELECT r.nombre as rol
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ?`,
+        { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      distribucionesConDetalles.push({
+        id_distribucion: d.id_distribucion,
+        estado: d.estado,
+        fecha_asignacion: d.fecha_asignacion,
+        fecha_entrega: d.fecha_entrega || null,
+        observaciones: d.observaciones,
+        
+        // Datos del cliente
+        cliente: clienteData ? {
+          id: d.pedido.id_usuario,
+          nombre: clienteData.nombre_completo,
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          ciudad: clienteData.ciudad
+        } : null,
+
+        // Datos del pedido
+        pedido: d.pedido ? {
+          id_pedido: d.pedido.id_pedido,
+          direccion_entrega: d.pedido.direccion_entrega || 'Sin dirección',
+          ciudad_envio: d.pedido.ciudad_envio || 'Sin ciudad',
+          total: d.pedido.total || 0,
+          fecha_estimada: d.pedido.fecha_estimada || null
+        } : null,
+
+        // Datos del repartidor asignado
+        repartidor_asignado: {
+          id: usuario.id,
+          nombre: usuario.nombre_completo,
+          email: usuario.email,
+          telefono: usuario.telefono,
+          rol: rolAsignado?.rol || 'REPARTIDOR',
+          vehiculo: vehiculoData
+        },
+
+        // Tipo de asignación (Bogotá o externa)
+        tipo_asignacion: d.pedido?.ciudad_envio ? 
+          (d.pedido.ciudad_envio.toLowerCase().trim() === 'bogotá' || 
+           d.pedido.ciudad_envio.toLowerCase().trim() === 'bogota' ? 
+            'BOGOTÁ' : 'EXTERNA') 
+          : 'DESCONOCIDA'
+      });
+    }
+
+    res.json({
+      success: true,
+      count: distribucionesConDetalles.length,
+      data: distribucionesConDetalles
+    });
+
+  } catch (error) {
+    console.error('Error al obtener todas las distribuciones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener distribuciones',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

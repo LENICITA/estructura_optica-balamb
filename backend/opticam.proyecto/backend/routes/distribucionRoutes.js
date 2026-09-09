@@ -26,6 +26,9 @@ router.put('/admin/:id/cancelar', authMiddleware, adminMiddleware, distribucionC
 // RUTAS PARA REPARTIDOR (requieren token)
 // ============================================
 
+// Obtener distribuciones asignadas al repartidor
+router.get('/mis-distribuciones', authMiddleware, distribucionController.obtenerMisDistribuciones);
+
 // Ver pedidos pendientes
 router.get('/pendientes', authMiddleware, distribucionController.obtenerPendientes);
 
