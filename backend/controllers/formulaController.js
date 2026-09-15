@@ -162,8 +162,6 @@ export const obtenerFormulaPorId = async (req, res) => {
     const { id } = req.params;
     const usuario = req.user;
 
-
-
     const formula = await FormulaModelo.obtenerPorId(id);
 
     if (!formula) {

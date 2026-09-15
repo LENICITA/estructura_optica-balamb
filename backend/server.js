@@ -18,13 +18,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000
-const SENA_HOST = process.env.HOST || '192.168.137.224';
-const CASA_HOST = process.env.HOST || '192.168.10.13';
-const HOST = process.env.HOST || '192.168.20.41';
+const HOST = '192.168.10.13';
 
 // Middlewares
 app.use(cors());
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,12 +46,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
     try {
         await sequelize.authenticate();
         console.log('Conexión a la base de datos establecida');
-        console.log(`Servidor corriendo en http://${SENA_HOST}:${PORT}`);
-        console.log(`Servidor corriendo en http://${CASA_HOST}:${PORT}`);
+        console.log(`Servidor corriendo en http://localhost:${PORT}`);
         console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     } catch (error) {
         console.error('Error al conectar a la base de datos:', error);
