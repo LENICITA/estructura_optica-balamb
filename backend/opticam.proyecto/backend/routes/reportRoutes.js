@@ -399,7 +399,7 @@ router.get('/clientes-frecuentes', reporteClientesFrecuentes);
  * /api/reportes/resumen-general:
  *   get:
  *     summary: Resumen general del sistema (Admin)
- *     description: Devuelve KPIs globales: clientes, repartidores, productos, pedidos, ingresos, fórmulas aprobadas/pendientes y los ingresos de los últimos 6 meses.
+ *     description: "Devuelve KPIs globales: clientes, repartidores, productos, pedidos, ingresos, fórmulas aprobadas/pendientes y los ingresos de los últimos 6 meses."
  *     tags: [Reportes]
  *     security:
  *       - bearerAuth: []
