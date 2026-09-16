@@ -134,7 +134,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     // Crear la distribución
     const distribucion = await DistribucionModelo.crear({
       id_pedido,
-      id_usuario,
+      id_usuario: usuarioAsignado,
       observaciones: observacionesFinal || null
     });
 
