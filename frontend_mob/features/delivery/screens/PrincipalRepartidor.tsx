@@ -25,6 +25,8 @@ type Pedido = {
   cliente: string;
   direccion: string;
   ciudad: string;
+  repartidor: string;
+  vehiculo: string;
   latitud: number;
   longitud: number;
   estado: EstadoPedido;
@@ -69,7 +71,7 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
           todasLasDistribuciones &&
           todasLasDistribuciones.length > 0
         ) {
-          const pedidosMapeados = todasLasDistribuciones.map(
+        const pedidosMapeados = todasLasDistribuciones.map(
             (d: any) => {
               const pedidoData = d.pedido || {};
 
@@ -83,6 +85,8 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                 pedidoData.ciudad_envio ||
                 d.ciudad_envio ||
                 'Sin ciudad';
+
+                
 
               return {
                 id: Number(
@@ -426,7 +430,7 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                         styles.pedidoTitulo
                       }
                     >
-                      Pedido #{pedido.id}
+                      Distribucion #{pedido.id}
                     </Text>
 
                     <Text
@@ -513,6 +517,7 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                   </View>
                 </View>
 
+
                 {/* DIRECCIÓN REAL */}
 
                 <View style={styles.infoRow}>
@@ -551,6 +556,69 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                   </View>
                 </View>
 
+                {/* REPARTIDOR*/}
+                <View style={styles.infoRow}>
+                  <View
+                    style={styles.iconoInfo}
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <View
+                    style={
+                      styles.infoTextoContainer
+                    }
+                  >
+                    <Text
+                      style={styles.infoLabel}
+                    >
+                      Repartidor
+                    </Text>
+
+                    <Text
+                      style={styles.infoTexto}
+                    >
+                      {pedido.repartidor}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* VEHICULO */}
+
+                <View style={styles.infoRow}>
+                  <View
+                    style={styles.iconoInfo}
+                  >
+                    <Ionicons
+                      name="car-outline"
+                      size={20}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <View
+                    style={
+                      styles.infoTextoContainer
+                    }
+                  >
+                    <Text
+                      style={styles.infoLabel}
+                    >
+                      Vehículo
+                    </Text>
+
+                    <Text
+                      style={styles.infoTexto}
+                    >
+                      {pedido.vehiculo}
+                    </Text>
+                  </View>
+                </View>
+
                 {/* BOTÓN IR A LA ENTREGA */}
 
                 {pedido.estado !== 'ENTREGADO' && (
@@ -578,62 +646,7 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                   </TouchableOpacity>
                 )}
 
-                {/* INICIAR ENTREGA */}
-
-                {pedido.estado ===
-                  'PENDIENTE' && (
-                  <TouchableOpacity
-                    style={styles.btnPedido}
-                    onPress={async () => {
-                      try {
-                        const result =
-                          await distribucionController.iniciarEntrega(
-                            pedido.id_distribucion
-                          );
-
-                        if (result.success) {
-                          Alert.alert(
-                            'Éxito',
-                            'Entrega iniciada correctamente'
-                          );
-
-                          cargarPedidos();
-                        } else {
-                          Alert.alert(
-                            'Error',
-                            result.message ||
-                              'No se pudo iniciar la entrega'
-                          );
-                        }
-                      } catch (error) {
-                        console.error(
-                          'Error al iniciar entrega:',
-                          error
-                        );
-
-                        Alert.alert(
-                          'Error',
-                          'No se pudo iniciar la entrega'
-                        );
-                      }
-                    }}
-                  >
-                    <Ionicons
-                      name="play-outline"
-                      size={20}
-                      color="#fff"
-                    />
-
-                    <Text
-                      style={
-                        styles.btnPedidoTexto
-                      }
-                    >
-                      Iniciar entrega
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
+              
                 {/* MARCAR ENTREGADO */}
 
                 {pedido.estado ===
