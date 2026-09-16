@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,10 +19,6 @@ import {
 } from "@react-navigation/native";
 
 import { UserController } from "../../../core/controllers/UserController";
-
-// ============================================
-// TIPOS DE NAVEGACIÓN
-// ============================================
 
 type RootStackParamList = {
   DetalleRepartidor: {
@@ -37,10 +33,6 @@ type RootStackParamList = {
   RegistrarRepartidor: undefined;
 };
 
-// ============================================
-// MODELO DEL REPARTIDOR
-// ============================================
-
 interface Repartidor {
   id: number;
   nombre: string;
@@ -51,10 +43,6 @@ interface Repartidor {
   ciudad?: string;
   fecha_registro: string;
 }
-
-// ============================================
-// SCREEN
-// ============================================
 
 export default function DashboardRepartidores() {
   const [repartidores, setRepartidores] = useState<Repartidor[]>([]);
@@ -67,15 +55,7 @@ export default function DashboardRepartidores() {
   const navigation =
     useNavigation<NavigationProp<RootStackParamList>>();
 
-  // ============================================
-  // CONTROLLER
-  // ============================================
-
   const userController = new UserController();
-
-  // ============================================
-  // CARGAR REPARTIDORES
-  // ============================================
 
   useFocusEffect(
     useCallback(() => {
@@ -146,10 +126,6 @@ export default function DashboardRepartidores() {
     }, [])
   );
 
-  // ============================================
-  // ELIMINAR REPARTIDOR
-  // ============================================
-
   const eliminarRepartidor = (item: Repartidor) => {
     Alert.alert(
       "Eliminar Repartidor",
@@ -210,10 +186,6 @@ export default function DashboardRepartidores() {
     );
   };
 
-  // ============================================
-  // FILTRAR REPARTIDORES
-  // ============================================
-
   const filtrarRepartidores =
     repartidores.filter((repartidor) => {
       const cumpleFiltro =
@@ -231,10 +203,6 @@ export default function DashboardRepartidores() {
       );
     });
 
-  // ============================================
-  // CANTIDADES
-  // ============================================
-
   const cantidadActivos =
     repartidores.filter(
       (r) => r.estado === "ACTIVO"
@@ -245,10 +213,6 @@ export default function DashboardRepartidores() {
       (r) => r.estado === "INACTIVO"
     ).length;
 
-  // ============================================
-  // RETURN
-  // ============================================
-
   return (
     <TouchableWithoutFeedback
       onPress={() => {
@@ -257,524 +221,423 @@ export default function DashboardRepartidores() {
       }}
     >
       <SafeAreaView style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.titulo}>
+            Gestión de Repartidores
+          </Text>
 
-        {/* ====================================== */}
-        {/* TÍTULO */}
-        {/* ====================================== */}
+          <Text style={styles.subtitulo}>
+            Administra el equipo de entregas
+          </Text>
 
-        <Text style={styles.titulo}>
-          Gestión de Repartidores
-        </Text>
-
-        <Text style={styles.subtitulo}>
-          Administra el equipo de entregas
-        </Text>
-
-        {/* ====================================== */}
-        {/* CARDS DE ESTADÍSTICAS */}
-        {/* ====================================== */}
-
-        <View style={styles.cardContainer}>
-
-          <View
-            style={[
-              styles.cardInfo,
-              styles.cardTotal,
-            ]}
-          >
-            <View style={styles.iconWrapper}>
-              <Ionicons
-                name="people-outline"
-                size={24}
-                color="#B90F0F"
-              />
-            </View>
-
-            <Text style={styles.cardNumero}>
-              {repartidores.length}
-            </Text>
-
-            <Text style={styles.cardLabel}>
-              Repartidores
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.cardInfo,
-              styles.cardActivos,
-            ]}
-          >
-            <View style={styles.checkCircle}>
-              <Ionicons
-                name="checkmark"
-                size={16}
-                color="white"
-              />
-            </View>
-
-            <Text style={styles.cardNumero}>
-              {cantidadActivos}
-            </Text>
-
-            <Text style={styles.cardLabel}>
-              Activos
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.cardInfo,
-              styles.cardInactivos,
-            ]}
-          >
-            <View style={styles.circleIcon}>
-              <View
-                style={styles.verticalLine}
-              />
-
-              <View
-                style={styles.verticalLine}
-              />
-            </View>
-
-            <Text style={styles.cardNumero}>
-              {cantidadInactivos}
-            </Text>
-
-            <Text style={styles.cardLabel}>
-              Inactivos
-            </Text>
-          </View>
-
-        </View>
-
-        {/* ====================================== */}
-        {/* BUSCADOR */}
-        {/* ====================================== */}
-
-        <View style={styles.searchContainer}>
-
-          <Ionicons
-            name="search"
-            size={20}
-            color="#666"
-            style={{ marginRight: 10 }}
-          />
-
-          <TextInput
-            placeholder="Buscar repartidor"
-            placeholderTextColor="#999"
-            value={buscar}
-            onChangeText={setBuscar}
-            style={styles.searchInput}
-          />
-
-          {buscar !== "" && (
-            <TouchableOpacity
-              onPress={() =>
-                setBuscar("")
-              }
-            >
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color="#999"
-              />
-            </TouchableOpacity>
-          )}
-
-        </View>
-
-        {/* ====================================== */}
-        {/* FILTROS */}
-        {/* ====================================== */}
-
-        <View style={styles.filtroContainer}>
-
-          <TouchableOpacity
-            style={[
-              styles.cardFiltro,
-              filtro === "todos" &&
-                styles.botonSeleccionado,
-            ]}
-            onPress={() =>
-              setFiltro("todos")
-            }
-          >
-            <Text
+          <View style={styles.cardContainer}>
+            <View
               style={[
-                styles.textoFiltro,
-                filtro === "todos" &&
-                  styles.textoSeleccionado,
+                styles.cardInfo,
+                styles.cardTotal,
               ]}
             >
-              Todos ({repartidores.length})
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.iconWrapper}>
+                <Ionicons
+                  name="people-outline"
+                  size={24}
+                  color="#B90F0F"
+                />
+              </View>
 
-          <TouchableOpacity
-            style={[
-              styles.cardFiltro,
-              filtro === "ACTIVO" &&
-                styles.botonSeleccionado,
-            ]}
-            onPress={() =>
-              setFiltro("ACTIVO")
-            }
-          >
-            <Text
+              <Text style={styles.cardNumero}>
+                {repartidores.length}
+              </Text>
+
+              <Text style={styles.cardLabel}>
+                Repartidores
+              </Text>
+            </View>
+
+            <View
               style={[
-                styles.textoFiltro,
-                filtro === "ACTIVO" &&
-                  styles.textoSeleccionado,
+                styles.cardInfo,
+                styles.cardActivos,
               ]}
             >
-              Activos ({cantidadActivos})
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.checkCircle}>
+                <Ionicons
+                  name="checkmark"
+                  size={16}
+                  color="white"
+                />
+              </View>
 
-          <TouchableOpacity
-            style={[
-              styles.cardFiltro,
-              filtro === "INACTIVO" &&
-                styles.botonSeleccionado,
-            ]}
-            onPress={() =>
-              setFiltro("INACTIVO")
-            }
-          >
-            <Text
+              <Text style={styles.cardNumero}>
+                {cantidadActivos}
+              </Text>
+
+              <Text style={styles.cardLabel}>
+                Activos
+              </Text>
+            </View>
+
+            <View
               style={[
-                styles.textoFiltro,
-                filtro === "INACTIVO" &&
-                  styles.textoSeleccionado,
+                styles.cardInfo,
+                styles.cardInactivos,
               ]}
             >
-              Inactivos ({cantidadInactivos})
-            </Text>
-          </TouchableOpacity>
-
-        </View>
-
-        {/* ====================================== */}
-        {/* LISTA */}
-        {/* ====================================== */}
-
-        <FlatList
-          data={filtrarRepartidores}
-          keyExtractor={(item) =>
-            item.id.toString()
-          }
-          style={{
-            marginBottom: 5,
-          }}
-          showsVerticalScrollIndicator={true}
-          refreshing={loading}
-          renderItem={({ item }) => (
-
-            <TouchableWithoutFeedback>
-
-              <View style={styles.card}>
-
-                {/* ================================= */}
-                {/* ENCABEZADO */}
-                {/* ================================= */}
+              <View style={styles.circleIcon}>
+                <View
+                  style={styles.verticalLine}
+                />
 
                 <View
-                  style={styles.headerCard}
-                >
+                  style={styles.verticalLine}
+                />
+              </View>
 
-                  {/* AVATAR */}
+              <Text style={styles.cardNumero}>
+                {cantidadInactivos}
+              </Text>
 
-                  <View style={styles.avatar}>
+              <Text style={styles.cardLabel}>
+                Inactivos
+              </Text>
+            </View>
+          </View>
 
-                    <Ionicons
-                      name="person"
-                      size={22}
-                      color="#B90F0F"
-                    />
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search"
+              size={20}
+              color="#666"
+              style={{ marginRight: 10 }}
+            />
 
-                  </View>
+            <TextInput
+              placeholder="Buscar repartidor"
+              placeholderTextColor="#999"
+              value={buscar}
+              onChangeText={setBuscar}
+              style={styles.searchInput}
+            />
 
-                  {/* INFORMACIÓN */}
+            {buscar !== "" && (
+              <TouchableOpacity
+                onPress={() =>
+                  setBuscar("")
+                }
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color="#999"
+                />
+              </TouchableOpacity>
+            )}
+          </View>
 
+          <View style={styles.filtroContainer}>
+            <TouchableOpacity
+              style={[
+                styles.cardFiltro,
+                filtro === "todos" &&
+                  styles.botonSeleccionado,
+              ]}
+              onPress={() =>
+                setFiltro("todos")
+              }
+            >
+              <Text
+                style={[
+                  styles.textoFiltro,
+                  filtro === "todos" &&
+                    styles.textoSeleccionado,
+                ]}
+              >
+                Todos ({repartidores.length})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.cardFiltro,
+                filtro === "ACTIVO" &&
+                  styles.botonSeleccionado,
+              ]}
+              onPress={() =>
+                setFiltro("ACTIVO")
+              }
+            >
+              <Text
+                style={[
+                  styles.textoFiltro,
+                  filtro === "ACTIVO" &&
+                    styles.textoSeleccionado,
+                ]}
+              >
+                Activos ({cantidadActivos})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.cardFiltro,
+                filtro === "INACTIVO" &&
+                  styles.botonSeleccionado,
+              ]}
+              onPress={() =>
+                setFiltro("INACTIVO")
+              }
+            >
+              <Text
+                style={[
+                  styles.textoFiltro,
+                  filtro === "INACTIVO" &&
+                    styles.textoSeleccionado,
+                ]}
+              >
+                Inactivos ({cantidadInactivos})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginBottom: 5 }}>
+            {filtrarRepartidores.map((item) => (
+              <TouchableWithoutFeedback key={item.id.toString()}>
+                <View style={styles.card}>
                   <View
-                    style={
-                      styles.infoPrincipal
-                    }
+                    style={styles.headerCard}
                   >
-
-                    {/* NOMBRE + ESTADO */}
+                    <View style={styles.avatar}>
+                      <Ionicons
+                        name="person"
+                        size={22}
+                        color="#B90F0F"
+                      />
+                    </View>
 
                     <View
-                      style={styles.nombreRow}
+                      style={
+                        styles.infoPrincipal
+                      }
                     >
-
-                      <Text
-                        style={styles.nombre}
-                      >
-                        {item.nombre}
-                      </Text>
-
                       <View
-                        style={[
-                          styles.estadoBadge,
-
-                          item.estado ===
-                            "ACTIVO"
-                            ? styles.estadoActivo
-                            : styles.estadoInactivo,
-                        ]}
+                        style={styles.nombreRow}
                       >
+                        <Text
+                          style={styles.nombre}
+                        >
+                          {item.nombre}
+                        </Text>
 
                         <View
                           style={[
-                            styles.estadoDot,
+                            styles.estadoBadge,
 
                             item.estado ===
                               "ACTIVO"
-                              ? styles.dotVerde
-                              : styles.dotRojo,
+                              ? styles.estadoActivo
+                              : styles.estadoInactivo,
                           ]}
+                        >
+                          <View
+                            style={[
+                              styles.estadoDot,
+
+                              item.estado ===
+                                "ACTIVO"
+                                ? styles.dotVerde
+                                : styles.dotRojo,
+                            ]}
+                          />
+
+                          <Text
+                            style={[
+                              styles.estadoTexto,
+
+                              item.estado ===
+                                "ACTIVO"
+                                ? styles.estadoTextoActivo
+                                : styles.estadoTextoInactivo,
+                            ]}
+                          >
+                            {item.estado}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={styles.infoRow}
+                      >
+                        <Ionicons
+                          name="call-outline"
+                          size={13}
+                          color="#888"
                         />
 
                         <Text
-                          style={[
-                            styles.estadoTexto,
-
-                            item.estado ===
-                              "ACTIVO"
-                              ? styles.estadoTextoActivo
-                              : styles.estadoTextoInactivo,
-                          ]}
+                          style={styles.infoText}
                         >
-                          {item.estado}
+                          {item.telefono ||
+                            "No disponible"}
                         </Text>
-
                       </View>
 
+                      <View
+                        style={styles.infoRow}
+                      >
+                        <Ionicons
+                          name="mail-outline"
+                          size={13}
+                          color="#888"
+                        />
+
+                        <Text
+                          style={styles.infoText}
+                        >
+                          {item.correo ||
+                            "No disponible"}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={styles.infoRow}
+                      >
+                        <Ionicons
+                          name="location-outline"
+                          size={14}
+                          color="#888"
+                        />
+
+                        <Text
+                          style={styles.infoText}
+                        >
+                          {item.ciudad ||
+                            "No especificada"}
+                        </Text>
+                      </View>
                     </View>
 
-                    {/* TELÉFONO */}
-
-                    <View
-                      style={styles.infoRow}
+                    <TouchableOpacity
+                      style={styles.menuButton}
+                      onPress={() => {
+                        Alert.alert(
+                          "Eliminar repartidor",
+                          `¿Deseas eliminar a ${item.nombre}?`,
+                          [
+                            {
+                              text: "Cancelar",
+                              style: "cancel",
+                            },
+                            {
+                              text: "Eliminar",
+                              style: "destructive",
+                              onPress: () =>
+                                eliminarRepartidor(
+                                  item
+                                ),
+                            },
+                          ]
+                        );
+                      }}
                     >
-
                       <Ionicons
-                        name="call-outline"
-                        size={13}
+                        name="ellipsis-vertical"
+                        size={20}
                         color="#888"
                       />
-
-                      <Text
-                        style={styles.infoText}
-                      >
-                        {item.telefono ||
-                          "No disponible"}
-                      </Text>
-
-                    </View>
-
-                    {/* CORREO */}
-
-                    <View
-                      style={styles.infoRow}
-                    >
-
-                      <Ionicons
-                        name="mail-outline"
-                        size={13}
-                        color="#888"
-                      />
-
-                      <Text
-                        style={styles.infoText}
-                      >
-                        {item.correo ||
-                          "No disponible"}
-                      </Text>
-
-                    </View>
-
-                    {/* CIUDAD */}
-
-                    <View
-                      style={styles.infoRow}
-                    >
-
-                      <Ionicons
-                        name="location-outline"
-                        size={14}
-                        color="#888"
-                      />
-
-                      <Text
-                        style={styles.infoText}
-                      >
-                        {item.ciudad ||
-                          "No especificada"}
-                      </Text>
-
-                    </View>
-
+                    </TouchableOpacity>
                   </View>
 
-                  {/* ================================= */}
-                  {/* MENÚ DE TRES PUNTOS */}
-                  {/* ================================= */}
+                  <View
+                    style={styles.resumen}
+                  >
+                    <View
+                      style={styles.resumenItem}
+                    >
+                      <Ionicons
+                        name="cube-outline"
+                        size={17}
+                        color="#B90F0F"
+                      />
+
+                      <Text
+                        style={
+                          styles.resumenText
+                        }
+                      >
+                        {item.pedidos || 0}{" "}
+                        pedidos asignados
+                      </Text>
+                    </View>
+
+                    <View
+                      style={styles.divisor}
+                    />
+
+                    <View
+                      style={styles.resumenItem}
+                    >
+                      <Ionicons
+                        name="calendar-outline"
+                        size={17}
+                        color="#B90F0F"
+                      />
+
+                      <Text
+                        style={
+                          styles.resumenText
+                        }
+                      >
+                        Último pedido
+                      </Text>
+                    </View>
+                  </View>
 
                   <TouchableOpacity
-                    style={styles.menuButton}
+                    style={styles.detalles}
                     onPress={() => {
-
-                      Alert.alert(
-                        "Eliminar repartidor",
-                        `¿Deseas eliminar a ${item.nombre}?`,
-                        [
-                          {
-                            text: "Cancelar",
-                            style: "cancel",
-                          },
-                          {
-                            text: "Eliminar",
-                            style: "destructive",
-                            onPress: () =>
-                              eliminarRepartidor(
-                                item
-                              ),
-                          },
-                        ]
+                      navigation.navigate(
+                        "DetalleRepartidor",
+                        {
+                          id: item.id,
+                        }
                       );
-
                     }}
                   >
-
-                    <Ionicons
-                      name="ellipsis-vertical"
-                      size={20}
-                      color="#888"
-                    />
-
+                    <Text
+                      style={
+                        styles.detallesText
+                      }
+                    >
+                      Ver detalles →
+                    </Text>
                   </TouchableOpacity>
-
                 </View>
+              </TouchableWithoutFeedback>
+            ))}
+          </View>
 
-                {/* ================================= */}
-                {/* RESUMEN */}
-                {/* ================================= */}
-
-                <View
-                  style={styles.resumen}
-                >
-
-                  <View
-                    style={styles.resumenItem}
-                  >
-
-                    <Ionicons
-                      name="cube-outline"
-                      size={17}
-                      color="#B90F0F"
-                    />
-
-                    <Text
-                      style={
-                        styles.resumenText
-                      }
-                    >
-                      {item.pedidos || 0}{" "}
-                      pedidos asignados
-                    </Text>
-
-                  </View>
-
-                  <View
-                    style={styles.divisor}
-                  />
-
-                  <View
-                    style={styles.resumenItem}
-                  >
-
-                    <Ionicons
-                      name="calendar-outline"
-                      size={17}
-                      color="#B90F0F"
-                    />
-
-                    <Text
-                      style={
-                        styles.resumenText
-                      }
-                    >
-                      Último pedido
-                    </Text>
-
-                  </View>
-
-                </View>
-
-                {/* ================================= */}
-                {/* DETALLES */}
-                {/* ================================= */}
-
-                <TouchableOpacity
-                  style={styles.detalles}
-                  onPress={() => {
-
-                    navigation.navigate(
-                      "DetalleRepartidor",
-                      {
-                        id: item.id,
-                      }
-                    );
-
-                  }}
-                >
-
-                  <Text
-                    style={
-                      styles.detallesText
-                    }
-                  >
-                    Ver detalles →
-                  </Text>
-
-                </TouchableOpacity>
-
-              </View>
-
-            </TouchableWithoutFeedback>
-          )}
-        />
-
-        {/* ====================================== */}
-        {/* BOTÓN FLOTANTE */}
-        {/* ====================================== */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
 
         <View
           style={
             styles.containerFlotante
           }
         >
-
           <TouchableOpacity
             style={styles.botonFlotante}
             onPress={() => {
-
               navigation.navigate(
                 "RegistrarRepartidor"
               );
-
             }}
           >
-
             <Text style={styles.plus}>
               +
             </Text>
-
           </TouchableOpacity>
 
           <Text
@@ -782,24 +645,21 @@ export default function DashboardRepartidores() {
           >
             Agregar Repartidor
           </Text>
-
         </View>
-
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }
 
-// ============================================
-// ESTILOS
-// ============================================
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: "#F3F4F6",
-    padding: 20,
+    padding: 10,
+  },
+
+  scrollContent: {
+    paddingBottom: 20,
   },
 
   titulo: {
@@ -1160,5 +1020,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-
 });
