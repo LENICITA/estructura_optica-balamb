@@ -168,10 +168,7 @@ export interface GenerarPDFRequest {
 export interface GenerarPDFResponse {
   success: boolean;
   message: string;
-  data?: {
-    url?: string;
-    filename?: string;
-  };
+  data?: Blob;
 }
 
 export class ReporteModel {

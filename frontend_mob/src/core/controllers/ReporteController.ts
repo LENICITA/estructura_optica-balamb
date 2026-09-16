@@ -122,12 +122,22 @@ export class ReporteController {
   }
 
   // ===== REPORTE 9: GENERAR PDF =====
-  async generarPDF(data: GenerarPDFRequest): Promise<GenerarPDFResponse | null> {
+   async generarPDF(data: GenerarPDFRequest): Promise<{
+    success: boolean;
+    message?: string;
+    blob?: Blob;
+  }> {
     try {
-      return await this.reporteService.generarPDF(data);
-    } catch (error) {
-      console.error('Error en generarPDF:', error);
-      return null;
-    }
-  }
+      console.log('Controller - generarPDF:', data);
+      const result = await this.reporteService.generarPDF(data);
+      console.log('Controller - Resultado:', result);
+      return result;
+    } catch (error: any) {
+      console.error('Controller - Error:', error);
+      return {
+        success: false,
+        message: error.message || 'Error al generar el reporte',
+      };
+}
+}
 }

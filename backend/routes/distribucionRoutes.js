@@ -26,11 +26,17 @@ router.put('/admin/:id/cancelar', authMiddleware, adminMiddleware, distribucionC
 // RUTAS PARA REPARTIDOR (requieren token)
 // ============================================
 
+// Obtener distribuciones asignadas al repartidor
+router.get('/mis-distribuciones', authMiddleware, distribucionController.obtenerMisDistribuciones);
+
 // Ver pedidos pendientes
 router.get('/pendientes', authMiddleware, distribucionController.obtenerPendientes);
 
 // Ver pedidos en entrega
 router.get('/en-entrega', authMiddleware, distribucionController.obtenerEnEntrega);
+
+// Ver historial de entregas
+router.get('/historial', authMiddleware, distribucionController.obtenerHistorial);
 
 // Ver detalle de una distribución (con dirección)
 router.get('/:id', authMiddleware, distribucionController.obtenerDistribucionPorId);  // ← NUEVA
@@ -40,8 +46,5 @@ router.patch('/:id/iniciar', authMiddleware, distribucionController.iniciarEntre
 
 // Marcar como entregado
 router.patch('/:id/entregar', authMiddleware, distribucionController.marcarEntregado);
-
-// Ver historial de entregas
-router.get('/historial', authMiddleware, distribucionController.obtenerHistorial);
 
 export default router;

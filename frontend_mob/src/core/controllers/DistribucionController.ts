@@ -49,7 +49,7 @@ export class DistribucionController {
   }
 
   //  OBTENER TODAS LAS DISTRIBUCIONES (ADMIN)
-  async getTodasDistribuciones(): Promise<DistribucionModel[]> {
+  async getTodasDistribuciones(): Promise<any> {
     try {
       return await this.distribucionService.getTodasDistribuciones();
     } catch (error) {
@@ -59,7 +59,7 @@ export class DistribucionController {
   }
 
   //  OBTENER DISTRIBUCIONES EXTERNAS (ADMIN)
-  async getDistribucionesExternas(): Promise<DistribucionModel[]> {
+  async getDistribucionesExternas(): Promise<any> {
     try {
       return await this.distribucionService.getDistribucionesExternas();
     } catch (error) {
@@ -120,7 +120,10 @@ export class DistribucionController {
   //  OBTENER DISTRIBUCIÓN POR ID (ADMIN y REPARTIDOR)
   async getDistribucionById(id: number): Promise<DistribucionModel | null> {
     try {
-      return await this.distribucionService.getDistribucionById(id);
+      const response = await this.distribucionService.getDistribucionById(id);
+      const data = response?.data ?? response;
+
+      return data ? DistribucionModel.fromJSON(data) : null;
     } catch (error) {
       console.error(' Error en getDistribucionById:', error);
       return null;
@@ -160,6 +163,26 @@ export class DistribucionController {
         success: false,
         message: error.response?.data?.message || error.message || 'Error al marcar como entregado',
       };
+    }
+  }
+
+//  REPARTIDOR - VER TODAS MIS DISTRIBUCIONES (TODOS LOS ESTADOS)
+  async getMisDistribuciones(): Promise<DistribucionModel[]> {
+    try {
+      const response = await this.distribucionService.getMisDistribuciones();
+
+      if (response?.success && response?.data) {
+        return DistribucionModel.fromJSONArray(response.data);
+      }
+
+      if (Array.isArray(response)) {
+        return DistribucionModel.fromJSONArray(response);
+      }
+
+      return [];
+    } catch (error) {
+      console.error(' Error en getMisDistribuciones:', error);
+      return [];
     }
   }
 }

@@ -81,7 +81,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
           model: sequelize.models.Usuario,
@@ -95,23 +95,22 @@ const DistribucionModelo = {
 
   // Obtener todas las distribuciones (admin)
   obtenerTodas: async () => {
-    const distribuciones = await Distribucion.findAll({
-      include: [
-        {
-          model: sequelize.models.Pedido,
-          as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
-        },
-        {
-          model: sequelize.models.Usuario,
-          as: 'repartidor',
-          attributes: ['id_usuario', 'nombre_completo']
-        }
-      ],
-      order: [['fecha_asignacion', 'DESC']]
-    });
-    return distribuciones;
-  },
+  const distribuciones = await sequelize.query(
+    `SELECT d.*, 
+            p.id_pedido, p.direccion_entrega, p.ciudad_envio, p.total, p.fecha_estimada,
+            u.nombre_completo as cliente_nombre,
+            r.nombre_completo as repartidor_nombre,
+            v.tipo as vehiculo_tipo, v.placa as vehiculo_placa
+     FROM DISTRIBUCIONES d
+     LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
+     LEFT JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+     LEFT JOIN USUARIOS r ON d.id_usuario = r.id_usuario
+     LEFT JOIN VEHICULOS v ON r.id_usuario = v.id_usuario
+     ORDER BY d.fecha_asignacion DESC`,
+    { type: sequelize.QueryTypes.SELECT }
+  );
+  return distribuciones;
+},
 
 
   //Obtener distribuciones de un usuario específico (admin o repartidor)
@@ -145,7 +144,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'ASC']]
@@ -175,7 +174,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'DESC']]
@@ -202,7 +201,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
         }
       ],
       order: [['fecha_entrega', 'DESC']]

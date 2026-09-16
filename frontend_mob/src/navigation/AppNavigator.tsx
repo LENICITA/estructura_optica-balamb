@@ -31,8 +31,8 @@ import { CrearFormulaScreen } from '@/features/client/screens/CrearFormulaSreen'
 import { CarritoCliente } from '../features/client/screens/CarritoCliente';
 import { CrearPedidoCliente } from '../features/client/screens/CrearPedidoCliente';
 import { MisPedidosCliente } from '../features/client/screens/MisPedidosCliente';
-import DetallePedidoCliente from '../features/client/screens/DetallePedidoCliente';
 import { PagosCliente } from '../features/client/screens/PagosCliente';
+import DetallePedidoCliente from '../features/client/screens/DetallePedidoCliente';
 // ===== SCREENS ADMIN =====
 import { PrincipalAdmin } from '../features/admin/screens/PrincipalAdmin';
 import { PerfilAdmin } from '../features/admin/screens/PerfilAdmin';
@@ -45,12 +45,17 @@ import { DetalleProductoAdmin } from '../features/admin/screens/DetalleProductoA
 import { DetalleFormula } from '@/features/admin/screens/DetalleFormula';
 import GestionarFormulas from '@/features/admin/screens/GestionarFormulas';
 import { GestionarPedidosAdmin } from '../features/admin/screens/GestionarPedidosAdmin';
-import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
 import CrearProducto  from '../features/admin/screens/CrearProducto';
 import EditarProducto from '../features/admin/screens/EditarProducto';
+import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
+import { ReportesAdmin } from '../features/admin/screens/ReportesAdmin';
+import { GestionarDistribucionesAdmin } from '../features/admin/screens/GestionarDistribucionesAdmin';
+import DetalleEntrega from '../features/admin/screens/DetalleEntrega';
+import DistribucionesExternasAdmin from '../features/admin/screens/DistribucionesExternasAdmin';
 // ===== SCREENS DELIVERY =====
-import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
+import PrincipalRepartidor from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import DetalleEntregaRepartidor from '../features/delivery/screens/DetalleEntregaReparetidor';
 
 const Stack = createNativeStackNavigator();
 
@@ -203,13 +208,13 @@ export default function AppNavigator() {
                           )}
                       </Stack.Screen>
 
-          <Stack.Screen name="DetallePedidosAdmin">
-                          {() => (
-                              <UserLayout>
-                                <DetallePedidosAdmin/>
-                              </UserLayout>
-                          )}
-                      </Stack.Screen>
+     <Stack.Screen name="DetallePedidosAdmin">
+                               {() => (
+                                   <UserLayout>
+                                     <DetallePedidosAdmin/>
+                                   </UserLayout>
+                               )}
+                           </Stack.Screen>
 
   <Stack.Screen name="CrearProducto">
                   {() => (
@@ -226,6 +231,39 @@ export default function AppNavigator() {
                     </UserLayout>
                   )}
                 </Stack.Screen>
+
+                <Stack.Screen name="ReportesAdmin">
+                               {() => (
+                             <UserLayout>
+                               <ReportesAdmin />
+                             </UserLayout>
+                                   )}
+                                  </Stack.Screen>
+
+              <Stack.Screen name="GestionarDistribucionesAdmin">
+                             {({ navigation }) => (
+                                 <UserLayout>
+                                   <GestionarDistribucionesAdmin navigation={navigation} />
+                                 </UserLayout>
+                             )}
+                            </Stack.Screen>
+
+              <Stack.Screen name="DetalleEntrega">
+                {() => (
+                  <UserLayout>
+                    <DetalleEntrega />
+                  </UserLayout>
+                )}
+              </Stack.Screen>
+
+              <Stack.Screen name="DistribucionesExternasAdmin">
+                {({ navigation }) => (
+                  <UserLayout>
+                    <DistribucionesExternasAdmin navigation={navigation} />
+                  </UserLayout>
+                )}
+              </Stack.Screen>
+
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (
@@ -306,14 +344,14 @@ export default function AppNavigator() {
                                         </ClientLayout>
                                     )}
                                 </Stack.Screen>
-          
-          <Stack.Screen name="DetallePedidoCliente">
-           {() => (
-            <ClientLayout>
-             <DetallePedidoCliente />
-           </ClientLayout>
-           )}
-          </Stack.Screen>
+
+        <Stack.Screen name="DetallePedidoCliente">
+                   {() => (
+                    <ClientLayout>
+                     <DetallePedidoCliente />
+                   </ClientLayout>
+                   )}
+                  </Stack.Screen>
 
            <Stack.Screen name="PagosCliente">
                                                {({ navigation, route }) => (
@@ -327,6 +365,14 @@ export default function AppNavigator() {
               {({ navigation }) => (
                 <UserLayout>
                   <PrincipalRepartidor navigation={navigation} />
+                </UserLayout>
+              )}
+            </Stack.Screen>
+
+            <Stack.Screen name="DetalleEntregaRepartidor">
+              {() => (
+                <UserLayout>
+                  <DetalleEntregaRepartidor />
                 </UserLayout>
               )}
             </Stack.Screen>

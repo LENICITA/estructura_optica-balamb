@@ -1692,6 +1692,45 @@ export default function DetallePedidoCliente() {
 
         </View>
 
+         {/* ===================================================
+                     BOTÓN DE PAGO Y MENSAJES
+                =================================================== */}
+
+                {(pedido.estado === 'Pendiente' || pedido.estado === 'Listo') && (
+                  <TouchableOpacity
+                    style={[
+                      styles.botonPagarDetalle,
+                      pedido.estado === 'Listo' && styles.botonPagarDetalleListo,
+                    ]}
+                    onPress={() => navigation.navigate('PagosCliente', { id_pedido: pedido.id_pedido })}
+                  >
+                    <Ionicons
+                      name={pedido.estado === 'Listo' ? 'checkmark-circle-outline' : 'card-outline'}
+                      size={22}
+                      color="#FFF"
+                    />
+                    <Text style={styles.botonPagarDetalleText}>
+                      {pedido.estado === 'Listo' ? 'Pagar saldo restante' : 'Pagar ahora'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {pedido.estado === 'Abonado' && (
+                  <View style={styles.abonadoInfo}>
+                    <Ionicons name="information-circle" size={20} color="#2563EB" />
+                    <Text style={styles.abonadoInfoText}>
+                      Ya realizaste un abono del 50%. Espera a que el pedido esté listo para pagar el saldo restante.
+                    </Text>
+                  </View>
+                )}
+
+                {pedido.estado === 'Pagado' && (
+                  <View style={styles.pagadoInfo}>
+                    <Ionicons name="checkmark-circle" size={20} color="#059669" />
+                    <Text style={styles.pagadoInfoText}> Pedido pagado completamente</Text>
+                  </View>
+                )}
+
         <View
           style={
             styles.bottomSpace
@@ -2308,5 +2347,53 @@ const styles = StyleSheet.create({
 
   bottomSpace: {
     height: 15,
+  },
+  botonPagarDetalle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 10,
+  },
+  botonPagarDetalleListo: {
+    backgroundColor: '#059669',
+  },
+  botonPagarDetalleText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  abonadoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DBEAFE',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    gap: 8,
+  },
+  abonadoInfoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1E40AF',
+    lineHeight: 18,
+  },
+  pagadoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    gap: 8,
+  },
+  pagadoInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#065F46',
+    fontWeight: '500',
   },
 });

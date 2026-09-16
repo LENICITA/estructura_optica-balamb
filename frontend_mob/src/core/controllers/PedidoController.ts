@@ -201,6 +201,17 @@ export class PedidoController {
     }
   }
 
+ // ===== ADMIN: ACTUALIZAR FECHA ESTIMADA =====
+async actualizarFechaEstimada(
+  id: number,
+  fecha_estimada: string
+): Promise<{ success: boolean; message: string }> {
+  return await this.pedidoService.actualizarFechaEstimada(
+    id,
+    fecha_estimada
+  );
+}
+
   // ===== ADMIN: OBTENER ESTADÍSTICAS =====
   async getEstadisticas(): Promise<any> {
     try {
