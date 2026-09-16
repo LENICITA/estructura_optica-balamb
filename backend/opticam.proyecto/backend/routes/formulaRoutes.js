@@ -351,7 +351,7 @@ router.get('/admin/pendientes', authMiddleware, adminMiddleware, formulaControll
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Precio asignado exitosamente. Estado: Aprobado
+ *                   example: "Precio asignado exitosamente. Estado: Aprobado"
  *                 data:
  *                   $ref: '#/components/schemas/Formula'
  *       400:
@@ -409,7 +409,7 @@ router.put('/:id/precio', authMiddleware, adminMiddleware, formulaController.asi
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Estado actualizado a: Rechazado
+ *                   example: "Estado actualizado a: Rechazado"
  *                 data:
  *                   $ref: '#/components/schemas/Formula'
  *       400:
