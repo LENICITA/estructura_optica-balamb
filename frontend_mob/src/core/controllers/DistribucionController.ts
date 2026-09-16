@@ -35,9 +35,9 @@ export class DistribucionController {
 
       const result = await this.distribucionService.asignarPedido(data);
       return {
-        success: true,
-        message: 'Pedido asignado exitosamente',
-        data: result,
+        success: result?.success ?? true,
+        message: result?.message || 'Pedido asignado exitosamente',
+        data: result?.data,
       };
     } catch (error: any) {
       console.error(' Error en asignarPedido:', error);
@@ -49,9 +49,11 @@ export class DistribucionController {
   }
 
   //  OBTENER TODAS LAS DISTRIBUCIONES (ADMIN)
-  async getTodasDistribuciones(): Promise<any> {
+  async getTodasDistribuciones(): Promise<DistribucionModel[]> {
     try {
-      return await this.distribucionService.getTodasDistribuciones();
+      const body = await this.distribucionService.getTodasDistribuciones();
+      const arr = Array.isArray(body) ? body : body?.data ?? [];
+      return DistribucionModel.fromJSONArray(arr);
     } catch (error) {
       console.error(' Error en getTodasDistribuciones:', error);
       return [];
@@ -59,9 +61,11 @@ export class DistribucionController {
   }
 
   //  OBTENER DISTRIBUCIONES EXTERNAS (ADMIN)
-  async getDistribucionesExternas(): Promise<any> {
+  async getDistribucionesExternas(): Promise<DistribucionModel[]> {
     try {
-      return await this.distribucionService.getDistribucionesExternas();
+      const body = await this.distribucionService.getDistribucionesExternas();
+      const arr = Array.isArray(body) ? body : body?.data ?? [];
+      return DistribucionModel.fromJSONArray(arr);
     } catch (error) {
       console.error(' Error en getDistribucionesExternas:', error);
       return [];
@@ -73,8 +77,8 @@ export class DistribucionController {
     try {
       const result = await this.distribucionService.cancelarEntrega(id, observacion);
       return {
-        success: result.success,
-        message: result.message || 'Entrega cancelada exitosamente',
+        success: result?.success ?? true,
+        message: result?.message || 'Entrega cancelada exitosamente',
       };
     } catch (error: any) {
       console.error(' Error en cancelarEntrega:', error);
@@ -90,17 +94,20 @@ export class DistribucionController {
   //  OBTENER PEDIDOS PENDIENTES (ADMIN ve externas, REPARTIDOR ve sus pendientes)
   async getPendientes(): Promise<DistribucionModel[]> {
     try {
-      return await this.distribucionService.getPendientes();
+      const body = await this.distribucionService.getPendientes();
+      const arr = Array.isArray(body) ? body : body?.data ?? [];
+      return DistribucionModel.fromJSONArray(arr);
     } catch (error) {
       console.error(' Error en getPendientes:', error);
       return [];
     }
   }
-
   //  OBTENER PEDIDOS EN ENTREGA (ADMIN ve externas, REPARTIDOR ve sus en entrega)
   async getEnEntrega(): Promise<DistribucionModel[]> {
     try {
-      return await this.distribucionService.getEnEntrega();
+      const body = await this.distribucionService.getEnEntrega();
+      const arr = Array.isArray(body) ? body : body?.data ?? [];
+      return DistribucionModel.fromJSONArray(arr);
     } catch (error) {
       console.error(' Error en getEnEntrega:', error);
       return [];
@@ -110,7 +117,9 @@ export class DistribucionController {
   //  OBTENER HISTORIAL (ADMIN ve externas, REPARTIDOR ve su historial)
   async getHistorial(): Promise<DistribucionModel[]> {
     try {
-      return await this.distribucionService.getHistorial();
+      const body = await this.distribucionService.getHistorial();
+      const arr = Array.isArray(body) ? body : body?.data ?? [];
+      return DistribucionModel.fromJSONArray(arr);
     } catch (error) {
       console.error(' Error en getHistorial:', error);
       return [];
@@ -120,10 +129,10 @@ export class DistribucionController {
   //  OBTENER DISTRIBUCIÓN POR ID (ADMIN y REPARTIDOR)
   async getDistribucionById(id: number): Promise<DistribucionModel | null> {
     try {
-      const response = await this.distribucionService.getDistribucionById(id);
-      const data = response?.data ?? response;
+      const body = await this.distribucionService.getDistribucionById(id);
+      const payload = body?.data ?? body;
 
-      return data ? DistribucionModel.fromJSON(data) : null;
+      return payload ? DistribucionModel.fromJSON(payload) : null;
     } catch (error) {
       console.error(' Error en getDistribucionById:', error);
       return null;
@@ -137,8 +146,8 @@ export class DistribucionController {
     try {
       const result = await this.distribucionService.iniciarEntrega(id);
       return {
-        success: result.success,
-        message: result.message || 'Entrega iniciada exitosamente',
+        success: result?.success ?? true,
+        message: result?.message || 'Entrega iniciada exitosamente',
       };
     } catch (error: any) {
       console.error(' Error en iniciarEntrega:', error);
@@ -154,8 +163,8 @@ export class DistribucionController {
     try {
       const result = await this.distribucionService.marcarEntregado(id, observacion);
       return {
-        success: result.success,
-        message: result.message || 'Pedido marcado como entregado',
+        success: result?.success ?? true,
+        message: result?.message || 'Pedido marcado como entregado',
       };
     } catch (error: any) {
       console.error(' Error en marcarEntregado:', error);
