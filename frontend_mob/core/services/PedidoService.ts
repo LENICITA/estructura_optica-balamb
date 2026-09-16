@@ -30,19 +30,24 @@ export interface EstadisticasPedidos {
 
 export class PedidoService {
   // ===== CREAR PEDIDO =====
-  async crearPedido(data: CrearPedidoRequest): Promise<{ id_pedido: number; total: number }> {
-    const response = await apiClient.post<PedidoResponse>('/pedidos', data);
-    const result = response.data;
+  async crearPedido(data: CrearPedidoRequest): Promise<{
+      success: boolean;
+      message: string;
+      data: any;
+    }> {
+      const response = await apiClient.post<PedidoResponse>('/pedidos', data);
+      const result = response.data;
 
-    if (!result.success) {
-      throw new Error(result.message || 'Error al crear el pedido');
+      if (!result.success) {
+        throw new Error(result.message || 'Error al crear el pedido');
+      }
+
+      return {
+        success: true,
+        message: result.message || 'Pedido creado exitosamente',
+        data: result.data,
+      };
     }
-
-    return {
-      id_pedido: result.data?.id_pedido || 0,
-      total: result.data?.total || 0,
-    };
-  }
 
   // ===== OBTENER MIS PEDIDOS (CLIENTE) =====
   async getMisPedidos(): Promise<PedidoModel[]> {
@@ -76,9 +81,17 @@ return PedidoModel.fromJSON(pedidoData);
 
   // ===== CANCELAR PEDIDO =====
   async cancelarPedido(id: number): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/cancelar`);
-    return response.data;
-  }
+      try {
+        const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/cancelar`);
+        return response.data;
+      } catch (error: any) {
+        const mensaje =
+          error.response?.data?.message ||
+          error.message ||
+          'No fue posible cancelar el pedido';
+        return { success: false, message: mensaje };
+      }
+    }
 
   // ===== ADMIN: OBTENER TODOS LOS PEDIDOS =====
   async getTodosLosPedidos(): Promise<PedidoModel[]> {
@@ -106,21 +119,51 @@ return PedidoModel.fromJSON(pedidoData);
 
   // ===== ADMIN: ACTUALIZAR ESTADO DEL PEDIDO =====
   async actualizarEstadoPedido(id: number, estado: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/estado`, { estado });
-    return response.data;
-  }
+      try {
+        const response = await apiClient.put<{ success: boolean; message: string }>(
+          `/pedidos/${id}/estado`,
+          { estado }
+        );
+        return response.data;
+      } catch (error: any) {
+        const mensaje =
+          error.response?.data?.message ||
+          error.message ||
+          'No fue posible actualizar el estado';
+        return { success: false, message: mensaje };
+      }
+    }
 
   // ===== ADMIN: MARCAR PEDIDO COMO LISTO =====
   async marcarPedidoComoListo(id: number): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/listo`);
-    return response.data;
-  }
+      try {
+        const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/listo`);
+        return response.data;
+      } catch (error: any) {
+        const mensaje =
+          error.response?.data?.message ||
+          error.message ||
+          'No fue posible marcar el pedido como LISTO';
+        return { success: false, message: mensaje };
+      }
+    }
 
   // ===== ADMIN: ACTUALIZAR FECHA ESTIMADA =====
   async actualizarFechaEstimada(id: number, fecha_estimada: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put<{ success: boolean; message: string }>(`/pedidos/${id}/fecha-estimada`, { fecha_estimada });
-    return response.data;
-  }
+      try {
+        const response = await apiClient.put<{ success: boolean; message: string }>(
+          `/pedidos/${id}/fecha-estimada`,
+          { fecha_estimada }
+        );
+        return response.data;
+      } catch (error: any) {
+        const mensaje =
+          error.response?.data?.message ||
+          error.message ||
+          'No fue posible actualizar la fecha estimada';
+        return { success: false, message: mensaje };
+      }
+    }
 
   // ===== ADMIN: OBTENER ESTADÍSTICAS =====
   async getEstadisticas(): Promise<EstadisticasPedidos> {

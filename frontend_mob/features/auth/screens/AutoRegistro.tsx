@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../../../shared/constants/colors';
+import { validarFormularioCliente } from '../../../shared/validators/userValidators';
 
 interface Props {
   navigation: any;
@@ -59,105 +60,66 @@ export const AutoRegistro = ({ navigation }: Props) => {
     }
   };
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
   const handleRegister = async () => {
-    setError('');
+      setError('');
 
-    if (!formData.nombre_completo.trim()) {
-      setError('El nombre completo es obligatorio');
-      return;
-    }
-    if (!formData.email.trim()) {
-      setError('El email es obligatorio');
-      return;
-    }
-    if (!validateEmail(formData.email)) {
-      setError('Ingresa un email válido');
-      return;
-    }
-
-if (!formData.telefono.trim()) {
-    setError('El teléfono es obligatorio');
-    return;
-  }
-  if (!formData.documento.trim()) {
-    setError('El documento es obligatorio');
-    return;
-  }
-  if (!formData.ciudad.trim()) {
-    setError('La ciudad es obligatoria');
-    return;
-  }
-  if (!formData.direccion.trim()) {
-    setError('La dirección es obligatoria');
-    return;
-  }
-  if (!formData.fecha_nacimiento) {
-    setError('La fecha de nacimiento es obligatoria');
-    return;
-  }
-
-    if (!formData.contrasena) {
-      setError('La contraseña es obligatoria');
-      return;
-    }
-    if (formData.contrasena !== formData.confirmar_contrasena) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-    if (formData.contrasena.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-    if (!passwordRegex.test(formData.contrasena)) {
-      setError('La contraseña debe tener: mayúscula, minúscula y número');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const userData = {
-        nombre_completo: formData.nombre_completo.trim(),
-        email: formData.email.trim().toLowerCase(),
-        documento: formData.documento.trim(),
+      // 1. Validar formulario completo con el validador compartido
+      const check = validarFormularioCliente({
+        nombre_completo: formData.nombre_completo,
+        telefono: formData.telefono,
         fecha_nacimiento: formData.fecha_nacimiento,
-        ciudad: formData.ciudad.trim(),
-        direccion: formData.direccion.trim(),
-        telefono: formData.telefono.trim(),
+        documento: formData.documento,
+        ciudad: formData.ciudad,
+        direccion: formData.direccion,
+        email: formData.email,
         contrasena: formData.contrasena,
-      };
+      });
 
-      //  Usamos register de useAuth (que ya usa AuthController)
-      const result: any = await register(userData);
+      if (!check.valido) {
+        setError(check.mensaje || 'Datos inválidos');
+        return;
+      }
 
-      console.log('Registro exitoso en AutoRegistro:', result);
+      // 2. Validar que las contraseñas coincidan (esto es solo del frontend)
+      if (formData.contrasena !== formData.confirmar_contrasena) {
+        setError('Las contraseñas no coinciden');
+        return;
+      }
 
-      if (result.success) {
-        Alert.alert('¡Éxito!', 'Cuenta creada correctamente. Por favor inicia sesión.');
-        navigation.navigate('Iniciosesion');
-      } else {
-          console.log('Error en registro:', result.message);
-        if (result.message?.includes('email')) {
-          setError('Este email ya está registrado.');
-        } else if (result.message?.includes('documento')) {
-          setError('Este documento ya está registrado.');
+      setLoading(true);
+
+      try {
+        const userData = {
+          nombre_completo: formData.nombre_completo.trim(),
+          email: formData.email.trim().toLowerCase(),
+          documento: formData.documento.trim(),
+          fecha_nacimiento: formData.fecha_nacimiento,
+          ciudad: formData.ciudad.trim(),
+          direccion: formData.direccion.trim(),
+          telefono: formData.telefono.trim(),
+          contrasena: formData.contrasena,
+        };
+
+        const result: any = await register(userData);
+
+        console.log('Registro exitoso en AutoRegistro:', result);
+
+        if (result.success) {
+          Alert.alert('¡Éxito!', 'Cuenta creada correctamente. Por favor inicia sesión.');
+          navigation.navigate('Iniciosesion');
         } else {
+          console.log('Error en registro:', result.message);
+          // El backend ya devuelve mensajes claros (gracias al helper),
+          // así que solo los mostramos tal cual
           setError(result.message || 'Error al registrar usuario.');
         }
+      } catch (error: any) {
+        console.error('Error en registro:', error);
+        setError('Error de conexión. Verifica tu internet.');
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error('Error en registro:', error);
-      setError('Error de conexión. Verifica tu internet.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   // ========== UI QUEDA EXACTAMENTE IGUAL ==========
   return (

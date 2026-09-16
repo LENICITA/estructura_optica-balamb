@@ -19,6 +19,10 @@ import { Ionicons} from '@expo/vector-icons';
 
 import { FormulaController } from '@/core/controllers/FormulaController';
 import { FormulaModel } from '@/core/models/FormulaModel';
+import {
+  validarAsignarPrecio,
+  MENSAJES_FORMULA
+} from '@/shared/validators/formulaValidators';
 
 const { width, height } = Dimensions.get('window');
 
@@ -100,58 +104,58 @@ const panResponder = PanResponder.create({
 
 
     const cambiarCosto = async () => {
-        try {
-            if (formula?.estado === 'Rechazado') {
-               console.error('No se puede asignar precio a una fórmula rechazada');
-               alert('No se puede asignar precio a una fórmula rechazada');
-            return;
-            }
-            setLoading(true);
+            try {
+                // Validar con el validador compartido
+                const check = validarAsignarPrecio({
+                  id_formula: id_formula ? Number(id_formula) : undefined,
+                  costo: costo,
+                  estadoActualFormula: formula?.estado,
+                });
 
-            if (!id_formula) {
-                console.error('No se encontro id de formula');
-                return;
-            }
+                if (!check.valido) {
+                  Alert.alert('Campo inválido', check.mensaje || 'Datos inválidos');
+                  return;
+                }
 
-            if (!costo.trim()) {
-                console.error('No se ingreso el costo de la formula');
-                return;
-            }
+                setLoading(true);
 
-            const resultadoCosto = await formulaController.actualizarCostoFormula(
-                Number(id_formula),
-                Number(costo),
-            );
-
-            if (resultadoCosto.success) {
-                if (formula?.estado === 'Pendiente') {
-                const resultadoEstado = await formulaController.actualizarEstadoFormula(
+                const resultadoCosto = await formulaController.actualizarCostoFormula(
                     Number(id_formula),
-                    'Aprobado'
+                    Number(costo),
                 );
 
-                if (resultadoEstado.success) {
-                    setCosto('');
-                    await cargarFormula();
-                    setEditandoCosto(false);
-                    console.log('Fórmula aprobada exitosamente');
+                if (resultadoCosto.success) {
+                    if (formula?.estado === 'Pendiente') {
+                        const resultadoEstado = await formulaController.actualizarEstadoFormula(
+                            Number(id_formula),
+                            'Aprobado'
+                        );
+
+                        if (resultadoEstado.success) {
+                            setCosto('');
+                            await cargarFormula();
+                            setEditandoCosto(false);
+                            console.log('Fórmula aprobada exitosamente');
+                        } else {
+                            console.error('Error al aprobar la fórmula:', resultadoEstado.message);
+                            Alert.alert('Error', resultadoEstado.message || 'No se pudo aprobar la fórmula');
+                        }
+                    } else {
+                        await cargarFormula();
+                        setEditandoCosto(false);
+                        console.log('Costo actualizado exitosamente');
+                    }
                 } else {
-                    console.error('Error al aprobar la fórmula:', resultadoEstado.message);
+                    console.error(resultadoCosto.message);
+                    Alert.alert('Error', resultadoCosto.message || 'No se pudo actualizar el costo');
                 }
-                } else {
-                    await cargarFormula();
-                    setEditandoCosto(false);
-                    console.log('Costo actualizado exitosamente');
-                }
-            } else {
-                console.error(resultadoCosto.message);
+            } catch (error) {
+                console.error('Error al cargar valor de formula', error);
+                Alert.alert('Error', 'Ocurrió un error inesperado');
+            } finally {
+                setLoading(false)
             }
-        } catch (error) {
-            console.error('Error al cargar valor de formula', error);
-        } finally {
-            setLoading(false)
-        }
-    };
+        };
 
     const handleEditarCosto = () => {
         if (formula?.estado === 'Aprobado') {
@@ -224,7 +228,10 @@ const panResponder = PanResponder.create({
                             placeholder="Ingrese el costo"
                             keyboardType="numeric"
                             value={costo}
-                            onChangeText={setCosto}
+                            onChangeText={(text) => {
+                              const soloNumeros = text.replace(/[^0-9]/g, '');
+                              setCosto(soloNumeros);
+                            }}
                         />
                         <View style={styles.botonesContainer}>
                             <TouchableOpacity style={styles.botonEdit} onPress={cambiarCosto}>

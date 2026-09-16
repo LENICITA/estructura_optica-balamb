@@ -23,6 +23,7 @@ export interface Distribucion {
     cliente?: {
       nombre: string;
       telefono: string;
+      email: string;
       ciudad: string;
     };
   };
@@ -52,6 +53,7 @@ export class DistribucionModel implements Distribucion {
     cliente?: {
       nombre: string;
       telefono: string;
+      email: string;
       ciudad: string;
     };
   };
@@ -125,22 +127,82 @@ export class DistribucionModel implements Distribucion {
   }
 
   static fromJSON(data: any): DistribucionModel {
+    const source = data?.data ?? data ?? {};
+    const pedidoData = source.pedido || {};
+    const clienteData =
+      pedidoData.cliente || source.cliente || {};
+    const repartidorData = source.repartidor || {};
+
     return new DistribucionModel({
-      id_distribucion: data.id_distribucion || data.id || 0,
-      id_pedido: data.id_pedido || 0,
-      id_usuario: data.id_usuario || 0,
-      estado: data.estado || 'PENDIENTE',
-      fecha_asignacion: data.fecha_asignacion || new Date().toISOString(),
-      fecha_entrega: data.fecha_entrega || null,
-      observaciones: data.observaciones || null,
-      pedido: data.pedido,
-      repartidor: data.repartidor? {
-          id: data.repartidor.id || data.repartidor.id_usuario || 0,
-        nombre: data.repartidor.nombre || data.repartidor.nombre_completo || '',
-        email: data.repartidor.email || '',
-        telefono: data.repartidor.telefono || '',
-        vehiculo: data.repartidor.vehiculo || null,
-         } : undefined,
+      id_distribucion:
+        source.id_distribucion || source.id || 0,
+      id_pedido:
+        source.id_pedido || pedidoData.id_pedido || 0,
+      id_usuario: source.id_usuario || 0,
+      estado: source.estado || 'PENDIENTE',
+      fecha_asignacion:
+        source.fecha_asignacion ||
+        new Date().toISOString(),
+      fecha_entrega: source.fecha_entrega || null,
+      observaciones: source.observaciones || null,
+      pedido: {
+        id_pedido:
+          pedidoData.id_pedido || source.id_pedido || 0,
+        direccion_entrega:
+          pedidoData.direccion_entrega ||
+          source.direccion_entrega ||
+          '',
+        ciudad_envio:
+          pedidoData.ciudad_envio ||
+          source.ciudad_envio ||
+          '',
+        total: pedidoData.total || source.total || 0,
+        fecha_estimada:
+          pedidoData.fecha_estimada ||
+          source.fecha_estimada ||
+          '',
+        cliente:
+          pedidoData.cliente ||
+          source.cliente_nombre ||
+          source.cliente_telefono ||
+          source.cliente_email ||
+          source.cliente_ciudad
+            ? {
+                nombre:
+                  clienteData.nombre ||
+                  clienteData.nombre_completo ||
+                  source.cliente_nombre ||
+                  '',
+                telefono:
+                  clienteData.telefono ||
+                  source.cliente_telefono ||
+                  '',
+                email:
+                  clienteData.email ||
+                  source.cliente_email ||
+                  '',
+                ciudad:
+                  clienteData.ciudad ||
+                  source.cliente_ciudad ||
+                  '',
+              }
+            : undefined,
+      },
+      repartidor: source.repartidor
+        ? {
+            id:
+              repartidorData.id ||
+              repartidorData.id_usuario ||
+              0,
+            nombre:
+              repartidorData.nombre ||
+              repartidorData.nombre_completo ||
+              '',
+            email: repartidorData.email || '',
+            telefono: repartidorData.telefono || '',
+            vehiculo: repartidorData.vehiculo || null,
+          }
+        : undefined,
      });
  }
 

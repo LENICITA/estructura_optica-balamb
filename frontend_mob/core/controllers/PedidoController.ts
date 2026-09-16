@@ -1,6 +1,13 @@
 // src/core/controllers/PedidoController.ts
 import { PedidoService } from '../services/PedidoService';
 import { PedidoModel } from '../models/PedidoModel';
+import {
+  validarFormularioPedido,
+  checkIdPedido,
+  checkEstadoPedido,
+  checkFechaEstimada,
+  ESTADOS_ACTIVOS_ADMIN
+} from '../../shared/validators/pedidoValidators';
 
 export interface CrearPedidoData {
   id_formula?: number;
@@ -26,34 +33,26 @@ export class PedidoController {
   async crearPedido(data: CrearPedidoData): Promise<PedidoResult> {
     try {
       // Validaciones
-      if (!data.direccion_entrega || !data.direccion_entrega.trim()) {
-        return {
-          success: false,
-          message: 'La dirección de entrega es obligatoria',
-        };
-      }
+      const check = validarFormularioPedido({
+              direccion_entrega: data.direccion_entrega,
+              ciudad_envio: data.ciudad_envio,
+              productos: data.productos
+            });
 
-      if (!data.ciudad_envio || !data.ciudad_envio.trim()) {
-        return {
-          success: false,
-          message: 'La ciudad de envío es obligatoria',
-        };
-      }
-
-      if (!data.productos || data.productos.length === 0) {
-        return {
-          success: false,
-          message: 'Debes agregar al menos un producto',
-        };
-      }
+            if (!check.valido) {
+              return {
+                success: false,
+                message: check.mensaje || 'Datos inválidos',
+              };
+            }
 
       const result = await this.pedidoService.crearPedido(data);
 
       return {
-        success: true,
-        message: 'Pedido creado exitosamente',
-        data: result,
-      };
+              success: true,
+              message: result.message || 'Pedido creado exitosamente',
+              data: result.data,
+            };
 
     } catch (error: any) {
       console.error(' Error en crearPedido:', error);
@@ -85,6 +84,11 @@ export class PedidoController {
   // ===== OBTENER PEDIDO POR ID =====
   async getPedidoById(id: number): Promise<PedidoModel | null> {
     try {
+        const check = checkIdPedido(id);
+              if (!check.valido) {
+                console.error('ID de pedido inválido:', id);
+                return null;
+              }
       return await this.pedidoService.getPedidoById(id);
     } catch (error) {
       console.error(' Error en getPedidoById:', error);
@@ -95,6 +99,13 @@ export class PedidoController {
   // ===== CANCELAR PEDIDO =====
   async cancelarPedido(id: number): Promise<PedidoResult> {
     try {
+        const check = checkIdPedido(id);
+              if (!check.valido) {
+                return {
+                  success: false,
+                  message: check.mensaje || 'ID de pedido inválido',
+                };
+              }
       const result = await this.pedidoService.cancelarPedido(id);
 
       return {
@@ -132,6 +143,10 @@ export class PedidoController {
   // ===== ADMIN: OBTENER PEDIDOS POR ESTADO =====
   async getPedidosByEstado(estado: string): Promise<PedidoModel[]> {
     try {
+        if (!ESTADOS_ACTIVOS_ADMIN.includes(estado as any)) {
+                console.error('Estado no permitido para admin:', estado);
+                return [];
+              }
       return await this.pedidoService.getPedidosByEstado(estado);
     } catch (error) {
       console.error(' Error en getPedidosByEstado:', error);
@@ -142,13 +157,21 @@ export class PedidoController {
   // ===== ADMIN: ACTUALIZAR ESTADO DEL PEDIDO =====
   async actualizarEstadoPedido(id: number, estado: string): Promise<PedidoResult> {
     try {
-      const estadosValidos = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
-      if (!estadosValidos.includes(estado)) {
-        return {
-          success: false,
-          message: 'Estado inválido. Debe ser: Abonado, Listo, Pagado, En Proceso, Enviado, Entregado',
-        };
-      }
+      const checkId = checkIdPedido(id);
+            if (!checkId.valido) {
+              return {
+                success: false,
+                message: checkId.mensaje || 'ID de pedido inválido',
+              };
+            }
+
+            const checkEstado = checkEstadoPedido(estado);
+            if (!checkEstado.valido) {
+              return {
+                success: false,
+                message: checkEstado.mensaje || 'Estado inválido',
+              };
+            }
 
       const result = await this.pedidoService.actualizarEstadoPedido(id, estado);
 
@@ -177,6 +200,13 @@ export class PedidoController {
   // ===== ADMIN: MARCAR PEDIDO COMO LISTO =====
   async marcarPedidoComoListo(id: number): Promise<PedidoResult> {
     try {
+        const check = checkIdPedido(id);
+              if (!check.valido) {
+                return {
+                  success: false,
+                  message: check.mensaje || 'ID de pedido inválido',
+                };
+              }
       const result = await this.pedidoService.marcarPedidoComoListo(id);
 
       return {
@@ -201,15 +231,42 @@ export class PedidoController {
     }
   }
 
-  // ===== ADMIN: ACTUALIZAR FECHA ESTIMADA =====
+ // ===== ADMIN: ACTUALIZAR FECHA ESTIMADA =====
 async actualizarFechaEstimada(
   id: number,
   fecha_estimada: string
 ): Promise<{ success: boolean; message: string }> {
-  return await this.pedidoService.actualizarFechaEstimada(
-    id,
-    fecha_estimada
-  );
+  try {
+    const checkId = checkIdPedido(id);
+    if (!checkId.valido) {
+      return {
+        success: false,
+        message: checkId.mensaje || 'ID de pedido inválido',
+      };
+    }
+
+    const checkFecha = checkFechaEstimada(fecha_estimada);
+    if (!checkFecha.valido) {
+      return {
+        success: false,
+        message: checkFecha.mensaje || 'Fecha inválida',
+      };
+    }
+
+    return await this.pedidoService.actualizarFechaEstimada(
+      id,
+      fecha_estimada
+    );
+  } catch (error: any) {
+    console.error('Error en actualizarFechaEstimada:', error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        'No fue posible actualizar la fecha estimada',
+    };
+  }
 }
 
   // ===== ADMIN: OBTENER ESTADÍSTICAS =====

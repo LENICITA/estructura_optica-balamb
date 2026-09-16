@@ -36,6 +36,13 @@ const ESTADOS_ACTIVOS = [
   'Entregado',
 ];
 
+const ESTADOS_EDITABLES = [
+  'Abonado',
+  'Listo',
+  'Pagado',
+  'En Proceso',
+];
+
 export default function DetallePedido() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -240,6 +247,13 @@ export default function DetallePedido() {
     if (!pedido) {
       return;
     }
+    if (!ESTADOS_EDITABLES.includes(pedido.estado)) {
+    Alert.alert(
+      'No se puede editar la fecha',
+      `El pedido está en estado "${pedido.estadoDisplay}". Solo se puede editar la fecha estimada cuando el pedido está en: Abonado, Listo, Pagado o En Proceso.`
+    );
+    return;
+  }
 
     let fechaInicial = '';
 
@@ -964,7 +978,7 @@ export default function DetallePedido() {
                   : 'No establecida'}
               </Text>
 
-              {esAdmin && (
+              {esAdmin && ESTADOS_EDITABLES.includes(pedido.estado) && (
                 <TouchableOpacity
                   style={styles.editDateButton}
                   onPress={abrirModalFechaEstimada}

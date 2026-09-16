@@ -2,6 +2,11 @@
 
 import { PagoService } from '../services/PagoService';
 import { PagoModel } from '../models/PagoModel';
+import {
+  validarFormularioPago,
+  checkIdPago,
+  checkIdPedido
+} from '../../shared/validators/pagoValidators';
 
 export interface CrearPagoData {
   id_pedido: number;
@@ -26,26 +31,18 @@ export class PagoController {
   async crearPago(data: CrearPagoData): Promise<PagoResult> {
     try {
       // Validaciones
-      if (!data.id_pedido) {
-        return {
-          success: false,
-          message: 'El ID del pedido es obligatorio',
-        };
-      }
+      const check = validarFormularioPago({
+              id_pedido: data.id_pedido,
+              eleccion_pago: data.eleccion_pago,
+              monto: data.monto
+            });
 
-      if (!data.eleccion_pago || !['50%', '100%'].includes(data.eleccion_pago)) {
-        return {
-          success: false,
-          message: 'La elección de pago debe ser 50% o 100%',
-        };
-      }
-
-      if (!data.monto || data.monto <= 0) {
-        return {
-          success: false,
-          message: 'El monto debe ser mayor a 0',
-        };
-      }
+            if (!check.valido) {
+              return {
+                success: false,
+                message: check.mensaje || 'Datos inválidos',
+              };
+            }
 
       const result = await this.pagoService.crearPago(data);
 
@@ -75,6 +72,12 @@ export class PagoController {
   // ===== OBTENER PAGOS POR PEDIDO =====
   async obtenerPagosPorPedido(pedidoId: number): Promise<PagoModel[]> {
     try {
+        const checkId = checkIdPedido(pedidoId);
+              if (!checkId.valido) {
+                console.error('ID de pedido inválido:', pedidoId);
+                return [];
+              }
+
       return await this.pagoService.obtenerPagosPorPedido(pedidoId);
     } catch (error) {
       console.error('Error en obtenerPagosPorPedido:', error);
@@ -85,6 +88,18 @@ export class PagoController {
   // ===== VERIFICAR SALDO DEL PEDIDO =====
   async verificarSaldo(pedidoId: number): Promise<any> {
     try {
+         const checkId = checkIdPedido(pedidoId);
+              if (!checkId.valido) {
+                console.error('ID de pedido inválido:', pedidoId);
+                return {
+                  total_pedido: 0,
+                  total_pagado: 0,
+                  saldo_pendiente: 0,
+                  estado_pago: 'SIN_PAGO',
+                  tiene_abono_50: false,
+                  tiene_pago_completo: false,
+                };
+              }
       const result = await this.pagoService.verificarSaldo(pedidoId);
       return result.data;
     } catch (error) {
@@ -103,6 +118,14 @@ export class PagoController {
   // ===== CONFIRMAR PAGO (WEBHOOK) =====
   async confirmarPago(id_pago: number): Promise<PagoResult> {
     try {
+        const checkId = checkIdPago(id_pago);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de pago inválido',
+                };
+              }
+
       const result = await this.pagoService.confirmarPago(id_pago);
 
       return {
@@ -123,6 +146,13 @@ export class PagoController {
   // ===== RECHAZAR PAGO (WEBHOOK) =====
   async rechazarPago(id_pago: number, motivo?: string): Promise<PagoResult> {
     try {
+        const checkId = checkIdPago(id_pago);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de pago inválido',
+                };
+              }
       const result = await this.pagoService.rechazarPago(id_pago, motivo);
 
       return {

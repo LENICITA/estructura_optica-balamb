@@ -24,6 +24,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { PedidoModel } from '../../../core/models/PedidoModel';
 import { COLORS } from '../../../shared/constants/colors';
+import { PagoController } from '../../../core/controllers/PagoController';
 
 const pedidoController = new PedidoController();
 
@@ -47,6 +48,7 @@ export default function DetallePedidoCliente() {
   const [loading, setLoading] = useState(true);
   const [imagenAmpliada, setImagenAmpliada] =
     useState<string | null>(null);
+    const [saldo, setSaldo] = useState<any>(null);
 
   // =========================================================
   // CARGAR PEDIDO
@@ -131,6 +133,17 @@ export default function DetallePedidoCliente() {
           2
         )
       );
+
+  try {
+          const pagoController = new PagoController();
+          const saldoData = await pagoController.verificarSaldo(Number(id_pedido));
+          console.log('SALDO DEL PEDIDO:', saldoData);
+          setSaldo(saldoData);
+        } catch (err) {
+          console.error('Error cargando saldo del pedido:', err);
+          setSaldo(null);
+        }
+
 
       setPedido(detalle);
 
@@ -290,25 +303,11 @@ export default function DetallePedidoCliente() {
       return 0;
     }
 
-    return Number(
-      pedido.abono ??
-      0
-    );
+    return saldo?.total_pagado || 0;
   };
 
   const obtenerSaldoRestante = () => {
-    const total =
-      obtenerTotalPedido();
-
-    const abono =
-      obtenerAbonoPedido();
-
-    const saldo =
-      total - abono;
-
-    return saldo > 0
-      ? saldo
-      : 0;
+    return saldo?.saldo_pendiente || obtenerTotalPedido();
   };
 
   // =========================================================

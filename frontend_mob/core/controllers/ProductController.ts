@@ -2,6 +2,11 @@
 
 import { ProductService } from '../services/ProductService';
 import { ProductModel } from '../models/ProductModel';
+import {
+  validarFormularioProducto,
+  validarFormularioEditarProducto,
+  checkIdProducto
+} from '../../shared/validators/productoValidators';
 
 export class ProductController {
   private productService: ProductService;
@@ -36,6 +41,11 @@ export class ProductController {
   async getProductoById(id: number): Promise<ProductModel | null> {
     try {
       console.log('Controller - getProductoById con ID:', id);
+      const checkId = checkIdProducto(id);
+            if (!checkId.valido) {
+              console.error('ID de producto inválido:', id);
+              return null;
+            }
           const producto = await this.productService.getProductoById(id);
           console.log('Controller - producto obtenido:', producto);
           return producto;
@@ -142,30 +152,23 @@ export class ProductController {
       });
 
       // Validaciones
-      if (!data.id_categoria) {
-        return {
-          success: false,
-          message: 'La categoría es requerida'
-        };
-      }
-      if (!data.nombre) {
-        return {
-          success: false,
-          message: 'El nombre es requerido'
-        };
-      }
-      if (!data.precio || data.precio <= 0) {
-        return {
-          success: false,
-          message: 'El precio debe ser mayor a 0'
-        };
-      }
-      if (!data.imagen) {
-        return {
-          success: false,
-          message: 'La imagen es requerida'
-        };
-      }
+      const check = validarFormularioProducto({
+              id_categoria: data.id_categoria,
+              nombre: data.nombre,
+              descripcion: data.descripcion,
+              marca: data.marca,
+              precio: data.precio,
+              imagen: data.imagen,
+              material: data.material,
+              color: data.color
+            });
+
+            if (!check.valido) {
+              return {
+                success: false,
+                message: check.mensaje || 'Datos inválidos'
+              };
+            }
 
       const response = await this.productService.crearProducto(data);
 
@@ -194,6 +197,31 @@ export class ProductController {
     color?: string;
   }): Promise<{ success: boolean; message: string; data?: any }> {
     try {
+        const checkId = checkIdProducto(id);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de producto inválido'
+                };
+              }
+
+           const check = validarFormularioEditarProducto({
+                  id_categoria: data.id_categoria,
+                  nombre: data.nombre,
+                  descripcion: data.descripcion,
+                  marca: data.marca,
+                  precio: data.precio,
+                  imagen: data.imagen,
+                  material: data.material,
+                  color: data.color
+                });
+
+                if (!check.valido) {
+                  return {
+                    success: false,
+                    message: check.mensaje || 'Datos inválidos'
+                  };
+                }
       const response = await this.productService.actualizarProducto(id, data);
       if (!response.success) {
         return { success: false, message: response.message || 'Error al actualizar producto' };
@@ -214,6 +242,13 @@ export class ProductController {
 
   async eliminarProducto(id: number): Promise<{ success: boolean; message: string }> {
     try {
+        const checkId = checkIdProducto(id);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de producto inválido'
+                };
+              }
       const response = await this.productService.eliminarProducto(id);
       if (!response.success) {
         return { success: false, message: response.message || 'Error al eliminar producto' };

@@ -60,4 +60,12 @@ export class DistribucionService {
     const response = await apiClient.patch(`/distribucion/${id}/entregar`, { observacion });
     return response.data;
   }
+
+    // REPARTIDOR
+
+    // OBTENER TODAS MIS DISTRIBUCIONES (REPARTIDOR)
+    async getMisDistribuciones(): Promise<any> {
+      const response = await apiClient.get('/distribucion/mis-distribuciones');
+      return response.data;
+    }
 }

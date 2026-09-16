@@ -80,7 +80,10 @@ export class ProductService {
   // ===== OBTENER PRODUCTO POR ID =====
   async getProductoById(id: number): Promise<ProductModel | null> {
       console.log('getProductoById llamado con ID:', id);
-    const response = await apiClient.get<{ success: boolean; data: any }>(`/inventario/productos/${id}`);
+    const response = await apiClient.get<{ success: boolean; producto: any; message?: string }>(
+          `/inventario/productos/${id}`
+        );
+
     const data = response.data;
 
     console.log('Respuesta del backend:', data);
@@ -158,26 +161,30 @@ export class ProductService {
 
   // ===== OBTENER PRODUCTOS POR CATEGORÍA =====
   async getProductosByCategoria(id_categoria: number): Promise<ProductModel[]> {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>(`/inventario/productos/categoria/${id_categoria}`);
-    const data = response.data;
+    const response = await apiClient.get<{ success: boolean; productos: any[]; message?: string }>(
+          `/inventario/productos/categoria/${id_categoria}`
+        );
+        const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al obtener productos por categoría');
     }
 
-    return ProductModel.fromJSONArray(data.data || []);
+    return ProductModel.fromJSONArray(data.productos || []);
   }
 
   // ===== OBTENER PRODUCTOS POR MARCA =====
   async getProductosByMarca(marca: string): Promise<ProductModel[]> {
-    const response = await apiClient.get<{ success: boolean; data: any[] }>(`/inventario/productos/marca/${encodeURIComponent(marca)}`);
-    const data = response.data;
+    const response = await apiClient.get<{ success: boolean; productos: any[]; message?: string }>(
+          `/inventario/productos/marca/${encodeURIComponent(marca)}`
+        );
+        const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al obtener productos por marca');
     }
 
-    return ProductModel.fromJSONArray(data.data || []);
+    return ProductModel.fromJSONArray(data.productos || []);
   }
 
   // ===== OBTENER MARCAS ÚNICAS =====
@@ -194,14 +201,14 @@ export class ProductService {
 
   // ===== OBTENER COLORES ÚNICOS =====
   async getColores(): Promise<string[]> {
-    const response = await apiClient.get<{ success: boolean; data: string[] }>('/inventario/colores');
-    const data = response.data;
+    const response = await apiClient.get<{ success: boolean; colores: string[]; message?: string }>('/inventario/colores');
+        const data = response.data;
 
     if (!data.success) {
       throw new Error(data.message || 'Error al obtener colores');
     }
 
-    return data.data || [];
+    return data.colores || [];
   }
 
   // ===== OBTENER CATEGORÍAS =====
@@ -310,19 +317,84 @@ export class ProductService {
 
   // ===== ACTUALIZAR PRODUCTO (ADMIN) =====
   async actualizarProducto(id: number, data: ActualizarProductoRequest): Promise<{ success: boolean; message: string; data?: any }> {
-    const response = await apiClient.put<ProductoResponse>(`/inventario/productos/${id}`, data);
-    const result = response.data;
+      // usa FormData cuando hay imagen nueva (para que se suba el archivo)
+      try {
+        console.log('Service - Actualizando producto ID:', id);
+        console.log('Service - Datos:', {
+          tieneImagen: !!data.imagen,
+          esUriLocal: data.imagen ? !data.imagen.startsWith('http') : false,
+        });
 
-    if (!result.success) {
-      throw new Error(result.message || 'Error al actualizar el producto');
+        const formData = new FormData();
+
+        if (data.id_categoria !== undefined) formData.append('id_categoria', String(data.id_categoria));
+        if (data.nombre !== undefined) formData.append('nombre', data.nombre);
+        if (data.descripcion !== undefined) formData.append('descripcion', data.descripcion || '');
+        if (data.marca !== undefined) formData.append('marca', data.marca || '');
+        if (data.precio !== undefined) formData.append('precio', String(data.precio));
+        if (data.material !== undefined) formData.append('material', data.material || '');
+        if (data.color !== undefined) formData.append('color', data.color || '');
+
+        // Si la imagen es una URI local (el usuario seleccionó una nueva), la mandamos como archivo
+        // Si es una URL de Cloudinary (la original), NO la mandamos
+        if (data.imagen && !data.imagen.startsWith('http')) {
+          const uri = data.imagen;
+          const uriParts = uri.split('.');
+          const fileType = uriParts[uriParts.length - 1] || 'jpg';
+          const fileName = `producto_${Date.now()}.${fileType}`;
+
+          let mimeType = 'image/jpeg';
+          if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
+          else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
+          else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
+
+          // @ts-ignore
+          formData.append('imagen', {
+            uri: uri,
+            name: fileName,
+            type: mimeType,
+          });
+
+          console.log('Service - Nueva imagen adjuntada:', fileName);
+        } else {
+          console.log('Service - Sin imagen nueva, manteniendo la actual');
+        }
+
+        const response = await apiClient.put(`/inventario/productos/${id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        const result = response.data;
+
+        if (!result.success) {
+          throw new Error(result.message || 'Error al actualizar el producto');
+        }
+
+        return {
+          success: true,
+          message: result.message || 'Producto actualizado exitosamente',
+          data: result.producto || result.data,
+        };
+
+      } catch (error: any) {
+        console.error('Error en ProductService.actualizarProducto:', error);
+
+        let errorMessage = 'No fue posible actualizar el producto.';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.status === 400) {
+          errorMessage = 'Datos inválidos. Verifica la imagen y los campos.';
+        } else if (error.response?.status === 404) {
+          errorMessage = 'Producto no encontrado.';
+        } else if (error.response?.status === 413) {
+          errorMessage = 'La imagen es demasiado grande.';
+        }
+
+        throw new Error(errorMessage);
+      }
     }
-
-    return {
-      success: true,
-      message: result.message || 'Producto actualizado exitosamente',
-      data: result.data,
-    };
-  }
 
   // ===== ELIMINAR PRODUCTO (ADMIN) =====
   async eliminarProducto(id: number): Promise<{ success: boolean; message: string }> {

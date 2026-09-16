@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@/shared/constants/colors';
 import { useNavigation } from '@react-navigation/native';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { validarFormularioProducto } from '../../../shared/validators/productoValidators';
 
 export default function CrearProductoAdmin() {
   const navigation = useNavigation();
@@ -69,87 +70,64 @@ export default function CrearProductoAdmin() {
   };
 
   const crearProducto = async () => {
-    if (!categoriaSeleccionada) {
-      Alert.alert('Campo requerido', 'Debes seleccionar una categoría.');
-      return;
-    }
-
-    if (!formData.nombre.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el nombre del producto.');
-      return;
-    }
-
-    if (!formData.descripcion.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar una descripción del producto.');
-      return;
-    }
-
-    if (!formData.marca.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar la marca del producto.');
-      return;
-    }
-
-    if (!formData.precio || parseFloat(formData.precio) <= 0) {
-      Alert.alert('Campo requerido', 'Debes ingresar un precio válido mayor a 0.');
-      return;
-    }
-
-    if (!formData.material.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el material del producto.');
-      return;
-    }
-
-    if (!formData.color.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el color del producto.');
-      return;
-    }
-
-    if (!imagen) {
-      Alert.alert('Campo requerido', 'Debes seleccionar una imagen para el producto.');
-      return;
-    }
-
-    try {
-      setSubiendo(true);
-
-      console.log('Enviando producto...');
-      console.log('Categoría seleccionada:', categoriaSeleccionada);
-
-      const resultado = await productController.crearProducto({
-        id_categoria: categoriaSeleccionada.id_categoria,
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim(),
-        marca: formData.marca.trim(),
-        precio: parseFloat(formData.precio),
-        imagen: imagen,
-        material: formData.material.trim(),
-        color: formData.color.trim(),
+      // validación con el validador compartido
+      const check = validarFormularioProducto({
+        id_categoria: categoriaSeleccionada?.id_categoria,
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        marca: formData.marca,
+        precio: formData.precio,
+        imagen: imagen || '',
+        material: formData.material,
+        color: formData.color
       });
 
-      console.log('Resultado creación:', resultado);
-
-      if (!resultado.success) {
-        Alert.alert('Error', resultado.message);
+      if (!check.valido) {
+        Alert.alert('Campo inválido', check.mensaje || 'Datos inválidos');
         return;
       }
 
-      Alert.alert(
-        '¡Producto creado!',
-        'El producto fue registrado correctamente.',
-        [
-          {
-            text: 'Ver productos',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    } catch (error: any) {
-      console.error('Error creando producto:', error);
-      Alert.alert('Error', error?.message || 'No fue posible crear el producto.');
-    } finally {
-      setSubiendo(false);
-    }
-  };
+      try {
+        setSubiendo(true);
+
+        console.log('Enviando producto...');
+        console.log('Categoría seleccionada:', categoriaSeleccionada);
+
+        const resultado = await productController.crearProducto({
+          id_categoria: categoriaSeleccionada!.id_categoria,
+          nombre: formData.nombre.trim(),
+          descripcion: formData.descripcion.trim(),
+          marca: formData.marca.trim(),
+          precio: parseFloat(formData.precio),
+          imagen: imagen!,
+          material: formData.material.trim(),
+          color: formData.color.trim(),
+        });
+
+        console.log('Resultado creación:', resultado);
+
+        if (!resultado.success) {
+          Alert.alert('Error', resultado.message);
+          return;
+        }
+
+        Alert.alert(
+          '¡Producto creado!',
+          'El producto fue registrado correctamente.',
+          [
+            {
+              text: 'Ver productos',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } catch (error: any) {
+        console.error('Error creando producto:', error);
+        Alert.alert('Error', error?.message || 'No fue posible crear el producto.');
+      } finally {
+        setSubiendo(false);
+      }
+    };
 
   return (
     <ScrollView
@@ -219,6 +197,7 @@ export default function CrearProductoAdmin() {
               placeholder="Ingrese el nombre del producto"
               value={formData.nombre}
               onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+              maxLength={45}
             />
           </View>
 
@@ -232,6 +211,7 @@ export default function CrearProductoAdmin() {
               scrollEnabled={true}
               value={formData.descripcion}
               onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
+              maxLength={45}
             />
           </View>
 
@@ -242,6 +222,7 @@ export default function CrearProductoAdmin() {
               placeholder="Ingrese la marca del producto"
               value={formData.marca}
               onChangeText={(text) => setFormData({ ...formData, marca: text })}
+              maxLength={45}
             />
           </View>
 
@@ -253,6 +234,7 @@ export default function CrearProductoAdmin() {
               keyboardType="numeric"
               value={formData.precio}
               onChangeText={(text) => setFormData({ ...formData, precio: text })}
+              maxLength={10}
             />
           </View>
 
@@ -263,6 +245,7 @@ export default function CrearProductoAdmin() {
               placeholder="Ingrese el material del producto"
               value={formData.material}
               onChangeText={(text) => setFormData({ ...formData, material: text })}
+              maxLength={45}
             />
           </View>
 
@@ -273,6 +256,7 @@ export default function CrearProductoAdmin() {
               placeholder="Ingrese el color del producto"
               value={formData.color}
               onChangeText={(text) => setFormData({ ...formData, color: text })}
+              maxLength={45}
             />
           </View>
 

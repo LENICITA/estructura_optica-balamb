@@ -185,7 +185,7 @@ export const PrincipalAdmin = ({ navigation }: Props) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('AdminReportes')}
+        onPress={() => navigation.navigate('ReportesAdmin')}
       >
         <View style={styles.buttonContent}>
           <View style={styles.buttonLeft}>
@@ -214,6 +214,24 @@ export const PrincipalAdmin = ({ navigation }: Props) => {
           </View>
           <View style={styles.buttonCenter}>
             <Text style={styles.textButton}>Gestionar fórmulas</Text>
+          </View>
+          <View style={styles.buttonRight}>
+            <Ionicons name="chevron-forward-outline" size={20} color={COLORS.primary} />
+          </View>
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('GestionarDistribucionesAdmin')}
+      >
+        <View style={styles.buttonContent}>
+          <View style={styles.buttonLeft}>
+            <View style={styles.iconContainer2}>
+              <Ionicons name="map-outline" size={28} color={COLORS.primary} />
+            </View>
+          </View>
+          <View style={styles.buttonCenter}>
+            <Text style={styles.textButton}>Gestionar distribuciones</Text>
           </View>
           <View style={styles.buttonRight}>
             <Ionicons name="chevron-forward-outline" size={20} color={COLORS.primary} />

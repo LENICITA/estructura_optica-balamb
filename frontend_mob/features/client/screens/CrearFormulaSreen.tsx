@@ -18,6 +18,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { RoundedButton } from '../../../shared/components/buttons/RoundedButton';
 import { useAuth } from '../../auth/context/AuthContext';
+import {
+  validarFormularioFormula,
+  MENSAJES_FORMULA
+} from '../../../shared/validators/formulaValidators';
 
 const COLORS = {
   primary: '#B90F0F',
@@ -89,63 +93,56 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
   };
 
   const subirFormula = async () => {
-    if (!idUsuario) {
-      Alert.alert('Error', 'No se pudo identificar al usuario.');
-      return;
-    }
-
-    if (!descripcion.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar una descripción para la fórmula.');
-      return;
-    }
-
-    if (!condicion) {
-      Alert.alert('Campo requerido', 'Debes seleccionar una condición.');
-      return;
-    }
-
-    if (!imagen) {
-      Alert.alert('Campo requerido', 'Debes seleccionar la imagen de la fórmula.');
-      return;
-    }
-
-    try {
-      setSubiendo(true);
-
-      console.log(' Enviando fórmula con usuario ID:', idUsuario);
-
-      const resultado = await formulaController.crearFormula({
-        id_usuario: Number(idUsuario),
+      // Validar formulario completo con el validador compartido
+      const check = validarFormularioFormula({
+        id_usuario: idUsuario ? Number(idUsuario) : undefined,
         condicion: condicion,
-        imagen_formula: imagen,
+        imagen_formula: imagen || '',
         observaciones: descripcion.trim(),
-        fecha_creacion: fecha,
       });
 
-      console.log(' Resultado creación:', resultado);
-
-      if (!resultado.success) {
-        Alert.alert('Error', resultado.message);
+      if (!check.valido) {
+        Alert.alert('Campo inválido', check.mensaje || 'Datos inválidos');
         return;
       }
 
-      Alert.alert(
-        '¡Fórmula creada!',
-        'La fórmula fue registrada correctamente y está en revisión.',
-        [
-          {
-            text: 'Ver mis fórmulas',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    } catch (error: any) {
-      console.error(' Error subiendo fórmula:', error);
-      Alert.alert('Error', error?.message || 'No fue posible subir la fórmula.');
-    } finally {
-      setSubiendo(false);
-    }
-  };
+      try {
+        setSubiendo(true);
+
+        console.log(' Enviando fórmula con usuario ID:', idUsuario);
+
+        const resultado = await formulaController.crearFormula({
+          id_usuario: Number(idUsuario),
+          condicion: condicion,
+          imagen_formula: imagen!,
+          observaciones: descripcion.trim(),
+          fecha_creacion: fecha,
+        });
+
+        console.log(' Resultado creación:', resultado);
+
+        if (!resultado.success) {
+          Alert.alert('Error', resultado.message);
+          return;
+        }
+
+        Alert.alert(
+          '¡Fórmula creada!',
+          'La fórmula fue registrada correctamente y está en revisión.',
+          [
+            {
+              text: 'Ver mis fórmulas',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } catch (error: any) {
+        console.error(' Error subiendo fórmula:', error);
+        Alert.alert('Error', error?.message || 'No fue posible subir la fórmula.');
+      } finally {
+        setSubiendo(false);
+      }
+    };
 
   return (
     <View style={styles.container}>
@@ -272,7 +269,7 @@ export const CrearFormulaScreen = ({ navigation, route }: Props) => {
               value={descripcion}
               onChangeText={setDescripcion}
               multiline
-              maxLength={500}
+              maxLength={200}
               textAlignVertical="top"
               autoFocus
             />
