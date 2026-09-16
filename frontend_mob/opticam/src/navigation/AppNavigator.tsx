@@ -49,9 +49,11 @@ import CrearProducto  from '../features/admin/screens/CrearProducto';
 import EditarProducto from '../features/admin/screens/EditarProducto';
 import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
 import { ReportesAdmin } from '../features/admin/screens/ReportesAdmin';
+import { GestionarDistribucionesAdmin } from '../features/admin/screens/GestionarDistribucionesAdmin';
 // ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import HistorialEntregas from '../features/delivery/screens/HistorialEntregas';
 
 const Stack = createNativeStackNavigator();
 
@@ -123,13 +125,6 @@ export default function AppNavigator() {
                 </UserLayout>
               )}
             </Stack.Screen>
-            <Stack.Screen name="ReportesAdmin">
-               {() => (
-             <UserLayout>
-               <ReportesAdmin />
-             </UserLayout>
-                   )}
-                  </Stack.Screen>
 
             <Stack.Screen name="DashboardRepartidores">
               {() => (
@@ -234,6 +229,23 @@ export default function AppNavigator() {
                     </UserLayout>
                   )}
                 </Stack.Screen>
+
+                <Stack.Screen name="ReportesAdmin">
+                               {() => (
+                             <UserLayout>
+                               <ReportesAdmin />
+                             </UserLayout>
+                                   )}
+                                  </Stack.Screen>
+
+              <Stack.Screen name="GestionarDistribucionesAdmin">
+                             {({ navigation }) => (
+                                 <UserLayout>
+                                   <GestionarDistribucionesAdmin navigation={navigation} />
+                                 </UserLayout>
+                             )}
+                            </Stack.Screen>
+
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (
@@ -346,6 +358,13 @@ export default function AppNavigator() {
                 </UserLayout>
               )}
             </Stack.Screen>
+            <Stack.Screen name="HistorialEntregas">
+            {({ navigation }) => (
+              <UserLayout>
+                <HistorialEntregas />
+              </UserLayout>
+                    )}
+             </Stack.Screen>
 
             <Stack.Screen name="Iniciosesion">
               {({ navigation }) => <Iniciosesion navigation={navigation} />}

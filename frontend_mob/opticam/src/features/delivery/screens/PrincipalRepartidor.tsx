@@ -54,13 +54,10 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
         setNombreRepartidor(user.nombre_completo);
       }
 
-      //  OBTENER PEDIDOS ASIGNADOS AL REPARTIDOR USANDO CONTROLADOR
       try {
-        // Obtenemos los pedidos pendientes y en entrega
         const pendientes = await distribucionController.getPendientes();
         const enEntrega = await distribucionController.getEnEntrega();
 
-        // Combinamos ambos arrays
         const todasLasDistribuciones = [...pendientes, ...enEntrega];
 
         if (todasLasDistribuciones && todasLasDistribuciones.length > 0) {
@@ -71,9 +68,9 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
               cliente: pedidoData.cliente?.nombre || pedidoData.cliente || 'Cliente',
               direccion: pedidoData.direccion_entrega || 'Sin dirección',
               ciudad: pedidoData.ciudad_envio || 'Sin ciudad',
-              latitud: 4.703215, // Coordenadas por defecto
+              latitud: 4.703215,
               longitud: -74.103664,
-              estado: d.estado === 'EN_ENTREGA' ? 'EN_ENTREGA' : 'PENDIENTE',
+              estado: (d.estado === 'EN_ENTREGA' ? 'EN_ENTREGA' : 'PENDIENTE') as EstadoPedido,
               fecha: pedidoData.fecha_estimada || new Date().toLocaleDateString(),
             };
           });
@@ -185,16 +182,30 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
     );
   }
 
-  // ========== UI QUEDA EXACTAMENTE IGUAL ==========
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      {/* TÍTULO + BOTÓN HISTORIAL */}
       <View style={styles.titleContainer}>
-        <Text style={styles.title}>Bienvenido, {nombreRepartidor}</Text>
-        <Text style={styles.subtitle}>Estos son tus pedidos del día de hoy</Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Bienvenido, {nombreRepartidor}</Text>
+            <Text style={styles.subtitle}>
+              Estos son tus pedidos del día de hoy
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.historialButton}
+            onPress={() => navigation.navigate('HistorialEntregas')}
+          >
+            <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.historialButtonText}>Historial</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* FILTROS */}
@@ -333,13 +344,10 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                     style={styles.btnPedido}
                     onPress={async () => {
                       try {
-                        //  Usamos el controlador para iniciar entrega
-                        // Necesitamos el id_distribucion, no el id_pedido
-                        // Por ahora usamos el id del pedido, pero en producción debería ser el id_distribucion
                         const result = await distribucionController.iniciarEntrega(pedido.id);
                         if (result.success) {
                           Alert.alert('Éxito', 'Entrega iniciada correctamente');
-                          cargarPedidos(); // Recargar
+                          cargarPedidos();
                         } else {
                           Alert.alert('Error', result.message || 'No se pudo iniciar la entrega');
                         }
@@ -359,11 +367,10 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                     style={styles.btnPedido}
                     onPress={async () => {
                       try {
-                        // ✅ Usamos el controlador para marcar entregado
                         const result = await distribucionController.marcarEntregado(pedido.id);
                         if (result.success) {
                           Alert.alert('Éxito', 'Pedido entregado correctamente');
-                          cargarPedidos(); // Recargar
+                          cargarPedidos();
                         } else {
                           Alert.alert('Error', result.message || 'No se pudo marcar como entregado');
                         }
@@ -393,7 +400,6 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
   );
 };
 
-// ========== TODOS LOS ESTILOS QUEDAN IGUAL ==========
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -418,6 +424,11 @@ const styles = StyleSheet.create({
     paddingTop: 25,
     paddingBottom: 18,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
     fontSize: 27,
     fontWeight: 'bold',
@@ -427,6 +438,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#666',
     marginTop: 6,
+  },
+  historialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDEEEE',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    gap: 6,
+  },
+  historialButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
   filtrosContainer: {
     paddingHorizontal: 20,
