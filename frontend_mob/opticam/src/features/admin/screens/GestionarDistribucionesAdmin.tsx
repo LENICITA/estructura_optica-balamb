@@ -46,13 +46,7 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
       setError(null);
       const data = await distribucionController.getTodasDistribuciones();
 
-      if (!data || !data.success) {
-        setDistribuciones([]);
-        return;
-      }
-
-      const distribucionesData = data.data || [];
-      setDistribuciones(distribucionesData);
+      setDistribuciones(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Error cargando distribuciones:', err);
       setError(err?.message || 'No fue posible cargar las distribuciones');

@@ -119,7 +119,18 @@ export const ReportesAdmin = () => {
           setLoading(false);
           return;
         }
-      }
+
+          const inicio = new Date(fechaInicio);
+          const fin = new Date(fechaFin);
+          inicio.setHours(0, 0, 0, 0);
+          fin.setHours(0, 0, 0, 0);
+
+          if (inicio > fin) {
+            setError('La fecha de inicio no puede ser posterior a la fecha fin');
+            setLoading(false);
+            return;
+          }
+        }
 
       const datosReporte = {
         tipo: tipo,

@@ -90,9 +90,30 @@ export default function DashboardRepartidores() {
             JSON.stringify(data, null, 2)
           );
 
-          const repartidoresMapeados: Repartidor[] = data.map(
-            (r: any) => ({
-              id: r.id_usuario || r.id || 0,
+          const repartidoresConConteo = await Promise.all(
+                      data.map(async (r: any) => {
+                        const id = r.id_usuario || r.id || 0;
+
+                        let pedidosCount = 0;
+
+                        try {
+                          const detalle = await userController.getRepartidorById(id);
+
+                          if (detalle) {
+                            pedidosCount =
+                              (detalle as any).pedidos_count ||
+                              (detalle as any).pedidos_entregados ||
+                              0;
+                          }
+                        } catch (err) {
+                          console.error(
+                            `Error obteniendo pedidos de repartidor ${id}:`,
+                            err
+                          );
+                        }
+
+                        return {
+                          id,
 
               nombre:
                 r.nombre_completo ||
@@ -116,17 +137,17 @@ export default function DashboardRepartidores() {
                 r.ciudad ||
                 "",
 
-              pedidos:
-                r.pedidos ||
-                0,
+              pedidos: pedidosCount,
 
               fecha_registro:
                 r.fecha_registro ||
                 new Date().toISOString(),
-            })
-          );
+            };
+          })
+        );
 
-          setRepartidores(repartidoresMapeados);
+      setRepartidores(repartidoresConConteo);
+
         } catch (error) {
           console.error(
             "Error al cargar repartidores:",
@@ -256,19 +277,39 @@ export default function DashboardRepartidores() {
         setSeleccionado(null);
       }}
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
 
-        {/* ====================================== */}
-        {/* TÍTULO */}
-        {/* ====================================== */}
+                {/* ====================================== */}
+                {/* TÍTULO + BOTÓN AGREGAR */}
+                {/* ====================================== */}
 
-        <Text style={styles.titulo}>
-          Gestión de Repartidores
-        </Text>
+                <View style={styles.headerRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.titulo}>
+                      Gestión de Repartidores
+                    </Text>
 
-        <Text style={styles.subtitulo}>
-          Administra el equipo de entregas
-        </Text>
+                    <Text style={styles.subtitulo}>
+                      Administra el equipo de entregas
+                    </Text>
+                  </View>
+
+                  <View style={styles.containerBotonAgregar}>
+                                      <TouchableOpacity
+                                        style={styles.botonFlotante}
+                                        onPress={() => {
+                                          navigation.navigate("RegistrarRepartidor");
+                                        }}
+                                        activeOpacity={0.85}
+                                      >
+                                        <Text style={styles.plus}>+</Text>
+                                      </TouchableOpacity>
+
+                                      <Text style={styles.textoFlotante}>
+                                        Agregar Repartidor
+                                      </Text>
+                                    </View>
+                </View>
 
         {/* ====================================== */}
         {/* CARDS DE ESTADÍSTICAS */}
@@ -469,6 +510,10 @@ export default function DashboardRepartidores() {
           style={{
             marginBottom: 5,
           }}
+            contentContainerStyle={{
+              paddingBottom: 20,
+              paddingTop: 4,
+            }}
           showsVerticalScrollIndicator={true}
           refreshing={loading}
           renderItem={({ item }) => (
@@ -685,7 +730,7 @@ export default function DashboardRepartidores() {
                       }
                     >
                       {item.pedidos || 0}{" "}
-                      pedidos asignados
+                      {(item.pedidos || 0) === 1 ? "pedido entregado" : "pedidos entregados"}
                     </Text>
 
                   </View>
@@ -750,41 +795,6 @@ export default function DashboardRepartidores() {
           )}
         />
 
-        {/* ====================================== */}
-        {/* BOTÓN FLOTANTE */}
-        {/* ====================================== */}
-
-        <View
-          style={
-            styles.containerFlotante
-          }
-        >
-
-          <TouchableOpacity
-            style={styles.botonFlotante}
-            onPress={() => {
-
-              navigation.navigate(
-                "RegistrarRepartidor"
-              );
-
-            }}
-          >
-
-            <Text style={styles.plus}>
-              +
-            </Text>
-
-          </TouchableOpacity>
-
-          <Text
-            style={styles.textoFlotante}
-          >
-            Agregar Repartidor
-          </Text>
-
-        </View>
-
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -800,7 +810,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F4F6",
     padding: 20,
+    paddingTop: 8,
+    paddingBottom: 0,
   },
+
+  headerRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginBottom: 8,
+    },
+
+        containerBotonAgregar: {
+          alignItems: "center",
+          marginLeft: 10,
+          marginTop: 4,
+        },
+
+        botonFlotante: {
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: "#B90F0F",
+          alignItems: "center",
+          justifyContent: "center",
+          elevation: 6,
+          shadowColor: "#B90F0F",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.3,
+          shadowRadius: 6,
+        },
+
+        plus: {
+          color: "#fff",
+          fontSize: 30,
+          fontWeight: "300",
+          lineHeight: 34,
+        },
+
+        textoFlotante: {
+          color: "#B90F0F",
+          marginTop: 5,
+          fontSize: 12,
+          fontWeight: "600",
+        },
 
   titulo: {
     fontSize: 28,
@@ -974,7 +1027,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginHorizontal: 0,
-    marginVertical: 8,
+    marginVertical: 10,
     elevation: 3,
 
     shadowColor: "#000",
@@ -1120,45 +1173,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#B90F0F",
     letterSpacing: 0.3,
-  },
-
-  containerFlotante: {
-    position: "absolute",
-    right: 20,
-    bottom: 25,
-    alignItems: "center",
-  },
-
-  botonFlotante: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#B90F0F",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-
-    shadowColor: "#B90F0F",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-  },
-
-  plus: {
-    color: "#fff",
-    fontSize: 30,
-    fontWeight: "300",
-    lineHeight: 34,
-  },
-
-  textoFlotante: {
-    color: "#B90F0F",
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
   },
 
 });

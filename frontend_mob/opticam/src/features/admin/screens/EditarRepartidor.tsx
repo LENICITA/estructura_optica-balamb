@@ -17,6 +17,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
 import { UserController } from '../../../core/controllers/UserController';
+import {
+  checkNombre,
+  checkEmail,
+  checkTelefono,
+  checkDocumento,
+  checkCiudad,
+  checkVehiculo
+} from '../../../shared/validators/userValidators';
 
 function EditarRepartidor({
   navigation,
@@ -316,88 +324,63 @@ function EditarRepartidor({
   // =========================================================
 
   const validarFormulario = () => {
-    const nuevosErrores: Record<
-      string,
-      string
-    > = {};
+      const nuevosErrores: Record<string, string> = {};
 
-    const {
-      datosPersonales,
-      datosVehiculo,
-    } = formData;
+      const { datosPersonales, datosVehiculo } = formData;
 
-    if (
-      !datosPersonales.nombre_completo.trim()
-    ) {
-      nuevosErrores.nombre_completo =
-        'El nombre es obligatorio';
-    }
-
-    if (
-      !datosPersonales.email.trim()
-    ) {
-      nuevosErrores.email =
-        'El email es obligatorio';
-    } else {
-      const emailRegex =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (
-        !emailRegex.test(
-          datosPersonales.email
-        )
-      ) {
-        nuevosErrores.email =
-          'El email no es válido';
+      // Validar nombre
+      const nombreCheck = checkNombre(datosPersonales.nombre_completo);
+      if (!nombreCheck.valido) {
+        nuevosErrores.nombre_completo = nombreCheck.mensaje!;
       }
-    }
 
-    if (
-      !datosPersonales.documento.trim()
-    ) {
-      nuevosErrores.documento =
-        'El documento es obligatorio';
-    }
+      // Validar email
+      const emailCheck = checkEmail(datosPersonales.email);
+      if (!emailCheck.valido) {
+        nuevosErrores.email = emailCheck.mensaje!;
+      }
 
-    if (
-      !datosPersonales.ciudad.trim()
-    ) {
-      nuevosErrores.ciudad =
-        'La ciudad es obligatoria';
-    }
+      // Validar teléfono (NUEVO)
+      const telCheck = checkTelefono(datosPersonales.telefono);
+      if (!telCheck.valido) {
+        nuevosErrores.telefono = telCheck.mensaje!;
+      }
 
-    if (
-      !datosVehiculo.placa.trim()
-    ) {
-      nuevosErrores.placa =
-        'La placa es obligatoria';
-    }
+      // Validar documento
+      const docCheck = checkDocumento(datosPersonales.documento);
+      if (!docCheck.valido) {
+        nuevosErrores.documento = docCheck.mensaje!;
+      }
 
-    if (!datosVehiculo.tipo) {
-      nuevosErrores.tipo =
-        'El tipo de vehículo es obligatorio';
-    }
+      // Validar ciudad
+      const ciudadCheck = checkCiudad(datosPersonales.ciudad);
+      if (!ciudadCheck.valido) {
+        nuevosErrores.ciudad = ciudadCheck.mensaje!;
+      }
 
-    if (
-      !datosVehiculo.modelo.trim()
-    ) {
-      nuevosErrores.modelo =
-        'El modelo es obligatorio';
-    }
+      // Validar vehículo completo (tipo, modelo, placa, color)
+      const vehiculoCheck = checkVehiculo(datosVehiculo);
+      if (!vehiculoCheck.valido) {
+        // Determinar qué campo específico falló
+        if (!datosVehiculo.tipo || !datosVehiculo.tipo.trim()) {
+          nuevosErrores.tipo = vehiculoCheck.mensaje!;
+        } else if (!datosVehiculo.modelo || !datosVehiculo.modelo.trim()) {
+          nuevosErrores.modelo = vehiculoCheck.mensaje!;
+        } else if (!datosVehiculo.placa || !datosVehiculo.placa.trim()) {
+          nuevosErrores.placa = vehiculoCheck.mensaje!;
+        } else if (datosVehiculo.placa.trim().length < 5) {
+          nuevosErrores.placa = vehiculoCheck.mensaje!;
+        } else if (!datosVehiculo.color || !datosVehiculo.color.trim()) {
+          nuevosErrores.color = vehiculoCheck.mensaje!;
+        } else {
+          nuevosErrores.color = vehiculoCheck.mensaje!;
+        }
+      }
 
-    if (
-      !datosVehiculo.color.trim()
-    ) {
-      nuevosErrores.color =
-        'El color es obligatorio';
-    }
+      setErrores(nuevosErrores);
 
-    setErrores(nuevosErrores);
-
-    return (
-      Object.keys(nuevosErrores).length === 0
-    );
-  };
+      return Object.keys(nuevosErrores).length === 0;
+    };
 
   // =========================================================
   // SUBMIT
@@ -740,11 +723,19 @@ function EditarRepartidor({
             {/* TELÉFONO */}
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Teléfono
-              </Text>
+              <View style={styles.labelContainer}>
+                <Text style={styles.label}>
+                  Teléfono
+                </Text>
+                <Text style={styles.requiredStar}>*</Text>
+              </View>
 
-              <View style={styles.inputWrapper}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  errores.telefono && styles.inputWrapperError,
+                ]}
+              >
                 <Ionicons
                   name="call-outline"
                   size={20}
@@ -754,10 +745,7 @@ function EditarRepartidor({
 
                 <TextInput
                   style={styles.input}
-                  value={
-                    formData.datosPersonales
-                      .telefono
-                  }
+                  value={formData.datosPersonales.telefono}
                   onChangeText={text =>
                     handleInputChange(
                       'datosPersonales',
@@ -770,6 +758,19 @@ function EditarRepartidor({
                   placeholderTextColor="#999"
                 />
               </View>
+
+              {errores.telefono && (
+                <View style={styles.errorContainer}>
+                  <Ionicons
+                    name="alert-circle"
+                    size={14}
+                    color="#B90F0F"
+                  />
+                  <Text style={styles.errorText}>
+                    {errores.telefono}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* EMAIL */}

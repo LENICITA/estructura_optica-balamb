@@ -19,6 +19,7 @@ import { PedidoController } from '../../../core/controllers/PedidoController';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { FormulaModel } from '../../../core/models/FormulaModel';
 import { UserController } from '../../../core/controllers/UserController';
+import { validarFormularioPedido } from '../../../shared/validators/pedidoValidators';
 
 interface CarritoItem {
   id: number;
@@ -172,65 +173,69 @@ const cargarDireccionUsuario = async () => {
     setTotal(subtotal + costoEnvio + formulaCost);
   };
 
-  const confirmarPedido = async () => {
-    if (!direccion.trim()) {
-      Alert.alert('Error', 'Ingresa la dirección de entrega');
-      return;
-    }
-
-    if (!ciudad.trim()) {
-      Alert.alert('Error', 'Ingresa la ciudad de envío');
-      return;
-    }
-
-    setEnviando(true);
-
-    try {
-      const data = {
-        direccion_entrega: direccion.trim(),
-        ciudad_envio: ciudad.trim(),
-        id_formula: formulaSeleccionada || undefined,
+    const confirmarPedido = async () => {
+      // validación con el validador compartido
+      const check = validarFormularioPedido({
+        direccion_entrega: direccion,
+        ciudad_envio: ciudad,
         productos: productos.map(item => ({
           id_producto: item.id_producto,
           cantidad: item.cantidad,
         })),
-      };
+      });
 
-      const result = await pedidoController.crearPedido(data);
-
-      if (result.success) {
-        // Limpiar carrito
-        await AsyncStorage.removeItem('@carrito');
-        await AsyncStorage.removeItem('carrito_seleccionado');
-
-const idPedidoCreado = result.data?.id_pedido;
-
-        Alert.alert(
-          ' Pedido creado',
-          'Tu pedido ha sido creado exitosamente. ¿Qué deseas hacer ahora?',
-          [
-            {
-              text: 'Ver mis pedidos',
-              onPress: () => navigation.navigate('MisPedidosCliente' as never),
-            },
-            {
-              text: 'Pagar ahora',
-              onPress: () => navigation.navigate('PagosCliente' as never, { id_pedido: idPedidoCreado }),
-            style: 'default',
-            },
-          ]
-        );
-      } else {
-        Alert.alert('Error', result.message || 'Error al crear el pedido');
+      if (!check.valido) {
+        Alert.alert('Campo inválido', check.mensaje || 'Datos inválidos');
+        return;
       }
-    } catch (error: any) {
-      console.error('Error creando pedido:', error);
-      Alert.alert('Error', error.message || 'Error al crear el pedido');
-    } finally {
-      setEnviando(false);
-    }
-  };
 
+      setEnviando(true);
+
+      try {
+        const data = {
+          direccion_entrega: direccion.trim(),
+          ciudad_envio: ciudad.trim(),
+          id_formula: formulaSeleccionada || undefined,
+          productos: productos.map(item => ({
+            id_producto: item.id_producto,
+            cantidad: item.cantidad,
+          })),
+        };
+
+        const result = await pedidoController.crearPedido(data);
+
+        if (result.success) {
+          // Limpiar carrito
+          await AsyncStorage.removeItem('@carrito');
+          await AsyncStorage.removeItem('carrito_seleccionado');
+
+          const idPedidoCreado = result.data?.id_pedido;
+
+          Alert.alert(
+            ' Pedido creado',
+            'Tu pedido ha sido creado exitosamente. ¿Qué deseas hacer ahora?',
+            [
+              {
+                text: 'Ver mis pedidos',
+                onPress: () => navigation.navigate('MisPedidosCliente' as never),
+              },
+              {
+                text: 'Pagar ahora',
+                onPress: () => navigation.navigate('PagosCliente' as never, { id_pedido: idPedidoCreado }),
+                style: 'default',
+              },
+            ]
+          );
+        } else {
+          Alert.alert('Error', result.message || 'Error al crear el pedido');
+        }
+      } catch (error: any) {
+        console.error('Error creando pedido:', error);
+        Alert.alert('Error', error.message || 'Error al crear el pedido');
+      } finally {
+        setEnviando(false);
+      }
+    };
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -289,6 +294,7 @@ const idPedidoCreado = result.data?.id_pedido;
                   placeholderTextColor="#999"
                   value={direccion}
                   onChangeText={setDireccion}
+                  maxLength={45}
                 />
 
                 <Text style={styles.label}>Ciudad de envío *</Text>
@@ -298,6 +304,7 @@ const idPedidoCreado = result.data?.id_pedido;
                   placeholderTextColor="#999"
                   value={ciudad}
                   onChangeText={handleCiudadChange}
+                  maxLength={45}
                 />
 
                 {/* Indicador de costo de envío */}
