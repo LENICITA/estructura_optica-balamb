@@ -39,7 +39,7 @@ router.get('/en-entrega', authMiddleware, distribucionController.obtenerEnEntreg
 router.get('/historial', authMiddleware, distribucionController.obtenerHistorial);
 
 // Ver detalle de una distribución (con dirección)
-router.get('/:id', authMiddleware, distribucionController.obtenerDistribucionPorId);  // ← NUEVA
+router.get('/:id', authMiddleware, distribucionController.obtenerDistribucionPorId);  
 
 // Iniciar entrega
 router.patch('/:id/iniciar', authMiddleware, distribucionController.iniciarEntrega);
