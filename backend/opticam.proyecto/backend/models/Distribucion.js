@@ -81,7 +81,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
           model: sequelize.models.Usuario,
@@ -144,7 +144,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'ASC']]
@@ -174,7 +174,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'DESC']]
@@ -201,7 +201,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
         }
       ],
       order: [['fecha_entrega', 'DESC']]

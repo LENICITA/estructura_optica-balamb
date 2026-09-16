@@ -35,16 +35,16 @@ router.get('/pendientes', authMiddleware, distribucionController.obtenerPendient
 // Ver pedidos en entrega
 router.get('/en-entrega', authMiddleware, distribucionController.obtenerEnEntrega);
 
+// Ver historial de entregas
+router.get('/historial', authMiddleware, distribucionController.obtenerHistorial);
+
 // Ver detalle de una distribución (con dirección)
-router.get('/:id', authMiddleware, distribucionController.obtenerDistribucionPorId);  // ← NUEVA
+router.get('/:id', authMiddleware, distribucionController.obtenerDistribucionPorId);  
 
 // Iniciar entrega
 router.patch('/:id/iniciar', authMiddleware, distribucionController.iniciarEntrega);
 
 // Marcar como entregado
 router.patch('/:id/entregar', authMiddleware, distribucionController.marcarEntregado);
-
-// Ver historial de entregas
-router.get('/historial', authMiddleware, distribucionController.obtenerHistorial);
 
 export default router;

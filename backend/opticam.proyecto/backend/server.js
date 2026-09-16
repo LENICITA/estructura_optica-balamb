@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';      
+import swaggerSpec from './config/swagger.js'; 
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import inventarioRoutes from './routes/inventarioRoutes.js';
@@ -24,6 +26,12 @@ const HOST = process.env.HOST || '192.168.0.4';
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Documentación Swagger  
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Óptica Balamb API'
+}));
 
 // Rutas
 app.use('/api/auth', authRoutes);

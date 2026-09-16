@@ -134,7 +134,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     // Crear la distribución
     const distribucion = await DistribucionModelo.crear({
       id_pedido,
-      id_usuario,
+      id_usuario: usuarioAsignado,
       observaciones: observacionesFinal || null
     });
 
@@ -428,7 +428,7 @@ export const obtenerDistribucionPorId = async (req, res) => {
     let clienteData = null;
     if (distribucion.pedido) {
       const [cliente] = await sequelize.query(
-        `SELECT nombre_completo, telefono, ciudad 
+        `SELECT nombre_completo, telefono, email, ciudad 
          FROM USUARIOS 
          WHERE id_usuario = ?`,
         { replacements: [distribucion.pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
@@ -443,7 +443,13 @@ export const obtenerDistribucionPorId = async (req, res) => {
          FROM USUARIOS u
          JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
          JOIN ROLES r ON ru.id_rol = r.id_rol
-         WHERE u.id_usuario = ?`,
+         WHERE u.id_usuario = ?
+           AND r.nombre IN ('ADMIN', 'REPARTIDOR')
+         ORDER BY CASE r.nombre
+           WHEN 'ADMIN' THEN 1
+           WHEN 'REPARTIDOR' THEN 2
+         END
+         LIMIT 1`,
         { replacements: [distribucion.id_usuario], type: sequelize.QueryTypes.SELECT }
       );
 
@@ -479,6 +485,7 @@ export const obtenerDistribucionPorId = async (req, res) => {
           cliente: clienteData ? {
             nombre: clienteData.nombre_completo,
             telefono: clienteData.telefono,
+            email: clienteData.email,
             ciudad: clienteData.ciudad
           } : null
         } : null,
@@ -744,10 +751,30 @@ export const obtenerHistorial = async (req, res) => {
 
     console.log(`${historial.length} entregas completadas encontradas`);
 
+    const historialConCliente = await Promise.all(
+      historial.map(async d => {
+        if (!d.pedido?.id_usuario) {
+          return { distribucion: d, cliente: null };
+        }
+
+        const [cliente] = await sequelize.query(
+          `SELECT nombre_completo, telefono, ciudad
+           FROM USUARIOS
+           WHERE id_usuario = ?`,
+          {
+            replacements: [d.pedido.id_usuario],
+            type: sequelize.QueryTypes.SELECT
+          }
+        );
+
+        return { distribucion: d, cliente };
+      })
+    );
+
     res.json({
       success: true,
       count: historial.length,
-      data: historial.map(d => ({
+      data: historialConCliente.map(({ distribucion: d, cliente }) => ({
         id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
@@ -759,7 +786,11 @@ export const obtenerHistorial = async (req, res) => {
           ciudad_envio: d.pedido.ciudad_envio || 'Sin ciudad', 
           total: d.pedido.total || 0,
           fecha_estimada: d.pedido.fecha_estimada || null,
-          cliente: d.cliente || 'Cliente'
+          cliente: cliente ? {
+            nombre: cliente.nombre_completo,
+            telefono: cliente.telefono,
+            ciudad: cliente.ciudad
+          } : null
         } : null
       }))
     });
