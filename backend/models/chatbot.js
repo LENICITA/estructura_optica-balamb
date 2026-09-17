@@ -1,3 +1,5 @@
+// models/chatbot.js
+
 const ChatBot = {
   // ========== RESPUESTAS ==========
   respuestas: {
@@ -16,46 +18,162 @@ const ChatBot = {
     default: "Lo siento, no entendí tu pregunta. ¿Podrías reformularla? O escribe 'ayuda' para ver las opciones disponibles."
   },
 
+  // ========== UTILIDADES ==========
+  /**
+   * Normaliza un texto: minúsculas + sin acentos
+   * Ejemplo: "Información" → "informacion"
+   */
+  normalizar: (texto) => {
+    if (!texto || typeof texto !== 'string') return '';
+    return texto
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quita tildes
+      .trim();
+  },
+
   // ========== DETECTAR INTENCIÓN ==========
   detectarIntencion: (mensaje) => {
-    const msg = mensaje.toLowerCase();
+    const msg = ChatBot.normalizar(mensaje);
 
-    if (msg.includes('hola') || msg.includes('buenas') || msg.includes('saludo') || msg.includes('que tal')) {
+    if (!msg) return 'default';
+
+    // SALUDO
+    if (
+      msg.includes('hola') ||
+      msg.includes('buenas') ||
+      msg.includes('saludo') ||
+      msg.includes('que tal') ||
+      msg.includes('hey') ||
+      msg.includes('hi')
+    ) {
       return 'saludo';
     }
-    if (msg.includes('producto') || msg.includes('gafa') || msg.includes('lente') || msg.includes('catalogo') || msg.includes('tienen')) {
-      return 'productos';
-    }
-    if (msg.includes('horario') || msg.includes('abren') || msg.includes('cierran') || msg.includes('atencion')) {
-      return 'horario';
-    }
-    if (msg.includes('envio') || msg.includes('domicilio') || msg.includes('entrega') || msg.includes('demora')) {
-      return 'envio';
-    }
-    if (msg.includes('formula') || msg.includes('receta') || msg.includes('subir') || msg.includes('adjuntar')) {
-      return 'formulamedica';
-    }
-    if (msg.includes('pago') || msg.includes('tarjeta') || msg.includes('bold') || msg.includes('pagar') || msg.includes('metodo') || msg.includes('transferencia')) {
-      return 'pago';
-    }
-    if (msg.includes('devolucion') || msg.includes('cambio') || msg.includes('garantia') || msg.includes('reclamo')) {
-      return 'devolucion';
-    }
-    if (msg.includes('gracias') || msg.includes('adios') || msg.includes('chao') || msg.includes('bye')) {
-      return 'despedida';
-    }
-    if (msg.includes('ayuda') || msg.includes('opciones') || msg.includes('que puedes hacer') || msg.includes('menu')) {
+
+    // AYUDA
+    if (
+      msg.includes('ayuda') ||
+      msg.includes('opciones') ||
+      msg.includes('que puedes hacer') ||
+      msg.includes('menu') ||
+      msg.includes('comandos')
+    ) {
       return 'ayuda';
     }
-    
-    if (msg.includes('precio') || msg.includes('costos') || msg.includes('cuanto cuesta') || msg.includes('valor') || msg.includes('precios')) {
+
+    // DESPEDIDA
+    if (
+      msg.includes('gracias') ||
+      msg.includes('adios') ||
+      msg.includes('chao') ||
+      msg.includes('bye') ||
+      msg.includes('hasta luego')
+    ) {
+      return 'despedida';
+    }
+
+    // PRODUCTOS
+    if (
+      msg.includes('producto') ||
+      msg.includes('gafa') ||
+      msg.includes('lente') ||
+      msg.includes('catalogo') ||
+      msg.includes('montura') ||
+      msg.includes('tienen') ||
+      msg.includes('venden')
+    ) {
+      return 'productos';
+    }
+
+    // HORARIO
+    if (
+      msg.includes('horario') ||
+      msg.includes('abren') ||
+      msg.includes('cierran') ||
+      msg.includes('atencion') ||
+      msg.includes('atienden')
+    ) {
+      return 'horario';
+    }
+
+    // ENVÍO
+    if (
+      msg.includes('envio') ||
+      msg.includes('domicilio') ||
+      msg.includes('entrega') ||
+      msg.includes('demora') ||
+      msg.includes('llega')
+    ) {
+      return 'envio';
+    }
+
+    // FÓRMULA MÉDICA
+    if (
+      msg.includes('formula') ||
+      msg.includes('receta') ||
+      msg.includes('subir') ||
+      msg.includes('adjuntar') ||
+      msg.includes('medica')
+    ) {
+      return 'formulamedica';
+    }
+
+    // PAGO
+    if (
+      msg.includes('pago') ||
+      msg.includes('tarjeta') ||
+      msg.includes('bold') ||
+      msg.includes('pagar') ||
+      msg.includes('metodo') ||
+      msg.includes('transferencia') ||
+      msg.includes('nequi') ||
+      msg.includes('daviplata')
+    ) {
+      return 'pago';
+    }
+
+    // DEVOLUCIÓN
+    if (
+      msg.includes('devolucion') ||
+      msg.includes('cambio') ||
+      msg.includes('reclamo') ||
+      msg.includes('devolver')
+    ) {
+      return 'devolucion';
+    }
+
+    // GARANTÍA (va después de devolución para evitar solapamiento)
+    if (
+      msg.includes('garantia') ||
+      msg.includes('proteccion') ||
+      msg.includes('defecto') ||
+      msg.includes('falla')
+    ) {
+      return 'garantia';
+    }
+
+    // PRECIOS
+    if (
+      msg.includes('precio') ||
+      msg.includes('costo') ||
+      msg.includes('cuanto cuesta') ||
+      msg.includes('cuanto vale') ||
+      msg.includes('valor')
+    ) {
       return 'precios';
     }
-    if (msg.includes('contacto') || msg.includes('contactar') || msg.includes('hablar') || msg.includes('comunicarse') || msg.includes('atención al cliente') || msg.includes('soporte')) {
+
+    // CONTACTO
+    if (
+      msg.includes('contacto') ||
+      msg.includes('contactar') ||
+      msg.includes('hablar') ||
+      msg.includes('comunicarse') ||
+      msg.includes('soporte') ||
+      msg.includes('whatsapp') ||
+      msg.includes('telefono')
+    ) {
       return 'contacto';
-    }
-    if (msg.includes('garantía') || msg.includes('garantia') || msg.includes('protección') || msg.includes('defecto') || msg.includes('falla')) {
-      return 'garantia';
     }
 
     return 'default';

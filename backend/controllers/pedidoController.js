@@ -2,6 +2,93 @@ import PedidoModelo from '../models/pedidos.js';
 import PedidoProductoModelo from '../models/pedidoprodutos.js';
 import sequelize from '../config/database.js';
 
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'El valor ya existe en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+// VALIDADORES REUTILIZABLES
+const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+const ESTADOS_VALIDOS = ['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'];
+const ESTADOS_ACTIVOS_ADMIN = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
+
+const validarCiudad = (ciudad) => {
+  if (!ciudad || typeof ciudad !== 'string') return false;
+  return REGEX_CIUDAD.test(ciudad.trim());
+};
+
+const validarDireccion = (direccion) => {
+  if (!direccion || typeof direccion !== 'string') return false;
+  const limpio = direccion.trim();
+  return limpio.length >= 5 && limpio.length <= 45;
+};
+
+const validarProductos = (productos) => {
+  if (!Array.isArray(productos) || productos.length === 0) return false;
+  for (const item of productos) {
+    if (!item.id_producto || typeof item.id_producto !== 'number' || item.id_producto <= 0) return false;
+    if (!item.cantidad || typeof item.cantidad !== 'number' || item.cantidad < 1 || !Number.isInteger(item.cantidad)) return false;
+  }
+  return true;
+};
+
+const validarId = (id) => {
+  if (id === undefined || id === null || id === '') return false;
+  const num = Number(id);
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+const TRANSICIONES_PERMITIDAS = {
+  'Pendiente':  ['Abonado', 'Cancelado'],
+  'Abonado':    ['Listo', 'Cancelado'],
+  'Listo':      ['Pagado'],
+  'Pagado':     ['En Proceso'],
+  'En Proceso': ['Enviado'],
+  'Enviado':    ['Entregado'],
+  'Entregado':  [],
+  'Cancelado':  []
+};
+
+const esTransicionValida = (estadoActual, estadoNuevo) => {
+  if (!TRANSICIONES_PERMITIDAS[estadoActual]) return false;
+  return TRANSICIONES_PERMITIDAS[estadoActual].includes(estadoNuevo);
+};
+
 // UTILIDAD - CALCULAR COSTO DE ENVÍO
 const calcularCostoEnvio = (ciudad) => {
   if (!ciudad) return 10000;
@@ -34,6 +121,13 @@ export const crearPedido = async (req, res) => {
       });
     }
 
+    if (!validarDireccion(direccion_entrega)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La dirección de entrega debe tener entre 5 y 45 caracteres'
+      });
+    }
+
     if (!ciudad_envio) {
       return res.status(400).json({
         success: false,
@@ -41,10 +135,24 @@ export const crearPedido = async (req, res) => {
       });
     }
 
+    if (!validarCiudad(ciudad_envio)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La ciudad solo puede contener letras y espacios'
+      });
+    }
+
     if (!productos || productos.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Debes agregar al menos un producto'
+      });
+    }
+
+    if (!validarProductos(productos)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cada producto debe tener un id válido y una cantidad mayor o igual a 1'
       });
     }
 
@@ -151,8 +259,8 @@ export const crearPedido = async (req, res) => {
     const id_pedido = await PedidoModelo.crear({
       id_usuario: usuario.id,
       id_formula: id_formula || null,
-      direccion_entrega: direccion_entrega,
-      ciudad_envio: ciudad_envio,
+      direccion_entrega: direccion_entrega.trim(),   
+      ciudad_envio: ciudad_envio.trim(),  
       total: total,
       costo_envio: costo_envio,
       fecha_estimada: fechaEstimadaStr
@@ -188,12 +296,7 @@ export const crearPedido = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al crear pedido:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al crear el pedido',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -229,12 +332,7 @@ export const obtenerMisPedidos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener tus pedidos',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -243,6 +341,13 @@ export const obtenerPedidoPorId = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -306,12 +411,7 @@ export const obtenerPedidoPorId = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedido:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener el pedido',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -320,6 +420,13 @@ export const cancelarPedido = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -351,6 +458,13 @@ export const cancelarPedido = async (req, res) => {
       });
     }
 
+    if (!esTransicionValida(pedido.estado, 'Cancelado')) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede pasar de "${pedido.estado}" a "Cancelado"`
+      });
+    }
+
     await PedidoModelo.actualizarEstado(id, 'Cancelado');
 
     const pedidoActualizado = await PedidoModelo.obtenerPorId(id);
@@ -362,12 +476,7 @@ export const cancelarPedido = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al cancelar pedido:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al cancelar el pedido',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -375,6 +484,13 @@ export const cancelarPedido = async (req, res) => {
 export const marcarPedidoComoListo = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
 
     const pedido = await PedidoModelo.obtenerPorId(id);
     if (!pedido) {
@@ -389,6 +505,13 @@ export const marcarPedidoComoListo = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `El pedido debe estar en estado "Abonado". Estado actual: ${pedido.estado}`
+      });
+    }
+
+    if (!esTransicionValida(pedido.estado, 'Listo')) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede pasar de "${pedido.estado}" a "Listo"`
       });
     }
 
@@ -427,12 +550,7 @@ export const marcarPedidoComoListo = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al marcar pedido como listo:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al marcar pedido como listo',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -448,12 +566,7 @@ export const obtenerTodosLosPedidos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener los pedidos',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -462,11 +575,10 @@ export const obtenerPedidosPorEstado = async (req, res) => {
   try {
     const { estado } = req.params;
 
-    const estadosValidos = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
-    if (!estadosValidos.includes(estado)) {
+    if (!ESTADOS_ACTIVOS_ADMIN.includes(estado)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado inválido'
+        message: `Estado inválido. Debe ser uno de: ${ESTADOS_ACTIVOS_ADMIN.join(', ')}`
       });
     }
 
@@ -479,12 +591,7 @@ export const obtenerPedidosPorEstado = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos por estado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener los pedidos',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -494,11 +601,24 @@ export const actualizarEstadoPedido = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    const estadosValidos = ['Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
-    if (!estadosValidos.includes(estado)) {
+    if (!validarId(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Estado inválido. Debe ser: Abonado, Listo, Pagado, En Proceso, Enviado, Entregado'
+        message: 'ID de pedido inválido'
+      });
+    }
+
+    if (!estado || typeof estado !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'El estado es requerido'
+      });
+    }
+
+    if (!ESTADOS_ACTIVOS_ADMIN.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        message: `Estado inválido. Debe ser uno de: ${ESTADOS_ACTIVOS_ADMIN.join(', ')}`
       });
     }
 
@@ -507,6 +627,13 @@ export const actualizarEstadoPedido = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Pedido no encontrado'
+      });
+    }
+
+    if (!esTransicionValida(pedido.estado, estado)) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede pasar de "${pedido.estado}" a "${estado}". Transiciones permitidas: ${TRANSICIONES_PERMITIDAS[pedido.estado]?.join(', ') || 'ninguna'}`
       });
     }
 
@@ -521,12 +648,7 @@ export const actualizarEstadoPedido = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al actualizar estado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al actualizar el estado',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -536,10 +658,42 @@ export const actualizarFechaEstimada = async (req, res) => {
     const { id } = req.params;
     const { fecha_estimada } = req.body;
 
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
+
     if (!fecha_estimada) {
       return res.status(400).json({
         success: false,
         message: 'La fecha estimada es requerida'
+      });
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_estimada)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha debe tener formato YYYY-MM-DD'
+      });
+    }
+
+    const fechaComparar = new Date(`${fecha_estimada}T00:00:00`);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if (isNaN(fechaComparar.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha estimada no es válida'
+      });
+    }
+
+    if (fechaComparar < hoy) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha estimada no puede ser anterior a hoy'
       });
     }
 
@@ -548,6 +702,14 @@ export const actualizarFechaEstimada = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Pedido no encontrado'
+      });
+    }
+
+    const estadosEditablesFecha = ['Abonado', 'Listo', 'Pagado', 'En Proceso'];
+    if (!estadosEditablesFecha.includes(pedido.estado)) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede editar la fecha estimada en estado "${pedido.estado}". Estados permitidos: ${estadosEditablesFecha.join(', ')}`
       });
     }
 
@@ -562,12 +724,7 @@ export const actualizarFechaEstimada = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al actualizar fecha:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al actualizar la fecha estimada de entrega',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -582,11 +739,6 @@ export const obtenerEstadisticasPedidos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener estadísticas',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };

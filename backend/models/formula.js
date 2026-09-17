@@ -13,19 +13,41 @@ const Formulas = sequelize.define('Formulas', {
     references: {
       model: 'USUARIOS',
       key: 'id_usuario'
+    },
+    validate: {
+      notNull: { msg: 'El usuario es requerido' },
+      isInt:   { msg: 'El ID del usuario debe ser un número' }
     }
   },
   condicion: {
     type: DataTypes.ENUM('DALTONISMO', 'ASTIGMATISMO', 'MIOPIA', 'BAJA VISION'),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La condición es requerida' },
+      notEmpty: { msg: 'La condición es requerida' },
+      isIn: {
+        args: [['DALTONISMO', 'ASTIGMATISMO', 'MIOPIA', 'BAJA VISION']],
+        msg: 'Condición inválida. Debe ser: DALTONISMO, ASTIGMATISMO, MIOPIA o BAJA VISION'
+      }
+    }
   },
   imagen_formula: {
     type: DataTypes.STRING(200),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La imagen de la fórmula es requerida' },
+      notEmpty: { msg: 'La imagen de la fórmula es requerida' }
+    }
   },
   observaciones: {
     type: DataTypes.STRING(200),
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: {
+        args: [0, 200],
+        msg: 'Las observaciones no pueden superar los 200 caracteres'
+      }
+    }
   },
   fecha_creacion: {
     type: DataTypes.DATE,
@@ -35,16 +57,42 @@ const Formulas = sequelize.define('Formulas', {
   costo: {
     type: DataTypes.FLOAT,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: 0,
+    validate: {
+      min: {
+        args: [0],
+        msg: 'El costo no puede ser negativo'
+      }
+    }
   },
   estado: {
     type: DataTypes.ENUM('Pendiente', 'Aprobado', 'Rechazado'),
     allowNull: false,
-    defaultValue: 'Pendiente'
+    defaultValue: 'Pendiente',
+    validate: {
+      isIn: {
+        args: [['Pendiente', 'Aprobado', 'Rechazado']],
+        msg: 'Estado inválido. Debe ser: Pendiente, Aprobado o Rechazado'
+      }
+    }
   }
 }, {
   tableName: 'FORMULAS',
-  timestamps: false
+  timestamps: false,
+  hooks: {
+    // Normalizar condicion a MAYÚSCULAS antes de crear
+    beforeCreate: (formula) => {
+      if (formula.condicion) {
+        formula.condicion = formula.condicion.toUpperCase();
+      }
+    },
+    // Normalizar condicion a MAYÚSCULAS antes de actualizar
+    beforeUpdate: (formula) => {
+      if (formula.changed('condicion') && formula.condicion) {
+        formula.condicion = formula.condicion.toUpperCase();
+      }
+    }
+  }
 });
 
 // ========== MÉTODOS DEL MODELO ==========

@@ -10,35 +10,76 @@ const Producto = sequelize.define('Producto', {
   },
   id_categoria: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La categoría es requerida' },
+      isInt:   { msg: 'El ID de la categoría debe ser un número' }
+    }
   },
   nombre: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El nombre es requerido' },
+      notEmpty: { msg: 'El nombre es requerido' },
+      len: { args: [2, 45], msg: 'El nombre debe tener entre 2 y 45 caracteres' }
+    }
   },
   descripcion: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La descripción es requerida' },
+      notEmpty: { msg: 'La descripción es requerida' },
+      len: { args: [2, 45], msg: 'La descripción debe tener entre 2 y 45 caracteres' }
+    }
   },
   marca: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La marca es requerida' },
+      notEmpty: { msg: 'La marca es requerida' },
+      len: { args: [2, 45], msg: 'La marca debe tener entre 2 y 45 caracteres' }
+    }
   },
   precio: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El precio es requerido' },
+      isFloat: { msg: 'El precio debe ser un número válido' },
+      min: { args: [0.01], msg: 'El precio debe ser mayor a 0' }
+    }
   },
   imagen: {
     type: DataTypes.STRING(200),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La imagen es requerida' },
+      notEmpty: { msg: 'La imagen es requerida' }
+    }
   },
   material: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El material es requerido' },
+      notEmpty: { msg: 'El material es requerido' },
+      len: { args: [2, 45], msg: 'El material debe tener entre 2 y 45 caracteres' }
+    }
   },
   color: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El color es requerido' },
+      notEmpty: { msg: 'El color es requerido' },
+      is: {
+        args: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        msg: 'El color solo puede contener letras y espacios'
+      }
+    }
   }
 }, {
   tableName: 'PRODUCTOS',
@@ -54,11 +95,23 @@ const Categoria = sequelize.define('Categoria', {
   },
   tipo_categoria: {
     type: DataTypes.ENUM('MONTURAS', 'ACCESORIOS', 'GAFAS DE SOL'),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El tipo de categoría es requerido' },
+      isIn: {
+        args: [['MONTURAS', 'ACCESORIOS', 'GAFAS DE SOL']],
+        msg: 'Tipo de categoría inválido. Debe ser: MONTURAS, ACCESORIOS o GAFAS DE SOL'
+      }
+    }
   },
   descripcion: {
     type: DataTypes.STRING(200),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La descripción es requerida' },
+      notEmpty: { msg: 'La descripción es requerida' },
+      len: { args: [2, 200], msg: 'La descripción debe tener entre 2 y 200 caracteres' }
+    }
   }
 }, {
   tableName: 'CATEGORIAS',

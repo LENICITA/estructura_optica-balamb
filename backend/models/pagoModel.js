@@ -14,6 +14,10 @@ const Pago = sequelize.define('Pago', {
     references: {
       model: 'PEDIDOS',
       key: 'id_pedido'
+    },
+    validate: {
+      notNull: { msg: 'El pedido es requerido' },
+      isInt:   { msg: 'El ID del pedido debe ser un número' }
     }
   },
   fecha_pago: {
@@ -23,17 +27,32 @@ const Pago = sequelize.define('Pago', {
   },
   eleccion_pago: {
     type: DataTypes.ENUM('50%', '100%'),
-    allowNull: false
+    allowNull: false,
+     validate: {
+      notNull: { msg: 'La elección de pago es requerida' },
+      isIn: {
+        args: [['50%', '100%']],
+        msg: 'La elección debe ser 50% o 100%'
+      }
+    }
   },
   canal_pago: {
     type: DataTypes.ENUM('Bold'),
     allowNull: false,
-    defaultValue: 'Bold'
+    defaultValue: 'Bold',
+    validate: {
+      isIn: {
+        args: [['Bold']],
+        msg: 'El canal de pago debe ser Bold'
+      }
+    }
   },
   monto: {
     type: DataTypes.FLOAT,
     allowNull: false,
     validate: {
+      notNull: { msg: 'El monto es requerido' },
+      isFloat: { msg: 'El monto debe ser un número válido' },
       min: {
         args: [0.01],
         msg: 'El monto debe ser mayor a 0'
@@ -43,7 +62,13 @@ const Pago = sequelize.define('Pago', {
   estado: {
     type: DataTypes.ENUM('Pendiente', 'Confirmado', 'Rechazado'),
     allowNull: false,
-    defaultValue: 'Pendiente'
+    defaultValue: 'Pendiente',
+    validate: {
+      isIn: {
+        args: [['Pendiente', 'Confirmado', 'Rechazado']],
+        msg: 'Estado inválido. Debe ser: Pendiente, Confirmado o Rechazado'
+      }
+    }
   },
   bold_reference: {
     type: DataTypes.STRING(300),

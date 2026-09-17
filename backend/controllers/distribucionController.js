@@ -134,7 +134,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     // Crear la distribución
     const distribucion = await DistribucionModelo.crear({
       id_pedido,
-      id_usuario: usuarioAsignado,
+      id_usuario,
       observaciones: observacionesFinal || null
     });
 
@@ -532,7 +532,6 @@ export const iniciarEntrega = async (req, res) => {
     }
 
     // Verificar permisos
-    const esAdmin = usuario.roles?.includes('ADMIN') || false;
     const esRepartidor = usuario.roles?.includes('REPARTIDOR') || false;
 
     //  Si es repartidor, solo puede iniciar sus propias distribuciones
@@ -541,31 +540,6 @@ export const iniciarEntrega = async (req, res) => {
         success: false,
         message: 'No tienes permiso para iniciar esta entrega'
       });
-    }
-
-    //  Si es admin, solo puede iniciar distribuciones externas
-    if (esAdmin) {
-      const [pedido] = await sequelize.query(
-        `SELECT ciudad_envio FROM PEDIDOS WHERE id_pedido = ?`,
-        { replacements: [distribucion.id_pedido], type: sequelize.QueryTypes.SELECT }
-      );
-
-      if (!pedido) {
-        return res.status(404).json({
-          success: false,
-          message: 'Pedido no encontrado'
-        });
-      }
-
-      const ciudad = pedido.ciudad_envio?.toLowerCase().trim() || '';
-      const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
-
-      if (esBogota) {
-        return res.status(403).json({
-          success: false,
-          message: 'Solo el repartidor asignado puede iniciar entregas en Bogotá'
-        });
-      }
     }
 
     if (distribucion.estado !== 'PENDIENTE') {
@@ -623,7 +597,6 @@ export const marcarEntregado = async (req, res) => {
     }
 
     // Verificar permisos
-    const esAdmin = usuario.roles?.includes('ADMIN') || false;
     const esRepartidor = usuario.roles?.includes('REPARTIDOR') || false;
 
     // Si es repartidor, solo puede marcar sus propias distribuciones
@@ -632,31 +605,6 @@ export const marcarEntregado = async (req, res) => {
         success: false,
         message: 'No tienes permiso para marcar esta entrega'
       });
-    }
-
-    // Si es admin, solo puede marcar distribuciones externas
-    if (esAdmin) {
-      const [pedido] = await sequelize.query(
-        `SELECT ciudad_envio FROM PEDIDOS WHERE id_pedido = ?`,
-        { replacements: [distribucion.id_pedido], type: sequelize.QueryTypes.SELECT }
-      );
-
-      if (!pedido) {
-        return res.status(404).json({
-          success: false,
-          message: 'Pedido no encontrado'
-        });
-      }
-
-      const ciudad = pedido.ciudad_envio?.toLowerCase().trim() || '';
-      const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
-
-      if (esBogota) {
-        return res.status(403).json({
-          success: false,
-          message: 'Solo el repartidor asignado puede marcar entregas en Bogotá'
-        });
-      }
     }
 
     if (distribucion.estado !== 'EN_ENTREGA') {

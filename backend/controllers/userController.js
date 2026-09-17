@@ -9,6 +9,51 @@ import sequelize from "../config/database.js";
 import { generateToken } from "../utils/generadorToken.js";
 import { Op } from "sequelize";
 
+// HELPER: Manejo centralizado de errores
+const manejarErrorValidacion = (error, res) => {
+    if (error.name === 'SequelizeValidationError') {
+        const mensajes = error.errors.map(e => e.message);
+        return res.status(400).json({
+            success: false,
+            message: mensajes[0],
+            errores: mensajes
+        });
+    }
+    if (error.name === 'SequelizeUniqueConstraintError') {
+        const campo = error.errors[0]?.path || 'campo';
+        const mensajes = {
+            email: 'El email ya está registrado',
+            documento: 'El documento ya está registrado',
+            placa: 'La placa ya está registrada'
+        };
+        return res.status(400).json({
+            success: false,
+            message: mensajes[campo] || `El ${campo} ya está registrado`
+        });
+    }
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Referencia inválida en la base de datos'
+        });
+    }
+    console.error('Error interno no controlado:', error);
+    return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+};
+
+// VALIDADORES REUTILIZABLES
+const REGEX_TELEFONO = /^3\d{9}$/;
+const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validarTelefono = (telefono) => REGEX_TELEFONO.test(telefono);
+const validarCiudad = (ciudad) => REGEX_CIUDAD.test(ciudad);
+const validarEmail = (email) => REGEX_EMAIL.test(email);
+
 // Registrar cliente
 export const registrarCliente = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -26,20 +71,55 @@ export const registrarCliente = async (req, res) => {
 
         // Validaciones
         if (!nombre_completo || !telefono || !fecha_nacimiento || !documento || !ciudad || !direccion || !email || !contrasena) {
-            return res.status(400).json({ success: false, message: "Todos los campos son requeridos" });
+            await transaction.rollback();
+            return res.status(400).json({ 
+                success: false, 
+                message: "Todos los campos son requeridos" 
+            });
+        }
+
+        if (!validarTelefono(telefono)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "El teléfono debe empezar por 3 y tener 10 dígitos"
+            });
+        }
+
+        if (!validarCiudad(ciudad)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "La ciudad solo puede contener letras y espacios"
+            });
+        }
+
+        if (!validarEmail(email)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "El email no tiene un formato válido"
+            });
+        }
+
+        if (contrasena.length < 8) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "La contraseña debe tener al menos 8 caracteres"
+            });
         }
 
         // Verificar si el email ya existe
         const emailExistente = await Usuario.findOne({
-            where: { email },
+            where: { email: email.toLowerCase() },
             transaction
         });
-
         if (emailExistente) {
             await transaction.rollback();
             return res.status(400).json({
                 success: false,
-                message: "El email ya esta registrado"
+                message: "El email ya está registrado"
             });
         }
 
@@ -48,14 +128,14 @@ export const registrarCliente = async (req, res) => {
             where: { documento },
             transaction
         });
-
         if (documentoExistente) {
             await transaction.rollback();
             return res.status(400).json({
                 success: false,
-                message: "El documento ya esta registrado"
+                message: "El documento ya está registrado"
             });
         }
+
 
         // Crear usuario
         const usuario = await Usuario.create({
@@ -65,7 +145,7 @@ export const registrarCliente = async (req, res) => {
             documento,
             ciudad,
             direccion,
-            email,
+            email: email.toLowerCase(),
             contrasena,
             estado: 'ACTIVO'
         }, { transaction });
@@ -86,7 +166,7 @@ export const registrarCliente = async (req, res) => {
         await transaction.commit();
 
         // Generar token
-        const token = generateToken(usuario.id_usuario);
+        const { token } = generateToken(usuario.id_usuario);
 
         res.status(201).json({
             success: true,
@@ -104,12 +184,7 @@ export const registrarCliente = async (req, res) => {
         });
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al registrar cliente: ', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -132,15 +207,64 @@ export const registrarRepartidor = async (req, res) => {
 
         // Validaciones
         if (!nombre_completo || !telefono || !fecha_nacimiento || !documento || !ciudad || !direccion || !email || !contrasena || !vehiculo) {
+            await transaction.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'Todos los campos incluyendo el vehiculo son requeridos'
+                message: 'Todos los campos incluyendo el vehículo son requeridos'
+            });
+        }
+
+        if (!vehiculo.tipo || !vehiculo.modelo || !vehiculo.placa || !vehiculo.color) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Los datos del vehículo (tipo, modelo, placa, color) son requeridos'
+            });
+        }
+
+        if (!validarTelefono(telefono)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El teléfono debe empezar por 3 y tener 10 dígitos'
+            });
+        }
+
+        if (!validarCiudad(ciudad)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La ciudad solo puede contener letras y espacios'
+            });
+        }
+
+        if (!validarEmail(email)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
+        if (contrasena.length < 8) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La contraseña debe tener al menos 8 caracteres'
+            });
+        }
+
+        if (!validarCiudad(vehiculo.color)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El color del vehículo solo puede contener letras y espacios'
             });
         }
 
         // Verificar si el email ya existe
         const emailExistente = await Usuario.findOne({
-            where: { email },
+            where: { email: email.toLowerCase() },
             transaction
         });
 
@@ -166,6 +290,18 @@ export const registrarRepartidor = async (req, res) => {
             });
         }
 
+        const placaExistente = await Vehiculo.findOne({
+            where: { placa: vehiculo.placa.toUpperCase() },
+            transaction
+        });
+        if (placaExistente) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La placa ya está registrada'
+            });
+        }
+
         // Crear usuario
         const usuario = await Usuario.create({
             nombre_completo,
@@ -174,7 +310,7 @@ export const registrarRepartidor = async (req, res) => {
             documento,
             ciudad,
             direccion,
-            email,
+            email: email.toLowerCase(),
             contrasena,
             estado: 'ACTIVO'
         }, { transaction });
@@ -185,33 +321,17 @@ export const registrarRepartidor = async (req, res) => {
             transaction
         });
 
-        if (rolRepartidor) {
-            await RolUsuario.create({
-                id_usuario: usuario.id_usuario,
-                id_rol: rolRepartidor.id_rol
-            }, { transaction });
-        } else {
-            console.log('Rol REPARTIDOR no encontrado');
+        if (!rolRepartidor) {
             await transaction.rollback();
             return res.status(500).json({
                 success: false,
                 message: 'Error: Rol REPARTIDOR no encontrado en la base de datos'
             });
         }
-
-        // Verificar si la placa ya existe
-        const placaExistente = await Vehiculo.findOne({
-            where: { placa: vehiculo.placa.toUpperCase() },
-            transaction
-        });
-
-        if (placaExistente) {
-            await transaction.rollback();
-            return res.status(400).json({
-                success: false,
-                message: 'La placa ya esta registrada'
-            });
-        }
+        await RolUsuario.create({
+            id_usuario: usuario.id_usuario,
+            id_rol: rolRepartidor.id_rol
+        }, { transaction });
 
         // Crear vehiculo para el repartidor
         const vehiculoCreado = await Vehiculo.create({
@@ -241,12 +361,7 @@ export const registrarRepartidor = async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al registrar repartidor: ', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno de servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -277,11 +392,7 @@ export const listarRepartidores = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al listar repartidores:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -323,6 +434,7 @@ export const obtenerRepartidor = async (req, res) => {
 
             const usuarioData = usuario.toJSON();
         usuarioData.pedidos_entregados = pedidosEntregados;
+        usuarioData.pedidos_count = pedidosEntregados;
 
         res.json({
             success: true,
@@ -330,11 +442,7 @@ export const obtenerRepartidor = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al obtener repartidor:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -374,16 +482,52 @@ export const actualizarRepartidor = async (req, res) => {
             });
         }
 
-// Verificar si el documento ya existe en otro usuario 
+// Validar teléfono si viene
+        if (telefono && !validarTelefono(telefono)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El teléfono debe empezar por 3 y tener 10 dígitos'
+            });
+        }
+
+        // Validar ciudad si viene
+        if (ciudad && !validarCiudad(ciudad)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La ciudad solo puede contener letras y espacios'
+            });
+        }
+
+        // Validar email si viene
+        if (email && !validarEmail(email)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
+        // Validar estado si viene
+        if (estado && !['ACTIVO', 'INACTIVO', 'SUSPENDIDO'].includes(estado)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'Estado inválido. Debe ser: ACTIVO, INACTIVO o SUSPENDIDO'
+            });
+        }
+
+
+ // Verificar documento duplicado
         if (documento && documento !== usuario.documento) {
             const documentoExistente = await Usuario.findOne({
                 where: {
-                    documento: documento,
+                    documento,
                     id_usuario: { [Op.ne]: id }
                 },
                 transaction
             });
-
             if (documentoExistente) {
                 await transaction.rollback();
                 return res.status(400).json({
@@ -393,16 +537,15 @@ export const actualizarRepartidor = async (req, res) => {
             }
         }
 
-         // Verificar si el email ya existe en otro usuario 
+         // Verificar email duplicado
         if (email && email !== usuario.email) {
             const emailExistente = await Usuario.findOne({
                 where: {
-                    email: email,
+                    email: email.toLowerCase(),
                     id_usuario: { [Op.ne]: id }
                 },
                 transaction
             });
-
             if (emailExistente) {
                 await transaction.rollback();
                 return res.status(400).json({
@@ -411,19 +554,6 @@ export const actualizarRepartidor = async (req, res) => {
                 });
             }
         }
-
-        // Validar fecha de nacimiento si se proporciona
-        if (fecha_nacimiento) {
-            const fecha = new Date(fecha_nacimiento);
-            if (isNaN(fecha.getTime())) {
-                await transaction.rollback();
-                return res.status(400).json({
-                    success: false,
-                    message: 'La fecha de nacimiento no es válida'
-                });
-            }
-        }
-
 
         // Actualizar repartidor
         await usuario.update({
@@ -439,6 +569,14 @@ export const actualizarRepartidor = async (req, res) => {
 
         // Actualizar vehiculo si se proporciona
         if (vehiculo) {
+            if (vehiculo.color && !validarCiudad(vehiculo.color)) {
+                await transaction.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: 'El color del vehículo solo puede contener letras y espacios'
+                });
+            }
+
             let vehiculoExistente = await Vehiculo.findOne({
                 where: { id_usuario: id },
                 transaction
@@ -452,12 +590,11 @@ export const actualizarRepartidor = async (req, res) => {
                     },
                     transaction
                 });
-
                 if (placaExistente) {
                     await transaction.rollback();
                     return res.status(400).json({
                         success: false,
-                        message: 'La placa ya esta registrada por otro usuario'
+                        message: 'La placa ya está registrada por otro usuario'
                     });
                 }
             }
@@ -507,11 +644,7 @@ export const actualizarRepartidor = async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al actualizar repartidor:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -562,11 +695,7 @@ export const eliminarRepartidor = async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error al eliminar repartidor: ', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -611,11 +740,7 @@ export const cambiarEstadoRepartidor = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al cambiar estado del repartidor: ', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -662,11 +787,7 @@ export const buscarRepartidores = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al buscar repartidores: ', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -701,8 +822,6 @@ export const obtenerPerfil = async (req, res) => {
             });
         }
 
-        console.log('Perfil obtenido:', usuario.nombre_completo);
-
         res.json({
             success: true,
             data: {
@@ -721,12 +840,7 @@ export const obtenerPerfil = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al obtener perfil:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -764,15 +878,35 @@ export const actualizarPerfil = async (req, res) => {
             });
         }
 
+        if (telefono && !validarTelefono(telefono)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El teléfono debe empezar por 3 y tener 10 dígitos'
+            });
+        }
+
+        if (ciudad && !validarCiudad(ciudad)) {
+            return res.status(400).json({
+                success: false,
+                message: 'La ciudad solo puede contener letras y espacios'
+            });
+        }
+
+        if (email && !validarEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
         // Verificar si el email ya existe en otro usuario
         if (email && email !== usuario.email) {
             const emailExistente = await Usuario.findOne({
                 where: {
-                    email: email,
+                    email: email.toLowerCase(),
                     id_usuario: { [Op.ne]: usuarioId }
                 }
             });
-
             if (emailExistente) {
                 return res.status(400).json({
                     success: false,
@@ -780,31 +914,18 @@ export const actualizarPerfil = async (req, res) => {
                 });
             }
         }
-
         // Verificar si el documento ya existe en otro usuario
         if (documento && documento !== usuario.documento) {
             const documentoExistente = await Usuario.findOne({
                 where: {
-                    documento: documento,
+                    documento,
                     id_usuario: { [Op.ne]: usuarioId }
                 }
             });
-
             if (documentoExistente) {
                 return res.status(400).json({
                     success: false,
                     message: 'El documento ya está registrado por otro usuario'
-                });
-            }
-        }
-
-        // Validar fecha de nacimiento si se proporciona
-        if (fecha_nacimiento) {
-            const fecha = new Date(fecha_nacimiento);
-            if (isNaN(fecha.getTime())) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'La fecha de nacimiento no es válida'
                 });
             }
         }
@@ -819,8 +940,6 @@ export const actualizarPerfil = async (req, res) => {
             fecha_nacimiento: fecha_nacimiento || usuario.fecha_nacimiento,
             documento: documento || usuario.documento
         });
-
-        console.log('Perfil actualizado');
 
         res.json({
             success: true,
@@ -838,12 +957,7 @@ export const actualizarPerfil = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error al actualizar perfil:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 export const contarClientes = async (req, res) => {
@@ -861,10 +975,6 @@ export const contarClientes = async (req, res) => {
             data: { total: count }
         });
     } catch (error) {
-        console.error('Error al contar clientes:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al contar clientes'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };

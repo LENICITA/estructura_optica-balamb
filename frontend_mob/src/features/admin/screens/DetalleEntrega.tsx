@@ -10,6 +10,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Linking,
+  Modal,
+  TextInput,
 } from 'react-native';
 
 import {
@@ -50,6 +53,9 @@ const DetalleEntrega = () => {
     useState<DistribucionModel | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [observacionModalVisible, setObservacionModalVisible] = useState(false);
+  const [observacion, setObservacion] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
 
   const distribucionController =
@@ -136,6 +142,57 @@ const DetalleEntrega = () => {
   // ==========================================================
   // RECARGAR AL ENTRAR EN LA PANTALLA
   // ==========================================================
+
+  const iniciarEntrega = async () => {
+    try {
+      setActionLoading(true);
+      const resultado = await distribucionController.iniciarEntrega(id_distribucion);
+      if (!resultado.success) {
+        Alert.alert('No se pudo iniciar la entrega', resultado.message || 'Intenta nuevamente.');
+        return;
+      }
+      await cargarDistribucion();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const marcarEntregado = async (textoObservacion?: string) => {
+    try {
+      setActionLoading(true);
+      const resultado = await distribucionController.marcarEntregado(
+        id_distribucion,
+        textoObservacion?.trim() || undefined
+      );
+      if (!resultado.success) {
+        Alert.alert('No se pudo marcar como entregado', resultado.message || 'Intenta nuevamente.');
+        return;
+      }
+      setObservacion('');
+      setObservacionModalVisible(false);
+      await cargarDistribucion();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const confirmarEntrega = () => {
+    Alert.alert(
+      'Confirmar entrega',
+      '¿El pedido ya fue entregado al cliente?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sí, entregar', onPress: () => setObservacionModalVisible(true) },
+      ]
+    );
+  };
+
+  const abrirRuta = () => {
+    const direccion = `${distribucion?.pedido?.direccion_entrega || ''}, ${distribucion?.pedido?.ciudad_envio || ''}, Colombia`;
+    Linking.openURL(
+      `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(direccion)}`
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -465,37 +522,30 @@ const DetalleEntrega = () => {
             </View>
 
 
-            {/* FECHA ESTIMADA */}
-
-            <View style={styles.infoRowLast}>
-
-              <View style={styles.infoIcon}>
-
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-
+            {distribucion.estado === 'ENTREGADO' && (
+              <View style={styles.infoRowLast}>
+                <View style={styles.infoIcon}>
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Fecha estimada de entrega</Text>
+                  <Text style={styles.infoValue}>{pedido?.fecha_estimada || 'N/A'}</Text>
+                </View>
               </View>
-
-              <View style={styles.infoContent}>
-
-                <Text style={styles.infoLabel}>
-                  Fecha estimada de entrega
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {pedido?.fecha_estimada || 'N/A'}
-                </Text>
-
-              </View>
-
-            </View>
+            )}
 
           </View>
 
         </View>
+
+        {(distribucion.estado === 'EN_ENTREGA' || distribucion.estado === 'ENTREGADO') && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Observaciones</Text>
+            <View style={styles.card}>
+              <Text style={styles.infoValue}>{distribucion.observaciones || 'Sin observaciones'}</Text>
+            </View>
+          </View>
+        )}
 
 
         {/* ================================================== */}
@@ -569,33 +619,7 @@ const DetalleEntrega = () => {
             </View>
 
 
-            {/* EMAIL */}
-
-            <View style={styles.infoRowLast}>
-
-              <View style={styles.infoIcon}>
-
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-
-              </View>
-
-              <View style={styles.infoContent}>
-
-                <Text style={styles.infoLabel}>
-                  Correo electrónico
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {cliente?.email || 'N/A'}
-                </Text>
-
-              </View>
-
-            </View>
+            <View style={styles.infoRowLast} />
 
           </View>
 
@@ -694,7 +718,12 @@ const DetalleEntrega = () => {
                 </Text>
 
                 <Text style={styles.infoValue}>
-                  {distribucion.vehiculoRepartidor}
+                  {(() => {
+                    const ciudad = pedido?.ciudad_envio?.toLowerCase().trim();
+                    return ciudad === 'bogotá' || ciudad === 'bogota'
+                      ? distribucion.vehiculoRepartidor
+                      : 'N/A';
+                  })()}
                 </Text>
 
               </View>
@@ -710,7 +739,7 @@ const DetalleEntrega = () => {
         {/* INFORMACIÓN DE LA DISTRIBUCIÓN */}
         {/* ================================================== */}
 
-        <View style={styles.section}>
+        {distribucion.estado === 'ENTREGADO' && <View style={styles.section}>
 
           <Text style={styles.sectionTitle}>
             Información de la distribución
@@ -748,71 +777,23 @@ const DetalleEntrega = () => {
             </View>
 
 
-            {/* FECHA ENTREGA */}
-
-            <View style={styles.infoRow}>
-
+            <View style={styles.infoRowLast}>
               <View style={styles.infoIcon}>
-
-                <Ionicons
-                  name="checkmark-done-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-
+                <Ionicons name="checkmark-done-outline" size={20} color={COLORS.primary} />
               </View>
-
               <View style={styles.infoContent}>
-
-                <Text style={styles.infoLabel}>
-                  Fecha de entrega
-                </Text>
-
+                <Text style={styles.infoLabel}>Fecha de entrega</Text>
                 <Text style={styles.infoValue}>
                   {distribucion.fecha_entrega
-                    ? new Date(
-                        distribucion.fecha_entrega
-                      ).toLocaleDateString('es-CO')
-                    : 'Pendiente'}
+                    ? new Date(distribucion.fecha_entrega).toLocaleDateString('es-CO')
+                    : 'N/A'}
                 </Text>
-
               </View>
-
-            </View>
-
-
-            {/* OBSERVACIONES */}
-
-            <View style={styles.infoRowLast}>
-
-              <View style={styles.infoIcon}>
-
-                <Ionicons
-                  name="chatbox-ellipses-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-
-              </View>
-
-              <View style={styles.infoContent}>
-
-                <Text style={styles.infoLabel}>
-                  Observaciones
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {distribucion.observaciones ||
-                    'Sin observaciones'}
-                </Text>
-
-              </View>
-
             </View>
 
           </View>
 
-        </View>
+        </View>}
 
 
         {/* ================================================== */}
@@ -869,6 +850,60 @@ const DetalleEntrega = () => {
           </View>
 
         </View>
+
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.routeButton} onPress={abrirRuta}>
+            <Ionicons name="map-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.actionButtonText}>Ver mapa</Text>
+          </TouchableOpacity>
+
+          {distribucion.estado === 'PENDIENTE' && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => Alert.alert('Iniciar entrega', '¿Deseas iniciar la entrega de este pedido?', [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Iniciar', onPress: iniciarEntrega },
+              ])}
+              disabled={actionLoading}
+            >
+              <Text style={styles.actionButtonTextPrimary}>Iniciar entrega</Text>
+            </TouchableOpacity>
+          )}
+
+          {distribucion.estado === 'EN_ENTREGA' && (
+            <TouchableOpacity style={styles.actionButton} onPress={confirmarEntrega} disabled={actionLoading}>
+              <Text style={styles.actionButtonTextPrimary}>Marcar como entregado</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <Modal
+          visible={observacionModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setObservacionModalVisible(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>¿Desea agregar una observación a la distribución?</Text>
+              <TextInput
+                style={styles.observacionInput}
+                value={observacion}
+                onChangeText={setObservacion}
+                placeholder="Escribe una observación (opcional)"
+                multiline
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity onPress={() => setObservacionModalVisible(false)} disabled={actionLoading}>
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => marcarEntregado(observacion)} disabled={actionLoading}>
+                  <Text style={styles.modalConfirmText}>{actionLoading ? 'Guardando...' : 'Continuar'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
 
         <View style={styles.bottomSpace} />
@@ -1100,6 +1135,85 @@ const styles = StyleSheet.create({
   currentStatusText: {
     fontSize: 17,
     fontWeight: '800',
+  },
+
+  actionsContainer: {
+    gap: 10,
+    marginTop: 14,
+  },
+
+  routeButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  actionButton: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  actionButtonTextPrimary: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 20,
+  },
+
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+
+  observacionInput: {
+    borderWidth: 1,
+    borderColor: '#D6D6D6',
+    borderRadius: 8,
+    minHeight: 90,
+    padding: 10,
+    textAlignVertical: 'top',
+  },
+
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 22,
+    marginTop: 18,
+  },
+
+  modalCancelText: {
+    color: COLORS.gray,
+    fontWeight: '700',
+  },
+
+  modalConfirmText: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 
   bottomSpace: {

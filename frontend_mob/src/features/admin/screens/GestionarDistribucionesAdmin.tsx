@@ -76,6 +76,9 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
   };
 
   const distribucionesFiltradas = distribuciones.filter((item) => {
+    const ciudad = item.pedido?.ciudad_envio?.toLowerCase().trim() || '';
+    if (ciudad !== 'bogotá' && ciudad !== 'bogota') return false;
+
     if (busqueda.trim()) {
       const texto = busqueda.toLowerCase().trim();
       const cliente = item.pedido?.cliente?.nombre?.toLowerCase() || '';

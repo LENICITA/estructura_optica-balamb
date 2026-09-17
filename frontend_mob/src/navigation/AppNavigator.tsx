@@ -51,11 +51,9 @@ import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
 import { ReportesAdmin } from '../features/admin/screens/ReportesAdmin';
 import { GestionarDistribucionesAdmin } from '../features/admin/screens/GestionarDistribucionesAdmin';
 import DetalleEntrega from '../features/admin/screens/DetalleEntrega';
-import DistribucionesExternasAdmin from '../features/admin/screens/DistribucionesExternasAdmin';
 // ===== SCREENS DELIVERY =====
 import PrincipalRepartidor from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
-import DetalleEntregaRepartidor from '../features/delivery/screens/DetalleEntregaReparetidor';
 
 const Stack = createNativeStackNavigator();
 
@@ -256,14 +254,6 @@ export default function AppNavigator() {
                 )}
               </Stack.Screen>
 
-              <Stack.Screen name="DistribucionesExternasAdmin">
-                {({ navigation }) => (
-                  <UserLayout>
-                    <DistribucionesExternasAdmin navigation={navigation} />
-                  </UserLayout>
-                )}
-              </Stack.Screen>
-
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (
@@ -365,14 +355,6 @@ export default function AppNavigator() {
               {({ navigation }) => (
                 <UserLayout>
                   <PrincipalRepartidor navigation={navigation} />
-                </UserLayout>
-              )}
-            </Stack.Screen>
-
-            <Stack.Screen name="DetalleEntregaRepartidor">
-              {() => (
-                <UserLayout>
-                  <DetalleEntregaRepartidor />
                 </UserLayout>
               )}
             </Stack.Screen>
