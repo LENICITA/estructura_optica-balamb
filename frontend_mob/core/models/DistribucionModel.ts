@@ -77,10 +77,10 @@ export class DistribucionModel implements Distribucion {
     this.repartidor = data.repartidor;
   }
 
-  get vehiculoRepartidor(): string {
-    if (!this.repartidor) return 'N/A';
-    return this.repartidor.vehiculo || 'N/A';
-  }
+    get vehiculoRepartidor(): string {
+        if (!this.repartidor) return 'N/A';
+        return this.repartidor.vehiculo || 'N/A';
+      }
 
   get estadoDisplay(): string {
     const map: Record<EstadoDistribucion, string> = {
@@ -131,90 +131,17 @@ export class DistribucionModel implements Distribucion {
     const pedidoData = source.pedido || {};
     const clienteData =
       pedidoData.cliente || source.cliente || {};
-
-    // Repartidor puede venir en varios sitios
-    const repartidorData =
-      source.repartidor ||
-      pedidoData.repartidor ||
-      {};
-
-    // Si el backend manda repartidor como string, lo normalizamos
-    const repartidorNombre =
-      (typeof source.repartidor === 'string' && source.repartidor) ||
-      (typeof pedidoData.repartidor === 'string' && pedidoData.repartidor) ||
-      repartidorData.nombre ||
-      repartidorData.nombre_completo ||
-      repartidorData.usuario?.nombre ||
-      repartidorData.usuario?.nombre_completo ||
-      source.repartidor_nombre ||
-      source.nombre_repartidor ||
-      source.nombreRepartidor ||
-      pedidoData.repartidor_nombre ||
-      '';
-
-    const repartidorEmail =
-      repartidorData.email ||
-      repartidorData.usuario?.email ||
-      source.repartidor_email ||
-      '';
-
-    const repartidorTelefono =
-      repartidorData.telefono ||
-      repartidorData.usuario?.telefono ||
-      source.repartidor_telefono ||
-      '';
-
-    const repartidorId =
-      repartidorData.id ||
-      repartidorData.id_usuario ||
-      repartidorData.usuario?.id ||
-      source.id_repartidor ||
-      source.id_usuario ||
-      0;
-
-    // Vehículo también puede venir en varios sitios
-    const vehiculoData =
-      repartidorData.vehiculo ||
-      repartidorData.tipo_vehiculo ||
-      repartidorData.placa ||
-      source.vehiculo ||
-      source.tipo_vehiculo ||
-      source.placa ||
-      pedidoData.vehiculo ||
-      null;
-
-    const vehiculo =
-      typeof vehiculoData === 'string'
-        ? vehiculoData
-        : vehiculoData?.placa ||
-          vehiculoData?.tipo ||
-          vehiculoData?.nombre ||
-          null;
-
-    // Construimos el objeto repartidor si tenemos al menos nombre o id
-    const repartidor =
-      repartidorNombre || repartidorId
-        ? {
-            id: Number(repartidorId) || 0,
-            nombre: repartidorNombre,
-            email: repartidorEmail,
-            telefono: repartidorTelefono,
-            vehiculo: vehiculo,
-          }
-        : undefined;
+    const repartidorData = source.repartidor || {};
 
     return new DistribucionModel({
       id_distribucion:
         source.id_distribucion || source.id || 0,
       id_pedido:
         source.id_pedido || pedidoData.id_pedido || 0,
-      id_usuario:
-        source.id_usuario || source.id_repartidor || 0,
+      id_usuario: source.id_usuario || 0,
       estado: source.estado || 'PENDIENTE',
       fecha_asignacion:
         source.fecha_asignacion ||
-        source.created_at ||
-        source.fecha_creacion ||
         new Date().toISOString(),
       fecha_entrega: source.fecha_entrega || null,
       observaciones: source.observaciones || null,
@@ -261,9 +188,23 @@ export class DistribucionModel implements Distribucion {
               }
             : undefined,
       },
-      repartidor,
-    });
-  }
+      repartidor: source.repartidor
+        ? {
+            id:
+              repartidorData.id ||
+              repartidorData.id_usuario ||
+              0,
+            nombre:
+              repartidorData.nombre ||
+              repartidorData.nombre_completo ||
+              '',
+            email: repartidorData.email || '',
+            telefono: repartidorData.telefono || '',
+            vehiculo: repartidorData.vehiculo || null,
+          }
+        : undefined,
+     });
+ }
 
   static fromJSONArray(data: any[]): DistribucionModel[] {
     return data.map(item => DistribucionModel.fromJSON(item));
