@@ -7,11 +7,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Linking,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../auth/context/AuthContext';
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
@@ -27,15 +28,34 @@ type Pedido = {
   ciudad: string;
   repartidor: string;
   vehiculo: string;
-  latitud: number;
-  longitud: number;
+  latitud: number | null;
+  longitud: number | null;
   estado: EstadoPedido;
   fecha: string;
+  fecha_asignacion: string;
 };
 
 interface Props {
   navigation: any;
 }
+
+// Formatea una fecha ISO a un string legible
+const formatearFecha = (fecha: string): string => {
+  if (!fecha) return '';
+  try {
+    const date = new Date(fecha);
+    if (isNaN(date.getTime())) return fecha;
+    return date.toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return fecha;
+  }
+};
 
 export const PrincipalRepartidor = ({ navigation }: Props) => {
   const { user } = useAuth();
@@ -44,11 +64,59 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<string>('TODOS');
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [nombreRepartidor, setNombreRepartidor] = useState('Repartidor');
+  const [nombreRepartidor, setNombreRepartidor] = useState('');
+
+  // Ubicación actual del repartidor
+  const [ubicacionUsuario, setUbicacionUsuario] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  // Pedido cuyo mapa se está mostrando en grande
+  const [pedidoMapa, setPedidoMapa] = useState<Pedido | null>(null);
 
   useEffect(() => {
     cargarPedidos();
+    obtenerUbicacion();
   }, []);
+
+  // ============================================================
+  // OBTENER UBICACIÓN DEL REPARTIDOR
+  // ============================================================
+
+  const obtenerUbicacion = async () => {
+    try {
+      const { status } =
+        await Location.requestForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Ubicación',
+          'Necesitamos permiso de ubicación para mostrar tu posición en el mapa.'
+        );
+        return;
+      }
+
+      const location =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+      setUbicacionUsuario({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    } catch (error) {
+      console.error(
+        'Error obteniendo ubicación:',
+        error
+      );
+    }
+  };
+
+  // ============================================================
+  // CARGAR PEDIDOS DESDE LA BASE DE DATOS
+  // ============================================================
 
   const cargarPedidos = async () => {
     try {
@@ -58,161 +126,136 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
         setNombreRepartidor(user.nombre_completo);
       }
 
-      try {
-        const pendientes = await distribucionController.getPendientes();
-        const enEntrega = await distribucionController.getEnEntrega();
+      const pendientes =
+        await distribucionController.getPendientes();
 
-        const todasLasDistribuciones = [
-          ...pendientes,
-          ...enEntrega,
-        ];
+      const enEntrega =
+        await distribucionController.getEnEntrega();
 
-        if (
-          todasLasDistribuciones &&
-          todasLasDistribuciones.length > 0
-        ) {
-        const pedidosMapeados = todasLasDistribuciones.map(
-            (d: any) => {
-              const pedidoData = d.pedido || {};
+      const todasLasDistribuciones = [
+        ...pendientes,
+        ...enEntrega,
+      ];
 
+      const pedidosMapeados: Pedido[] =
+        todasLasDistribuciones.map((d: any) => {
+          const pedidoData = d.pedido || {};
 
-              const direccionReal =
-                pedidoData.direccion_entrega ||
-                d.direccion_entrega ||
-                'Sin dirección';
+          const clienteData =
+            pedidoData.cliente ||
+            d.cliente ||
+            {};
 
-              const ciudadReal =
-                pedidoData.ciudad_envio ||
-                d.ciudad_envio ||
-                'Sin ciudad';
+          const latitud =
+            pedidoData.latitud ??
+            pedidoData.latitude ??
+            d.latitud ??
+            d.latitude ??
+            null;
 
-                
+          const longitud =
+            pedidoData.longitud ??
+            pedidoData.longitude ??
+            d.longitud ??
+            d.longitude ??
+            null;
 
-              return {
-                id: Number(
-                  pedidoData.id_pedido ||
-                  d.id_pedido ||
-                  d.id ||
-                  0
-                ),
+          return {
+            id:
+              Number(
+                pedidoData.id_pedido ??
+                d.id_pedido ??
+                d.id ??
+                0
+              ),
 
-                id_distribucion: Number(
-                  d.id_distribucion ||
-                  d.id ||
-                  0
-                ),
+            id_distribucion:
+              Number(
+                d.id_distribucion ??
+                d.id ??
+                0
+              ),
 
-                cliente:
-                  pedidoData.cliente?.nombre ||
-                  pedidoData.cliente ||
-                  d.cliente?.nombre ||
-                  'Cliente',
+            cliente:
+              clienteData?.nombre ??
+              pedidoData.nombre_cliente ??
+              'Sin nombre',
 
-                direccion: direccionReal,
+            direccion:
+              pedidoData.direccion_entrega ??
+              d.direccion_entrega ??
+              'Sin dirección',
 
-                ciudad: ciudadReal,
+            ciudad:
+              pedidoData.ciudad_envio ??
+              d.ciudad_envio ??
+              clienteData?.ciudad ??
+              'Sin ciudad',
 
-                latitud: 4.703215,
-                longitud: -74.103664,
+            // El modelo ya nos da d.repartidor.nombre cuando existe
+            repartidor:
+              d.repartidor?.nombre ??
+              (typeof d.repartidor === 'string'
+                ? d.repartidor
+                : '') ??
+              d.repartidor_nombre ??
+              '',
 
-                estado:
-                  d.estado === 'EN_ENTREGA'
-                    ? 'EN_ENTREGA'
-                    : 'PENDIENTE',
+            // El modelo ya nos da d.repartidor.vehiculo cuando existe
+            vehiculo:
+              d.repartidor?.vehiculo ??
+              d.vehiculo ??
+              '',
 
-                fecha:
-                  pedidoData.fecha_estimada ||
-                  new Date().toLocaleDateString(),
-              };
-            }
-          );
+            latitud:
+              latitud !== null
+                ? Number(latitud)
+                : null,
 
-          setPedidos(pedidosMapeados);
-        } else {
-          setPedidos([]);
-        }
-      } catch (error) {
-        console.log(
-          'Error al cargar pedidos:',
-          error
-        );
+            longitud:
+              longitud !== null
+                ? Number(longitud)
+                : null,
 
-        setPedidos([]);
-      }
+            estado:
+              d.estado === 'EN_ENTREGA'
+                ? 'EN_ENTREGA'
+                : d.estado === 'ENTREGADO'
+                ? 'ENTREGADO'
+                : 'PENDIENTE',
+
+            // Fecha estimada del pedido
+            fecha:
+              pedidoData.fecha_estimada ??
+              d.pedido?.fecha_estimada ??
+              d.fecha_estimada ??
+              '',
+
+            // Fecha en la que se asignó la distribución
+            fecha_asignacion:
+              d.fecha_asignacion ??
+              d.created_at ??
+              d.fecha_creacion ??
+              '',
+          };
+        });
+
+      setPedidos(pedidosMapeados);
     } catch (error) {
       console.error(
-        'Error al cargar datos del repartidor:',
+        'Error al cargar pedidos:',
         error
       );
+
+      setPedidos([]);
     } finally {
       setLoading(false);
     }
   };
 
-  /*
-   * ABRIR GOOGLE MAPS CON LA DIRECCIÓN REAL
-   *
-   * Cada pedido tiene su propia:
-   *
-   * direccion
-   * ciudad
-   *
-   * Por ejemplo:
-   *
-   * Calle 84 bis # 91a - 08, Bogotá
-   *
-   * Google Maps recibe esa dirección y abre la ruta.
-   */
-  const abrirRuta = async (
-    direccion: string,
-    ciudad: string
-  ) => {
-    try {
-      if (
-        !direccion ||
-        direccion.trim() === '' ||
-        direccion === 'Sin dirección'
-      ) {
-        Alert.alert(
-          'Dirección no disponible',
-          'Este pedido no tiene una dirección de entrega registrada.'
-        );
-        return;
-      }
-
-      const direccionCompleta =
-        `${direccion}, ${ciudad}`;
-
-      /*
-       * Google Maps Directions API.
-       *
-       * destination recibe TEXTO, no coordenadas.
-       * Por eso cada pedido puede abrir una dirección diferente.
-       */
-      const url =
-        `https://www.google.com/maps/dir/?api=1` +
-        `&destination=${encodeURIComponent(
-          direccionCompleta
-        )}`;
-
-      console.log(
-        'Abriendo Google Maps:',
-        direccionCompleta
-      );
-
-      await Linking.openURL(url);
-    } catch (error) {
-      console.error(
-        'Error al abrir Google Maps:',
-        error
-      );
-
-      Alert.alert(
-        'Error',
-        'No fue posible abrir Google Maps.'
-      );
-    }
-  };
+  // ============================================================
+  // FILTRAR PEDIDOS
+  // ============================================================
 
   const pedidosFiltrados =
     filtro === 'TODOS'
@@ -221,6 +264,10 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
           (pedido) =>
             pedido.estado === filtro
         );
+
+  // ============================================================
+  // ESTADO DEL PEDIDO
+  // ============================================================
 
   const getEstadoTexto = (
     estado: EstadoPedido
@@ -276,6 +323,62 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
     }
   };
 
+  // ============================================================
+  // ABRIR MAPA
+  // ============================================================
+
+  const abrirMapa = (pedido: Pedido) => {
+    setPedidoMapa(pedido);
+  };
+
+  const cerrarMapa = () => {
+    setPedidoMapa(null);
+  };
+
+  // ============================================================
+  // MARCAR PEDIDO COMO ENTREGADO
+  // ============================================================
+
+  const marcarEntregado = async (
+    pedido: Pedido
+  ) => {
+    try {
+      const result =
+        await distribucionController.marcarEntregado(
+          pedido.id_distribucion
+        );
+
+      if (result.success) {
+        Alert.alert(
+          'Éxito',
+          'Pedido entregado correctamente'
+        );
+
+        await cargarPedidos();
+      } else {
+        Alert.alert(
+          'Error',
+          result.message ||
+            'No se pudo marcar como entregado'
+        );
+      }
+    } catch (error) {
+      console.error(
+        'Error al marcar entregado:',
+        error
+      );
+
+      Alert.alert(
+        'Error',
+        'No se pudo marcar como entregado'
+      );
+    }
+  };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -291,404 +394,489 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
     );
   }
 
+  // ============================================================
+  // INTERFAZ
+  // ============================================================
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>
-          Bienvenido, {nombreRepartidor}
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Estos son tus pedidos del día de hoy
-        </Text>
-      </View>
-
-      {/* FILTROS */}
-
+    <>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtrosContainer}
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {[
-          'TODOS',
-          'PENDIENTE',
-          'EN_ENTREGA',
-          'ENTREGADO',
-        ].map((tipo) => (
-          <TouchableOpacity
-            key={tipo}
-            style={[
-              styles.filtro,
-              filtro === tipo &&
-                styles.filtroActivo,
-            ]}
-            onPress={() => setFiltro(tipo)}
-          >
-            <Text
+        {/* TÍTULO */}
+
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>
+            Bienvenido
+            {nombreRepartidor
+              ? `, ${nombreRepartidor}`
+              : ''}
+          </Text>
+
+          <Text style={styles.subtitle}>
+            Estos son tus pedidos del día de hoy
+          </Text>
+        </View>
+
+        {/* FILTROS */}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={
+            styles.filtrosContainer
+          }
+        >
+          {[
+            'TODOS',
+            'PENDIENTE',
+            'EN_ENTREGA',
+            'ENTREGADO',
+          ].map((tipo) => (
+            <TouchableOpacity
+              key={tipo}
               style={[
-                styles.filtroTexto,
+                styles.filtro,
                 filtro === tipo &&
-                  styles.filtroTextoActivo,
+                  styles.filtroActivo,
               ]}
+              onPress={() =>
+                setFiltro(tipo)
+              }
             >
-              {tipo === 'TODOS'
-                ? 'Todos'
-                : tipo === 'PENDIENTE'
-                ? 'Pendientes'
-                : tipo === 'EN_ENTREGA'
-                ? 'En entrega'
-                : 'Entregados'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[
+                  styles.filtroTexto,
+                  filtro === tipo &&
+                    styles.filtroTextoActivo,
+                ]}
+              >
+                {tipo === 'TODOS'
+                  ? 'Todos'
+                  : tipo === 'PENDIENTE'
+                  ? 'Pendientes'
+                  : tipo === 'EN_ENTREGA'
+                  ? 'En entrega'
+                  : 'Entregados'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-      {/* LISTA DE PEDIDOS */}
+        {/* LISTA */}
 
-      <View style={styles.pedidosContainer}>
-        {pedidosFiltrados.length === 0 ? (
-          <View style={styles.sinPedidos}>
-            <Ionicons
-              name="file-tray-outline"
-              size={50}
-              color="#999"
-            />
+        <View style={styles.pedidosContainer}>
+          {pedidosFiltrados.length === 0 ? (
+            <View style={styles.sinPedidos}>
+              <Ionicons
+                name="file-tray-outline"
+                size={50}
+                color="#999"
+              />
 
-            <Text style={styles.sinPedidosTitulo}>
-              No hay pedidos
-            </Text>
+              <Text
+                style={styles.sinPedidosTitulo}
+              >
+                No hay pedidos
+              </Text>
 
-            <Text style={styles.sinPedidosTexto}>
-              No hay pedidos para el filtro seleccionado.
-            </Text>
-          </View>
-        ) : (
-          pedidosFiltrados.map((pedido) => (
-            <View
-              key={pedido.id_distribucion}
-              style={styles.cardPedido}
-            >
-              {/* MAPA */}
+              <Text
+                style={styles.sinPedidosTexto}
+              >
+                No hay pedidos para el filtro
+                seleccionado.
+              </Text>
+            </View>
+          ) : (
+            pedidosFiltrados.map((pedido) => (
+              <View
+                key={pedido.id_distribucion}
+                style={styles.cardPedido}
+              >
+                {/* ================================================= */}
+                {/* MAPA */}
+                {/* ================================================= */}
 
-              <View style={styles.mapaContainer}>
-                <MapView
-                  style={styles.mapa}
-                  initialRegion={{
-                    latitude: pedido.latitud,
-                    longitude: pedido.longitud,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                  rotateEnabled={false}
-                  pitchEnabled={false}
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    abrirMapa(pedido)
+                  }
                 >
-                  <Marker
-                    coordinate={{
-                      latitude: pedido.latitud,
-                      longitude: pedido.longitud,
-                    }}
-                    title={pedido.cliente}
-                    description={`${pedido.direccion}, ${pedido.ciudad}`}
-                  />
-                </MapView>
-
-                <View
-                  style={styles.mapaEtiqueta}
-                >
-                  <Ionicons
-                    name="location"
-                    size={15}
-                    color={COLORS.primary}
-                  />
-
-                  <Text
+                  <View
                     style={
-                      styles.mapaEtiquetaTexto
+                      styles.mapaContainer
                     }
                   >
-                    Ubicación de entrega
-                  </Text>
-                </View>
-              </View>
+                    {pedido.latitud !== null &&
+                    pedido.longitud !== null ? (
+                      <MapView
+                        style={styles.mapa}
+                        initialRegion={{
+                          latitude:
+                            pedido.latitud,
+                          longitude:
+                            pedido.longitud,
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }}
+                        scrollEnabled={false}
+                        zoomEnabled={false}
+                        rotateEnabled={false}
+                        pitchEnabled={false}
+                        showsUserLocation={
+                          true
+                        }
+                        showsMyLocationButton={
+                          false
+                        }
+                      >
+                        <Marker
+                          coordinate={{
+                            latitude:
+                              pedido.latitud,
+                            longitude:
+                              pedido.longitud,
+                          }}
+                          title="Lugar de entrega"
+                          description={`${pedido.direccion}, ${pedido.ciudad}`}
+                        />
+                      </MapView>
+                    ) : (
+                      <View
+                        style={
+                          styles.mapaSinUbicacion
+                        }
+                      >
+                        <Ionicons
+                          name="map-outline"
+                          size={42}
+                          color="#999"
+                        />
 
-              {/* CONTENIDO DEL PEDIDO */}
+                        <Text
+                          style={
+                            styles.mapaSinUbicacionTexto
+                          }
+                        >
+                          Ubicación de entrega
+                          no disponible
+                        </Text>
+                      </View>
+                    )}
 
-              <View style={styles.pedidoContent}>
-                <View
-                  style={styles.pedidoHeader}
-                >
-                  <View>
-                    <Text
+                    {/* ETIQUETA */}
+
+                    <View
                       style={
-                        styles.pedidoTitulo
+                        styles.mapaEtiqueta
                       }
                     >
-                      Distribucion #{pedido.id}
-                    </Text>
+                      <Ionicons
+                        name="location"
+                        size={15}
+                        color={COLORS.primary}
+                      />
 
-                    <Text
-                      style={
-                        styles.fechaPequena
-                      }
+                      <Text
+                        style={
+                          styles.mapaEtiquetaTexto
+                        }
+                      >
+                        Ubicación de entrega
+                      </Text>
+                    </View>
+
+                    {/* BOTÓN PARA VER MAPA */}
+
+                    <View
+                      style={styles.mapaAbrir}
                     >
-                      {pedido.fecha}
-                    </Text>
+                      <Ionicons
+                        name="expand-outline"
+                        size={19}
+                        color={COLORS.primary}
+                      />
+                    </View>
                   </View>
+                </TouchableOpacity>
+
+                {/* ================================================= */}
+                {/* INFORMACIÓN DEL PEDIDO */}
+                {/* ================================================= */}
+
+                <View
+                  style={styles.pedidoContent}
+                >
+                  {/* CABECERA */}
 
                   <View
-                    style={[
-                      styles.estadoContainer,
-                      {
-                        backgroundColor:
-                          pedido.estado ===
-                          'ENTREGADO'
-                            ? '#E8F5E9'
-                            : pedido.estado ===
-                              'PENDIENTE'
-                            ? '#FFF4E5'
-                            : '#FDEEEE',
-                      },
-                    ]}
+                    style={
+                      styles.pedidoHeader
+                    }
                   >
-                    <Ionicons
-                      name={getEstadoIcon(
-                        pedido.estado
-                      )}
-                      size={16}
-                      color={getEstadoColor(
-                        pedido.estado
-                      )}
-                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={
+                          styles.pedidoTitulo
+                        }
+                      >
+                        Pedido #{pedido.id}
+                      </Text>
 
-                    <Text
+                      {pedido.fecha_asignacion ? (
+                        <View
+                          style={styles.fechaRow}
+                        >
+                          <Ionicons
+                            name="calendar-outline"
+                            size={12}
+                            color="#999"
+                          />
+                          <Text
+                            style={
+                              styles.fechaPequena
+                            }
+                          >
+                            Asignado:{' '}
+                            {formatearFecha(
+                              pedido.fecha_asignacion
+                            )}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      {pedido.fecha ? (
+                        <View
+                          style={styles.fechaRow}
+                        >
+                          <Ionicons
+                            name="time-outline"
+                            size={12}
+                            color="#999"
+                          />
+                          <Text
+                            style={
+                              styles.fechaPequena
+                            }
+                          >
+                            Entrega estimada:{' '}
+                            {pedido.fecha}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    <View
                       style={[
-                        styles.estadoTexto,
+                        styles.estadoContainer,
                         {
-                          color:
-                            getEstadoColor(
-                              pedido.estado
-                            ),
+                          backgroundColor:
+                            pedido.estado ===
+                            'ENTREGADO'
+                              ? '#E8F5E9'
+                              : pedido.estado ===
+                                'PENDIENTE'
+                              ? '#FFF4E5'
+                              : '#FDEEEE',
                         },
                       ]}
                     >
-                      {getEstadoTexto(
-                        pedido.estado
-                      )}
-                    </Text>
-                  </View>
-                </View>
+                      <Ionicons
+                        name={getEstadoIcon(
+                          pedido.estado
+                        )}
+                        size={16}
+                        color={getEstadoColor(
+                          pedido.estado
+                        )}
+                      />
 
-                {/* CLIENTE */}
-
-                <View style={styles.infoRow}>
-                  <View
-                    style={styles.iconoInfo}
-                  >
-                    <Ionicons
-                      name="person-outline"
-                      size={19}
-                      color={COLORS.primary}
-                    />
-                  </View>
-
-                  <View
-                    style={
-                      styles.infoTextoContainer
-                    }
-                  >
-                    <Text
-                      style={styles.infoLabel}
-                    >
-                      Cliente
-                    </Text>
-
-                    <Text
-                      style={styles.infoTexto}
-                    >
-                      {pedido.cliente}
-                    </Text>
-                  </View>
-                </View>
-
-
-                {/* DIRECCIÓN REAL */}
-
-                <View style={styles.infoRow}>
-                  <View
-                    style={styles.iconoInfo}
-                  >
-                    <Ionicons
-                      name="location-outline"
-                      size={20}
-                      color={COLORS.primary}
-                    />
+                      <Text
+                        style={[
+                          styles.estadoTexto,
+                          {
+                            color:
+                              getEstadoColor(
+                                pedido.estado
+                              ),
+                          },
+                        ]}
+                      >
+                        {getEstadoTexto(
+                          pedido.estado
+                        )}
+                      </Text>
+                    </View>
                   </View>
 
-                  <View
-                    style={
-                      styles.infoTextoContainer
-                    }
-                  >
-                    <Text
-                      style={styles.infoLabel}
+                  {/* CLIENTE */}
+
+                  <View style={styles.infoRow}>
+                    <View
+                      style={styles.iconoInfo}
                     >
-                      Dirección de entrega
-                    </Text>
+                      <Ionicons
+                        name="person-outline"
+                        size={19}
+                        color={COLORS.primary}
+                      />
+                    </View>
 
-                    <Text
-                      style={styles.infoTexto}
+                    <View
+                      style={
+                        styles.infoTextoContainer
+                      }
                     >
-                      {pedido.direccion}
-                    </Text>
+                      <Text
+                        style={
+                          styles.infoLabel
+                        }
+                      >
+                        Cliente
+                      </Text>
 
-                    <Text
-                      style={styles.ciudad}
-                    >
-                      {pedido.ciudad}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* REPARTIDOR*/}
-                <View style={styles.infoRow}>
-                  <View
-                    style={styles.iconoInfo}
-                  >
-                    <Ionicons
-                      name="person-outline"
-                      size={20}
-                      color={COLORS.primary}
-                    />
-                  </View>
-
-                  <View
-                    style={
-                      styles.infoTextoContainer
-                    }
-                  >
-                    <Text
-                      style={styles.infoLabel}
-                    >
-                      Repartidor
-                    </Text>
-
-                    <Text
-                      style={styles.infoTexto}
-                    >
-                      {pedido.repartidor}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* VEHICULO */}
-
-                <View style={styles.infoRow}>
-                  <View
-                    style={styles.iconoInfo}
-                  >
-                    <Ionicons
-                      name="car-outline"
-                      size={20}
-                      color={COLORS.primary}
-                    />
+                      <Text
+                        style={
+                          styles.infoTexto
+                        }
+                      >
+                        {pedido.cliente}
+                      </Text>
+                    </View>
                   </View>
 
-                  <View
-                    style={
-                      styles.infoTextoContainer
-                    }
-                  >
-                    <Text
-                      style={styles.infoLabel}
-                    >
-                      Vehículo
-                    </Text>
+                  {/* DIRECCIÓN */}
 
-                    <Text
-                      style={styles.infoTexto}
+                  <View style={styles.infoRow}>
+                    <View
+                      style={styles.iconoInfo}
                     >
-                      {pedido.vehiculo}
-                    </Text>
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                    </View>
+
+                    <View
+                      style={
+                        styles.infoTextoContainer
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.infoLabel
+                        }
+                      >
+                        Dirección de entrega
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.infoTexto
+                        }
+                      >
+                        {pedido.direccion}
+                      </Text>
+
+                      <Text
+                        style={styles.ciudad}
+                      >
+                        {pedido.ciudad}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* BOTÓN IR A LA ENTREGA */}
+                  {/* REPARTIDOR */}
 
-                {pedido.estado !== 'ENTREGADO' && (
-                  <TouchableOpacity
-                    style={styles.btnRuta}
-                    onPress={() =>
-                      abrirRuta(
-                        pedido.direccion,
-                        pedido.ciudad
-                      )
-                    }
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons
-                      name="navigate"
-                      size={21}
-                      color="#fff"
-                    />
-
-                    <Text
-                      style={styles.btnRutaTexto}
+                  <View style={styles.infoRow}>
+                    <View
+                      style={styles.iconoInfo}
                     >
-                      Ir a la entrega
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                      <Ionicons
+                        name="person-circle-outline"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                    </View>
 
-              
-                {/* MARCAR ENTREGADO */}
+                    <View
+                      style={
+                        styles.infoTextoContainer
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.infoLabel
+                        }
+                      >
+                        Repartidor
+                      </Text>
 
-                {pedido.estado ===
-                  'EN_ENTREGA' && (
+                      <Text
+                        style={
+                          styles.infoTexto
+                        }
+                      >
+                        {pedido.repartidor ||
+                          'No asignado'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* VEHÍCULO */}
+
+                  <View style={styles.infoRow}>
+                    <View
+                      style={styles.iconoInfo}
+                    >
+                      <Ionicons
+                        name="bicycle-outline"
+                        size={20}
+                        color={COLORS.primary}
+                      />
+                    </View>
+
+                    <View
+                      style={
+                        styles.infoTextoContainer
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.infoLabel
+                        }
+                      >
+                        Vehículo
+                      </Text>
+
+                      <Text
+                        style={
+                          styles.infoTexto
+                        }
+                      >
+                        {pedido.vehiculo ||
+                          'No especificado'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* ================================================= */}
+                  {/* VER DETALLE */}
+                  {/* ================================================= */}
+
                   <TouchableOpacity
                     style={styles.btnPedido}
-                    onPress={async () => {
-                      try {
-                        const result =
-                          await distribucionController.marcarEntregado(
-                            pedido.id_distribucion
-                          );
-
-                        if (result.success) {
-                          Alert.alert(
-                            'Éxito',
-                            'Pedido entregado correctamente'
-                          );
-
-                          cargarPedidos();
-                        } else {
-                          Alert.alert(
-                            'Error',
-                            result.message ||
-                              'No se pudo marcar como entregado'
-                          );
-                        }
-                      } catch (error) {
-                        console.error(
-                          'Error al marcar entregado:',
-                          error
-                        );
-
-                        Alert.alert(
-                          'Error',
-                          'No se pudo marcar como entregado'
-                        );
-                      }
+                    onPress={() => {
+                      // La navegación será conectada
+                      // posteriormente.
                     }}
                   >
                     <Ionicons
-                      name="checkmark-outline"
+                      name="eye-outline"
                       size={20}
                       color="#fff"
                     />
@@ -698,43 +886,322 @@ export const PrincipalRepartidor = ({ navigation }: Props) => {
                         styles.btnPedidoTexto
                       }
                     >
-                      Marcar entregado
+                      Ver detalle
                     </Text>
                   </TouchableOpacity>
-                )}
 
-                {/* ENTREGADO */}
+                  {/* ================================================= */}
+                  {/* MARCAR ENTREGADO */}
+                  {/* ================================================= */}
 
-                {pedido.estado ===
-                  'ENTREGADO' && (
+                  {pedido.estado ===
+                    'EN_ENTREGA' && (
+                    <TouchableOpacity
+                      style={
+                        styles.btnEntregado
+                      }
+                      onPress={() =>
+                        marcarEntregado(
+                          pedido
+                        )
+                      }
+                    >
+                      <Ionicons
+                        name="checkmark-outline"
+                        size={20}
+                        color="#fff"
+                      />
+
+                      <Text
+                        style={
+                          styles.btnPedidoTexto
+                        }
+                      >
+                        Marcar entregado
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* PEDIDO ENTREGADO */}
+
+                  {pedido.estado ===
+                    'ENTREGADO' && (
+                    <View
+                      style={
+                        styles.entregadoContainer
+                      }
+                    >
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color="#008000"
+                      />
+
+                      <Text
+                        style={
+                          styles.entregadoTexto
+                        }
+                      >
+                        Pedido entregado
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+
+      {/* ========================================================= */}
+      {/* MAPA GRANDE */}
+      {/* ========================================================= */}
+
+      <Modal
+        visible={pedidoMapa !== null}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={cerrarMapa}
+      >
+        <View
+          style={styles.modalContainer}
+        >
+          {/* CABECERA */}
+
+          <View
+            style={styles.modalHeader}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={styles.modalTitulo}
+              >
+                Ubicación de entrega
+              </Text>
+
+              {pedidoMapa && (
+                <Text
+                  style={
+                    styles.modalDireccion
+                  }
+                >
+                  {pedidoMapa.direccion},{' '}
+                  {pedidoMapa.ciudad}
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={
+                styles.botonCerrarMapa
+              }
+              onPress={cerrarMapa}
+            >
+              <Ionicons
+                name="close"
+                size={25}
+                color="#333"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* MAPA */}
+
+          {pedidoMapa &&
+          pedidoMapa.latitud !== null &&
+          pedidoMapa.longitud !== null ? (
+            <MapView
+              style={styles.mapaGrande}
+              initialRegion={{
+                latitude: ubicacionUsuario
+                  ? ubicacionUsuario.latitude
+                  : pedidoMapa.latitud,
+
+                longitude: ubicacionUsuario
+                  ? ubicacionUsuario.longitude
+                  : pedidoMapa.longitud,
+
+                latitudeDelta: 0.03,
+                longitudeDelta: 0.03,
+              }}
+              showsUserLocation={true}
+              showsMyLocationButton={true}
+              zoomEnabled={true}
+              scrollEnabled={true}
+              rotateEnabled={true}
+              pitchEnabled={true}
+            >
+              {/* MARCADOR DE ENTREGA */}
+
+              <Marker
+                coordinate={{
+                  latitude:
+                    pedidoMapa.latitud,
+                  longitude:
+                    pedidoMapa.longitud,
+                }}
+                title="Lugar de entrega"
+                description={`${pedidoMapa.direccion}, ${pedidoMapa.ciudad}`}
+              />
+
+              {/* MARCADOR DEL REPARTIDOR */}
+
+              {ubicacionUsuario && (
+                <Marker
+                  coordinate={{
+                    latitude:
+                      ubicacionUsuario.latitude,
+                    longitude:
+                      ubicacionUsuario.longitude,
+                  }}
+                  title="Mi ubicación"
+                  description="Ubicación actual del repartidor"
+                >
                   <View
                     style={
-                      styles.entregadoContainer
+                      styles.markerUsuario
                     }
                   >
                     <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color="#008000"
+                      name="navigate"
+                      size={18}
+                      color="#fff"
                     />
-
-                    <Text
-                      style={
-                        styles.entregadoTexto
-                      }
-                    >
-                      Pedido entregado
-                    </Text>
                   </View>
-                )}
+                </Marker>
+              )}
+            </MapView>
+          ) : (
+            <View
+              style={
+                styles.mapaGrandeSinUbicacion
+              }
+            >
+              <Ionicons
+                name="map-outline"
+                size={65}
+                color="#999"
+              />
+
+              <Text
+                style={
+                  styles.mapaGrandeSinTitulo
+                }
+              >
+                Ubicación de entrega no disponible
+              </Text>
+
+              <Text
+                style={
+                  styles.mapaGrandeSinTexto
+                }
+              >
+                Este pedido todavía no tiene
+                coordenadas disponibles.
+              </Text>
+
+              {ubicacionUsuario && (
+                <Text
+                  style={
+                    styles.mapaGrandeUbicacion
+                  }
+                >
+                  Tu ubicación está disponible,
+                  pero falta la ubicación de la
+                  entrega.
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* INFORMACIÓN DEL MAPA */}
+
+          {pedidoMapa && (
+            <View
+              style={styles.modalInfo}
+            >
+              {/* MI UBICACIÓN */}
+
+              <View
+                style={styles.modalInfoFila}
+              >
+                <View
+                  style={[
+                    styles.puntoMapa,
+                    styles.puntoUsuario,
+                  ]}
+                />
+
+                <View
+                  style={
+                    styles.modalInfoTexto
+                  }
+                >
+                  <Text
+                    style={
+                      styles.modalInfoTitulo
+                    }
+                  >
+                    Mi ubicación
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.modalInfoDescripcion
+                    }
+                  >
+                    {ubicacionUsuario
+                      ? 'Ubicación actual del repartidor'
+                      : 'Ubicación no disponible'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* ENTREGA */}
+
+              <View
+                style={styles.modalInfoFila}
+              >
+                <View
+                  style={[
+                    styles.puntoMapa,
+                    styles.puntoEntrega,
+                  ]}
+                />
+
+                <View
+                  style={
+                    styles.modalInfoTexto
+                  }
+                >
+                  <Text
+                    style={
+                      styles.modalInfoTitulo
+                    }
+                  >
+                    Lugar de entrega
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.modalInfoDescripcion
+                    }
+                  >
+                    {pedidoMapa.direccion},{' '}
+                    {pedidoMapa.ciudad}
+                  </Text>
+                </View>
               </View>
             </View>
-          ))
-        )}
-      </View>
-    </ScrollView>
+          )}
+        </View>
+      </Modal>
+    </>
   );
 };
+
+// ================================================================
+// ESTILOS
+// ================================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -835,6 +1302,20 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 
+  mapaSinUbicacion: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E9ECEF',
+  },
+
+  mapaSinUbicacionTexto: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#777',
+    fontWeight: '600',
+  },
+
   mapaEtiqueta: {
     position: 'absolute',
     left: 12,
@@ -862,6 +1343,26 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 
+  mapaAbrir: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+
   pedidoContent: {
     padding: 17,
   },
@@ -879,10 +1380,16 @@ const styles = StyleSheet.create({
     color: '#222',
   },
 
+  fechaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+
   fechaPequena: {
     fontSize: 11,
     color: '#999',
-    marginTop: 3,
   },
 
   estadoContainer: {
@@ -937,28 +1444,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  /*
-   * BOTÓN PARA ABRIR GOOGLE MAPS
-   */
-
-  btnRuta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 9,
-    backgroundColor: '#4285F4',
-    paddingVertical: 14,
-    borderRadius: 9,
-    marginTop: 5,
-    marginBottom: 5,
-  },
-
-  btnRutaTexto: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-
   btnPedido: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -967,7 +1452,18 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingVertical: 13,
     borderRadius: 9,
-    marginTop: 16,
+    marginTop: 5,
+  },
+
+  btnEntregado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#008000',
+    paddingVertical: 13,
+    borderRadius: 9,
+    marginTop: 10,
   },
 
   btnPedidoTexto: {
@@ -984,7 +1480,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5E9',
     paddingVertical: 13,
     borderRadius: 9,
-    marginTop: 16,
+    marginTop: 10,
   },
 
   entregadoTexto: {
@@ -1014,5 +1510,148 @@ const styles = StyleSheet.create({
     color: '#777',
     marginTop: 5,
     textAlign: 'center',
+  },
+
+  // ============================================================
+  // MODAL MAPA
+  // ============================================================
+
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+
+  modalHeader: {
+    minHeight: 85,
+    paddingHorizontal: 18,
+    paddingTop: 45,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+
+  modalTitulo: {
+    fontSize: 19,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+
+  modalDireccion: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 4,
+    maxWidth: 280,
+  },
+
+  botonCerrarMapa: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F1F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  mapaGrande: {
+    flex: 1,
+    width: '100%',
+  },
+
+  markerUsuario: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
+  mapaGrandeSinUbicacion: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    backgroundColor: '#F4F6F9',
+  },
+
+  mapaGrandeSinTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#444',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+
+  mapaGrandeSinTexto: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+
+  mapaGrandeUbicacion: {
+    fontSize: 13,
+    color: COLORS.primary,
+    marginTop: 15,
+    textAlign: 'center',
+  },
+
+  modalInfo: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+
+  modalInfoFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  puntoMapa: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 12,
+  },
+
+  puntoUsuario: {
+    backgroundColor: COLORS.primary,
+  },
+
+  puntoEntrega: {
+    backgroundColor: '#D32F2F',
+  },
+
+  modalInfoTexto: {
+    flex: 1,
+  },
+
+  modalInfoTitulo: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333',
+  },
+
+  modalInfoDescripcion: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 2,
   },
 });
