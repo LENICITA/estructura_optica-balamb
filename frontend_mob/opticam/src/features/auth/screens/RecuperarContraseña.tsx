@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginTop: 8,
+    textAlign: 'center',
   },
   card: {
     backgroundColor: '#fff',

@@ -18,7 +18,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
-// Agregar al inicio
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { UserController } from '../../../core/controllers/UserController';

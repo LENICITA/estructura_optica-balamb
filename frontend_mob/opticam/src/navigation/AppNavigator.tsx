@@ -53,6 +53,8 @@ import { GestionarDistribucionesAdmin } from '../features/admin/screens/Gestiona
 // ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
+import HistorialEntregas from '../features/delivery/screens/HistorialEntregas';
+import DetalleEntrega from '../features/delivery/screens/DetalleEntrega';
 
 const Stack = createNativeStackNavigator();
 
@@ -357,6 +359,22 @@ export default function AppNavigator() {
                 </UserLayout>
               )}
             </Stack.Screen>
+
+            <Stack.Screen name="HistorialEntregas">
+                        {({ navigation }) => (
+                          <UserLayout>
+                            <HistorialEntregas />
+                          </UserLayout>
+                                )}
+                         </Stack.Screen>
+
+            <Stack.Screen name="DetalleEntrega">
+                            {() => (
+                              <UserLayout>
+                                <DetalleEntrega />
+                              </UserLayout>
+                            )}
+                          </Stack.Screen>
 
             <Stack.Screen name="Iniciosesion">
               {({ navigation }) => <Iniciosesion navigation={navigation} />}

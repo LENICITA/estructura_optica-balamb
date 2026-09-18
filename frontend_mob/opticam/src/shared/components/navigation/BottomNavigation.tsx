@@ -125,7 +125,7 @@ export const BottomNavigation = () => {
           label: 'Historial',
           icon: 'time-outline',
           activeIcon: 'time',
-          route: 'HistorialRepartidor',
+          route: 'HistorialEntregas',
         },
         {
           label: 'Perfil',

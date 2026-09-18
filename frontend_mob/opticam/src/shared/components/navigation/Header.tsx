@@ -303,7 +303,7 @@ const role = getMainRole();
           id: 'repartidor-historial',
           label: 'Historial',
           icon: 'time-outline',
-          route: 'PrincipalRepartidor',
+          route: 'HistorialEntregas',
         });
 
       }

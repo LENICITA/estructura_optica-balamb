@@ -7,3 +7,4 @@ export * from './contactoValidators';
 export * from './productoValidators';
 export * from './pedidoValidators';
 export * from './pagoValidators';
+export * from './distribucionValidators';

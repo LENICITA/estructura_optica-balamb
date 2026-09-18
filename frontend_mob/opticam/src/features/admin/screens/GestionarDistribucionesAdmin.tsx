@@ -13,6 +13,7 @@ import {
   Alert,
   TextInput,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -33,6 +34,8 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [distribucionSeleccionada, setDistribucionSeleccionada] = useState<DistribucionModel | null>(null);
 
   const ESTADOS_FILTRO = [
     { label: 'Todos', value: 'TODOS' },
@@ -70,6 +73,7 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
   };
 
   const distribucionesFiltradas = distribuciones.filter((item) => {
+      if (item.estado === 'CANCELADO') return false;
     if (busqueda.trim()) {
       const texto = busqueda.toLowerCase().trim();
       const cliente = item.pedido?.cliente?.nombre?.toLowerCase() || '';
@@ -131,6 +135,51 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
     });
   };
 
+  const abrirMenu = (distribucion: DistribucionModel) => {
+    setDistribucionSeleccionada(distribucion);
+    setMenuVisible(true);
+  };
+
+  const cerrarMenu = () => {
+    setMenuVisible(false);
+    setDistribucionSeleccionada(null);
+  };
+
+  const handleCancelar = () => {
+    if (!distribucionSeleccionada) return;
+
+    const id = distribucionSeleccionada.id_distribucion;
+
+    cerrarMenu();
+
+    Alert.alert(
+      'Cancelar distribución',
+      `¿Estás seguro de cancelar la distribución #${id}? El pedido volverá a estado "Pagado".`,
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Sí, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await distribucionController.cancelarEntrega(id);
+
+              if (result.success) {
+                Alert.alert('Cancelada', result.message || 'Distribución cancelada exitosamente');
+                cargarDistribuciones();
+              } else {
+                Alert.alert('Error', result.message || 'No se pudo cancelar la distribución');
+              }
+            } catch (error: any) {
+              console.error('Error al cancelar:', error);
+              Alert.alert('Error', error.message || 'Error al cancelar la distribución');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderDistribucion = ({ item }: { item: DistribucionModel }) => {
     const estado = item.estado || 'PENDIENTE';
     const estadoColor = getEstadoColor(estado);
@@ -154,13 +203,25 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
               <Text style={[styles.idValue, { fontWeight: '700' }]}>#{item.id_distribucion}</Text>
             </View>
           </View>
-          <View style={[styles.estadoBadge, { backgroundColor: estadoBackground }]}>
-            <Ionicons name={estadoIcon} size={14} color={estadoColor} />
-            <Text style={[styles.estadoText, { color: estadoColor }]}>
-              {getEstadoTexto(estado)}
-            </Text>
+          <View style={styles.headerRight}>
+            <View style={[styles.estadoBadge, { backgroundColor: estadoBackground }]}>
+              <Ionicons name={estadoIcon} size={14} color={estadoColor} />
+              <Text style={[styles.estadoText, { color: estadoColor }]}>
+                {getEstadoTexto(estado)}
+              </Text>
+            </View>
+
+            {estado === 'PENDIENTE' && (
+              <TouchableOpacity
+                style={styles.menuButton}
+                onPress={() => abrirMenu(item)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="ellipsis-vertical" size={18} color="#666" />
+              </TouchableOpacity>
+            )}
           </View>
-        </View>
+          </View>
 
         <View style={styles.divider} />
 
@@ -334,6 +395,37 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
           </View>
         }
       />
+      <Modal
+              visible={menuVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={cerrarMenu}
+            >
+              <TouchableOpacity
+                style={styles.modalOverlay}
+                activeOpacity={1}
+                onPress={cerrarMenu}
+              >
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>
+                      Distribución #{distribucionSeleccionada?.id_distribucion}
+                    </Text>
+                    <TouchableOpacity onPress={cerrarMenu}>
+                      <Ionicons name="close" size={22} color="#333" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={handleCancelar}
+                  >
+                    <Ionicons name="close-circle-outline" size={22} color="#EF4444" />
+                    <Text style={styles.modalOptionTextDanger}>Cancelar distribución</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </Modal>
     </SafeAreaView>
   );
 };
@@ -626,5 +718,59 @@ iconoDistribucion: {
     color: '#888',
     fontSize: 12,
     lineHeight: 17,
+  },
+
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  menuButton: {
+    padding: 4,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+  },
+
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+
+  modalOptionTextDanger: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 });
