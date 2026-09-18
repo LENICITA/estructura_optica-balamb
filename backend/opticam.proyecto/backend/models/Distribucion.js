@@ -14,6 +14,10 @@ const Distribucion = sequelize.define('Distribucion', {
     references: {
       model: 'PEDIDOS',
       key: 'id_pedido'
+    },
+    validate: {
+      notNull: { msg: 'El pedido es requerido' },
+      isInt:   { msg: 'El ID del pedido debe ser un número' }
     }
   },
   id_usuario: {
@@ -22,12 +26,24 @@ const Distribucion = sequelize.define('Distribucion', {
     references: {
       model: 'USUARIOS',
       key: 'id_usuario'
+    },
+    validate: {
+      notNull: { msg: 'El repartidor es requerido' },
+      isInt:   { msg: 'El ID del repartidor debe ser un número' }
     }
   },
   estado: {
     type: DataTypes.ENUM('PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'),
     allowNull: false,
-    defaultValue: 'PENDIENTE'
+    defaultValue: 'PENDIENTE',
+    validate: {
+      notNull: { msg: 'El estado es requerido' },
+      notEmpty: { msg: 'El estado es requerido' },
+      isIn: {
+        args: [['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO']],
+        msg: 'Estado inválido. Debe ser: PENDIENTE, EN_ENTREGA, ENTREGADO o CANCELADO'
+      }
+    }
   },
   fecha_asignacion: {
     type: DataTypes.DATE,
@@ -40,17 +56,25 @@ const Distribucion = sequelize.define('Distribucion', {
   },
   observaciones: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: {
+        args: [0, 5000],
+        msg: 'Las observaciones no pueden superar los 5000 caracteres'
+      }
+    }
   }
 }, {
   tableName: 'DISTRIBUCIONES',
   timestamps: false,
   hooks: {
     beforeCreate: (distribucion) => {
-      distribucion.estado = distribucion.estado.toUpperCase();
+      if (distribucion.estado) {
+        distribucion.estado = distribucion.estado.toUpperCase();
+      }
     },
     beforeUpdate: (distribucion) => {
-      if (distribucion.changed('estado')) {
+      if (distribucion.changed('estado') && distribucion.estado) {
         distribucion.estado = distribucion.estado.toUpperCase();
       }
       if (distribucion.estado === 'ENTREGADO' && !distribucion.fecha_entrega) {
@@ -251,6 +275,12 @@ const DistribucionModelo = {
   cancelarEntrega: async (id_distribucion, observacion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion);
     if (!distribucion) return null;
+
+    if (distribucion.estado !== 'PENDIENTE') {
+      throw new Error(
+        `Solo se pueden cancelar distribuciones en estado PENDIENTE. Estado actual: ${distribucion.estado}`
+      );
+    }
     
     await distribucion.update({
       estado: 'CANCELADO',

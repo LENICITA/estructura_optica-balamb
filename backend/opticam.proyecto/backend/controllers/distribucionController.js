@@ -1,15 +1,104 @@
 import DistribucionModelo from '../models/Distribucion.js';
 import sequelize from '../config/database.js';
 
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    const campo = error.errors[0]?.path || 'campo';
+    return res.status(400).json({
+      success: false,
+      message: `El ${campo} ya está registrado`
+    });
+  }
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+  // Errores de transición lanzados desde el modelo
+  if (error.message && (
+    error.message.includes('No se puede') ||
+    error.message.includes('Solo se pueden')
+  )) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+// ============================================
+// VALIDADORES REUTILIZABLES
+// ============================================
+
+const validarId = (id) => {
+  if (id === undefined || id === null || id === '') return false;
+  const num = Number(id);
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+const validarObservacion = (obs) => {
+  if (obs === undefined || obs === null) return true;
+  if (typeof obs !== 'string') return false;
+  return obs.length <= 5000;
+};
+
+// TRANSICIONES DE ESTADO PERMITIDAS
+
+const TRANSICIONES_PERMITIDAS = {
+  'PENDIENTE': ['EN_ENTREGA', 'CANCELADO'],
+  'EN_ENTREGA': ['ENTREGADO'],      
+  'ENTREGADO': [],
+  'CANCELADO': []
+};
+
+const esTransicionValida = (actual, nueva) => {
+  if (!TRANSICIONES_PERMITIDAS[actual]) return false;
+  return TRANSICIONES_PERMITIDAS[actual].includes(nueva);
+};
+
 // ADMIN - ASIGNAR PEDIDO A REPARTIDOR
 export const asignarPedido = async (req, res) => {
   try {
     const { id_pedido, id_usuario, observaciones } = req.body;
 
-    if (!id_pedido || !id_usuario) {
+    if (!validarId(id_pedido)) {
       return res.status(400).json({
         success: false,
-        message: 'Faltan campos requeridos: id_pedido, id_usuario'
+        message: 'ID de pedido inválido'
+      });
+    }
+    if (!validarId(id_usuario)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de repartidor inválido'
+      });
+    }
+    if (!validarObservacion(observaciones)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las observaciones no pueden superar los 5000 caracteres'
       });
     }
 
@@ -33,12 +122,6 @@ export const asignarPedido = async (req, res) => {
         message: `El pedido debe estar en estado "Pagado". Estado actual: ${pedido.estado}`
       });
     }
-
-    // OBTENER CIUDAD DEL USUARIO DEL PEDIDO
-    const [usuarioPedido] = await sequelize.query(
-      'SELECT ciudad FROM USUARIOS WHERE id_usuario = ?',
-      { replacements: [pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
-    );
 
     const ciudad = pedido.ciudad_envio?.toLowerCase().trim() || '';
     const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
@@ -179,12 +262,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     });
 
   } catch (error) {
-    console.error('Error al asignar pedido:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al asignar el pedido',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -283,12 +361,7 @@ export const obtenerPendientes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos pendientes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener pedidos pendientes',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -383,12 +456,7 @@ export const obtenerEnEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos en entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener pedidos en entrega',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -397,6 +465,13 @@ export const obtenerDistribucionPorId = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+     if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -500,12 +575,7 @@ export const obtenerDistribucionPorId = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener distribución:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribución',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -514,6 +584,13 @@ export const iniciarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -568,12 +645,12 @@ export const iniciarEntrega = async (req, res) => {
       }
     }
 
-    if (distribucion.estado !== 'PENDIENTE') {
-      return res.status(400).json({
-        success: false,
-        message: `No puedes iniciar una entrega en estado ${distribucion.estado}`
-      });
-    }
+    if (!esTransicionValida(distribucion.estado, 'EN_ENTREGA')) {
+  return res.status(400).json({
+    success: false,
+    message: `No puedes iniciar una entrega en estado ${distribucion.estado}`
+  });
+}
 
     const distribucionActualizada = await DistribucionModelo.iniciarEntrega(id);
 
@@ -590,12 +667,7 @@ export const iniciarEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al iniciar entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al iniciar la entrega',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -605,6 +677,20 @@ export const marcarEntregado = async (req, res) => {
     const { id } = req.params;
     const { observacion } = req.body;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
+
+    if (!validarObservacion(observacion)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La observación no puede superar los 5000 caracteres'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -659,12 +745,12 @@ export const marcarEntregado = async (req, res) => {
       }
     }
 
-    if (distribucion.estado !== 'EN_ENTREGA') {
-      return res.status(400).json({
-        success: false,
-        message: `No puedes marcar como entregado en estado ${distribucion.estado}`
-      });
-    }
+    if (!esTransicionValida(distribucion.estado, 'ENTREGADO')) {
+  return res.status(400).json({
+    success: false,
+    message: `No puedes marcar como entregado en estado ${distribucion.estado}`
+  });
+}
 
     // Agregar observación si se proporcionó
     if (observacion) {
@@ -689,12 +775,7 @@ export const marcarEntregado = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al marcar entregado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al marcar como entregado',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -796,12 +877,7 @@ export const obtenerHistorial = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener historial:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener historial',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -845,12 +921,7 @@ export const obtenerTodas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener distribuciones:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribuciones',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -859,6 +930,20 @@ export const cancelarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
     const { observacion } = req.body;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
+
+    if (!validarObservacion(observacion)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La observación no puede superar los 5000 caracteres'
+      });
+    }
 
     const distribucion = await DistribucionModelo.obtenerPorId(id);
 
@@ -869,10 +954,20 @@ export const cancelarEntrega = async (req, res) => {
       });
     }
 
-    if (distribucion.estado === 'ENTREGADO') {
+    if (!esTransicionValida(distribucion.estado, 'CANCELADO')) {
+      let mensaje = '';
+      if (distribucion.estado === 'EN_ENTREGA') {
+        mensaje = 'No se puede cancelar una entrega que ya está en camino. El repartidor debe completarla o contactar al administrador.';
+      } else if (distribucion.estado === 'ENTREGADO') {
+        mensaje = 'No se puede cancelar una entrega ya entregada';
+      } else if (distribucion.estado === 'CANCELADO') {
+        mensaje = 'Esta distribución ya está cancelada';
+      } else {
+        mensaje = `No se puede cancelar en estado ${distribucion.estado}`;
+      }
       return res.status(400).json({
         success: false,
-        message: 'No se puede cancelar una entrega ya entregada'
+        message: mensaje
       });
     }
 
@@ -890,12 +985,7 @@ export const cancelarEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al cancelar entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al cancelar la entrega',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -975,12 +1065,7 @@ export const obtenerDistribucionesExternas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener distribuciones externas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribuciones externas',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 // REPARTIDOR - VER TODAS MIS DISTRIBUCIONES (TODOS LOS ESTADOS)
@@ -1101,11 +1186,6 @@ export const obtenerMisDistribuciones = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener todas las distribuciones:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribuciones',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };

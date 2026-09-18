@@ -32,7 +32,9 @@ const options = {
       { name: 'Pedidos (Admin)', description: 'Gestión de pedidos (admin)' },
       { name: 'Pagos', description: 'Pagos con Bold' },
       { name: 'Pagos (Webhook)', description: 'Webhooks de Bold' },
-      { name: 'Reportes', description: 'Reportes y estadísticas (admin)' }
+      { name: 'Reportes', description: 'Reportes y estadísticas (admin)' },
+      { name: 'Distribuciones', description: 'Distribuciones y entregas (repartidor)' },
+      { name: 'Distribuciones (Admin)', description: 'Gestión de distribuciones (admin)' }
     ],
     components: {
       securitySchemes: {
@@ -461,7 +463,169 @@ const options = {
             canal_pago: { type: 'string', enum: ['Bold'], default: 'Bold' },
             monto: { type: 'number', minimum: 0.01, example: 175000 }
           }
+        },
+
+        // ============ DISTRIBUCIONES ============
+        Distribucion: {
+          type: 'object',
+          properties: {
+            id_distribucion: { type: 'integer', example: 1 },
+            id_pedido: { type: 'integer', example: 10 },
+            id_usuario: { type: 'integer', example: 5 },
+            estado: {
+              type: 'string',
+              enum: ['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'],
+              example: 'PENDIENTE'
+            },
+            fecha_asignacion: { type: 'string', format: 'date-time' },
+            fecha_entrega: { type: 'string', format: 'date-time', nullable: true },
+            observaciones: { type: 'string', nullable: true, example: 'ENTREGA EN BOGOTÁ - REPARTIDOR' }
+          }
+        },
+        DistribucionConCliente: {
+          type: 'object',
+          properties: {
+            id_distribucion: { type: 'integer', example: 1 },
+            estado: {
+              type: 'string',
+              enum: ['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO']
+            },
+            fecha_asignacion: { type: 'string', format: 'date-time' },
+            pedido: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id_pedido: { type: 'integer' },
+                direccion_entrega: { type: 'string' },
+                ciudad_envio: { type: 'string' },
+                total: { type: 'number' },
+                fecha_estimada: { type: 'string', format: 'date', nullable: true },
+                cliente: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    nombre: { type: 'string' },
+                    telefono: { type: 'string' },
+                    ciudad: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        DistribucionConDetalles: {
+          type: 'object',
+          properties: {
+            id_distribucion: { type: 'integer' },
+            estado: { type: 'string', enum: ['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'] },
+            fecha_asignacion: { type: 'string', format: 'date-time' },
+            fecha_entrega: { type: 'string', format: 'date-time', nullable: true },
+            observaciones: { type: 'string', nullable: true },
+            pedido: {
+              type: 'object',
+              properties: {
+                id_pedido: { type: 'integer' },
+                direccion_entrega: { type: 'string' },
+                ciudad_envio: { type: 'string' },
+                total: { type: 'number' },
+                fecha_estimada: { type: 'string', format: 'date', nullable: true },
+                cliente: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    nombre: { type: 'string' },
+                    telefono: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    ciudad: { type: 'string' }
+                  }
+                }
+              }
+            },
+            repartidor: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id: { type: 'integer' },
+                nombre: { type: 'string' },
+                email: { type: 'string', format: 'email' },
+                telefono: { type: 'string' },
+                vehiculo: { type: 'string', example: 'MOTO AKT 125 - Placa: ABC12D' }
+              }
+            },
+            cliente: {
+              type: 'object',
+              nullable: true,
+              description: 'Presente en /mis-distribuciones',
+              properties: {
+                id: { type: 'integer' },
+                nombre: { type: 'string' },
+                email: { type: 'string', format: 'email' },
+                telefono: { type: 'string' },
+                ciudad: { type: 'string' }
+              }
+            },
+            repartidor_asignado: {
+              type: 'object',
+              description: 'Presente en /mis-distribuciones',
+              properties: {
+                id: { type: 'integer' },
+                nombre: { type: 'string' },
+                email: { type: 'string', format: 'email' },
+                telefono: { type: 'string' },
+                rol: { type: 'string', example: 'REPARTIDOR' },
+                vehiculo: { $ref: '#/components/schemas/Vehiculo' }
+              }
+            },
+            tipo_asignacion: {
+              type: 'string',
+              enum: ['BOGOTÁ', 'EXTERNA', 'DESCONOCIDA'],
+              description: 'Presente en /mis-distribuciones'
+            }
+          }
+        },
+        DistribucionDetalle: {
+          type: 'object',
+          properties: {
+            id_distribucion: { type: 'integer' },
+            estado: { type: 'string', enum: ['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'] },
+            fecha_asignacion: { type: 'string', format: 'date-time' },
+            fecha_entrega: { type: 'string', format: 'date-time', nullable: true },
+            observaciones: { type: 'string', nullable: true },
+            pedido: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id_pedido: { type: 'integer' },
+                direccion_entrega: { type: 'string' },
+                ciudad_envio: { type: 'string' },
+                total: { type: 'number' },
+                fecha_estimada: { type: 'string', format: 'date' },
+                cliente: {
+                  type: 'object',
+                  nullable: true,
+                  properties: {
+                    nombre: { type: 'string' },
+                    telefono: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    ciudad: { type: 'string' }
+                  }
+                }
+              }
+            },
+            repartidor: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id: { type: 'integer' },
+                nombre: { type: 'string' },
+                email: { type: 'string', format: 'email' },
+                telefono: { type: 'string' },
+                vehiculo: { type: 'string', example: 'MOTO AKT 125 - Placa: ABC12D' }
+              }
+            }
+          }
         }
+
       }
     }
   },
