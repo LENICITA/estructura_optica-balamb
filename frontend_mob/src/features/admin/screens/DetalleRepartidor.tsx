@@ -142,8 +142,9 @@ export const DetalleRepartidor = () => {
     'No especificada';
 
   const pedidos =
-    user?.pedidos_count ??
-    0;
+      (user as any)?.pedidos_count ??
+      (user as any)?.pedidos_entregados ??
+      0;
 
   const fechaRegistro =
     user?.fecha_registro ??
@@ -391,7 +392,8 @@ export const DetalleRepartidor = () => {
             />
 
             <Text style={styles.resumenText}>
-              {pedidos || 0} pedidos asignados
+              {pedidos || 0}{" "}
+              {pedidos === 1 ? "pedido entregado" : "pedidos entregados"}
             </Text>
           </View>
 

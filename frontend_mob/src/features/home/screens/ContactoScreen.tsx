@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ContactoController } from '../../../core/controllers/ContactoController';
 import { COLORS } from '../../../shared/constants/colors';
+import { validarFormularioContacto } from '../../../shared/validators/contactoValidators';
 
 export const ContactoScreen = () => {
   const [formData, setFormData] = useState({
@@ -22,39 +23,44 @@ export const ContactoScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.nombre.trim()) { setError('Ingresa tu nombre completo'); return; }
-    if (!formData.email.trim()) { setError('Ingresa tu email'); return; }
-    if (!formData.mensaje.trim()) { setError('Escribe tu mensaje'); return; }
-    if (formData.mensaje.trim().length < 10) {
-      setError('El mensaje debe tener al menos 10 caracteres');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await ContactoController.enviarMensaje({
-        nombre: formData.nombre.trim(),
-        email: formData.email.trim().toLowerCase(),
-        telefono: formData.telefono.trim(),
-        mensaje: formData.mensaje.trim(),
+      // Validar formulario completo con el validador compartido
+      const check = validarFormularioContacto({
+        nombre: formData.nombre,
+        email: formData.email,
+        telefono: formData.telefono,
+        mensaje: formData.mensaje,
       });
 
-      if (result.success) {
-        setEnviado(true);
-        setFormData({ nombre: '', email: '', telefono: '', mensaje: '' });
-        Alert.alert('Éxito', '¡Mensaje enviado! Te contactaremos pronto.');
-        setTimeout(() => setEnviado(false), 5000);
-      } else {
-        setError(result.message || 'Error al enviar el mensaje');
+      if (!check.valido) {
+        setError(check.mensaje || 'Datos inválidos');
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al enviar el mensaje');
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await ContactoController.enviarMensaje({
+          nombre: formData.nombre.trim(),
+          email: formData.email.trim().toLowerCase(),
+          telefono: formData.telefono.trim(),
+          mensaje: formData.mensaje.trim(),
+        });
+
+        if (result.success) {
+          setEnviado(true);
+          setFormData({ nombre: '', email: '', telefono: '', mensaje: '' });
+          Alert.alert('Éxito', '¡Mensaje enviado! Te contactaremos pronto.');
+          setTimeout(() => setEnviado(false), 5000);
+        } else {
+          setError(result.message || 'Error al enviar el mensaje');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Error al enviar el mensaje');
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -142,8 +148,9 @@ export const ContactoScreen = () => {
             numberOfLines={4}
             textAlignVertical="top"
             editable={!loading}
+            maxLength={1000}
           />
-          <Text style={styles.hint}>Mínimo 10 caracteres</Text>
+          <Text style={styles.hint}>Mínimo 10 caracteres · Máximo 1000</Text>
         </View>
 
         <TouchableOpacity

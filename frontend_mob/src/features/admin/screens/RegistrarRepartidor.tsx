@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { UserController } from '../../../core/controllers/UserController';
 import { COLORS } from '../../../shared/constants/colors';
+import { validarFormularioRepartidor } from '../../../shared/validators/userValidators';
 
 interface Props {
   navigation: any;
@@ -63,97 +64,80 @@ export const RegistrarRepartidor = ({ navigation }: Props) => {
   };
 
   const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
+      setError('');
+      setSuccess('');
 
-    // Validaciones
-    if (!nombre.trim() || !email.trim() || !password.trim()) {
-      setError('Completa los campos obligatorios.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('La contraseña debe tener mínimo 8 caracteres.');
-      return;
-    }
-
-    if (!vehiculo || !modelo.trim() || !placa.trim()) {
-      setError('Completa los datos del vehículo.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      //  Usamos el controlador en lugar de apiClient
-      const result = await userController.registrarRepartidor({
-        nombre_completo: nombre.trim(),
-        telefono: telefono.trim(),
+      const check = validarFormularioRepartidor({
+        nombre_completo: nombre,
+        telefono: telefono,
         fecha_nacimiento: fechaNacimiento,
-        documento: documento.trim(),
-        ciudad: ciudad.trim(),
-        direccion: direccion.trim(),
-        email: email.trim(),
+        documento: documento,
+        ciudad: ciudad,
+        direccion: direccion,
+        email: email,
         contrasena: password,
         vehiculo: {
           tipo: vehiculo,
-          modelo: modelo.trim(),
-          placa: placa.trim().toUpperCase(),
-          color: color.trim(),
+          modelo: modelo,
+          placa: placa,
+          color: color,
         },
       });
 
-      if (result.success) {
-        setSuccess('Repartidor registrado exitosamente.');
-
-        Alert.alert(
-          'Registro exitoso',
-          'El repartidor ha sido registrado correctamente.',
-          [
-            {
-              text: 'Aceptar',
-              onPress: () => {
-                navigation.navigate('DashboardRepartidores');
-              },
-            },
-          ]
-        );
-      } else {
-        setError(result.message || 'No se pudo registrar el repartidor.');
+      if (!check.valido) {
+        setError(check.mensaje || 'Datos inválidos');
+        return;
       }
 
-    } catch (error: any) {
-      console.error('Error al registrar repartidor:', error);
+      try {
+        setLoading(true);
 
-      if (error.response?.status === 400) {
-        setError(
-          error.response?.data?.message ||
-          'Datos inválidos. Verifica la información ingresada.'
-        );
-      } else if (error.response?.status === 401) {
-        setError(
-          'Tu sesión ha expirado. Inicia sesión nuevamente.'
-        );
-      } else if (error.response?.status === 403) {
-        setError(
-          'No tienes permisos para registrar repartidores.'
-        );
-      } else if (error.response?.status === 409) {
-        setError(
-          error.response?.data?.message ||
-          'El correo, documento o placa ya está registrado.'
-        );
-      } else {
+        const result = await userController.registrarRepartidor({
+          nombre_completo: nombre.trim(),
+          telefono: telefono.trim(),
+          fecha_nacimiento: fechaNacimiento,
+          documento: documento.trim(),
+          ciudad: ciudad.trim(),
+          direccion: direccion.trim(),
+          email: email.trim().toLowerCase(),
+          contrasena: password,
+          vehiculo: {
+            tipo: vehiculo,
+            modelo: modelo.trim(),
+            placa: placa.trim().toUpperCase(),
+            color: color.trim(),
+          },
+        });
+
+        if (result.success) {
+          setSuccess('Repartidor registrado exitosamente.');
+
+          Alert.alert(
+            'Registro exitoso',
+            'El repartidor ha sido registrado correctamente.',
+            [
+              {
+                text: 'Aceptar',
+                onPress: () => {
+                  navigation.navigate('DashboardRepartidores');
+                },
+              },
+            ]
+          );
+        } else {
+          setError(result.message || 'No se pudo registrar el repartidor.');
+        }
+
+      } catch (error: any) {
+        console.error('Error al registrar repartidor:', error);
         setError(
           error.response?.data?.message ||
           'Error al registrar repartidor. Intenta nuevamente.'
         );
+      } finally {
+        setLoading(false);
       }
-
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   // ========== EL RESTO DEL CÓDIGO (UI) QUEDA EXACTAMENTE IGUAL ==========
   return (

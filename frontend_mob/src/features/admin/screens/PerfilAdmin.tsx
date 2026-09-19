@@ -16,6 +16,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../auth/context/AuthContext';
 import { UserController } from '../../../core/controllers/UserController';
 import { COLORS } from '../../../shared/constants/colors';
+import {
+  checkNombre,
+  checkEmail,
+  checkTelefono,
+  checkDocumento,
+  checkCiudad
+} from '../../../shared/validators/userValidators';
 
 interface Props {
   navigation: any;
@@ -107,57 +114,78 @@ export const PerfilAdmin = ({ navigation }: Props) => {
 
   // ===== GUARDAR =====
   const guardarCambios = async () => {
-    if (!formData.nombre_completo.trim()) {
-      Alert.alert('Campo requerido', 'El nombre es obligatorio.');
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      Alert.alert('Campo requerido', 'El correo electrónico es obligatorio.');
-      return;
-    }
-
-  if (formData.documento && isNaN(Number(formData.documento))) {
-    Alert.alert('Campo inválido', 'El documento debe ser un número válido.');
-    return;
-  }
-
-  if (formData.fecha_nacimiento) {
-    const fecha = new Date(formData.fecha_nacimiento);
-    if (isNaN(fecha.getTime())) {
-      Alert.alert('Campo inválido', 'La fecha de nacimiento no es válida.');
-      return;
-    }
-  }
-
-    try {
-      setGuardando(true);
-
-      const result = await userController.updateProfile({
-        nombre_completo: formData.nombre_completo.trim(),
-        email: formData.email.trim(),
-        telefono: formData.telefono.trim(),
-        direccion: formData.direccion.trim(),
-        ciudad: formData.ciudad.trim(),
-        fecha_nacimiento: formData.fecha_nacimiento.trim(),
-        documento: formData.documento ? Number(formData.documento) : undefined,
-      });
-
-      if (result.success) {
-        await updateUser();
-        setEditando(false);
-        Alert.alert('Perfil actualizado', result.message);
-        await cargarPerfil();
-      } else {
-        Alert.alert('Error', result.message);
+      // Validar nombre
+      const nombreCheck = checkNombre(formData.nombre_completo);
+      if (!nombreCheck.valido) {
+        Alert.alert('Campo inválido', nombreCheck.mensaje!);
+        return;
       }
-    } catch (error: any) {
-      console.error('Error al actualizar perfil:', error);
-      Alert.alert('Error', 'No fue posible actualizar el perfil.');
-    } finally {
-      setGuardando(false);
-    }
-  };
+
+      // Validar email
+      const emailCheck = checkEmail(formData.email);
+      if (!emailCheck.valido) {
+        Alert.alert('Campo inválido', emailCheck.mensaje!);
+        return;
+      }
+
+      // Validar teléfono
+      const telCheck = checkTelefono(formData.telefono);
+      if (!telCheck.valido) {
+        Alert.alert('Campo inválido', telCheck.mensaje!);
+        return;
+      }
+
+      // Validar documento
+      const docCheck = checkDocumento(formData.documento);
+      if (!docCheck.valido) {
+        Alert.alert('Campo inválido', docCheck.mensaje!);
+        return;
+      }
+
+      // Validar ciudad
+      const ciudadCheck = checkCiudad(formData.ciudad);
+      if (!ciudadCheck.valido) {
+        Alert.alert('Campo inválido', ciudadCheck.mensaje!);
+        return;
+      }
+
+      // Validar fecha de nacimiento
+      if (formData.fecha_nacimiento) {
+        const fecha = new Date(formData.fecha_nacimiento);
+        if (isNaN(fecha.getTime())) {
+          Alert.alert('Campo inválido', 'La fecha de nacimiento no es válida.');
+          return;
+        }
+      }
+
+      try {
+        setGuardando(true);
+
+        const result = await userController.updateProfile({
+          nombre_completo: formData.nombre_completo.trim(),
+          email: formData.email.trim().toLowerCase(),
+          telefono: formData.telefono.trim(),
+          direccion: formData.direccion.trim(),
+          ciudad: formData.ciudad.trim(),
+          fecha_nacimiento: formData.fecha_nacimiento.trim(),
+          documento: formData.documento ? Number(formData.documento) : undefined,
+        });
+
+        if (result.success) {
+          await updateUser();
+          setEditando(false);
+          Alert.alert('Perfil actualizado', result.message);
+          await cargarPerfil();
+        } else {
+          Alert.alert('Error', result.message);
+        }
+      } catch (error: any) {
+        console.error('Error al actualizar perfil:', error);
+        Alert.alert('Error', 'No fue posible actualizar el perfil.');
+      } finally {
+        setGuardando(false);
+      }
+    };
 
   if (loading) {
     return (

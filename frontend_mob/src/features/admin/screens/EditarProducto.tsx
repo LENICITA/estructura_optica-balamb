@@ -15,14 +15,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '@/shared/constants/colors';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { validarFormularioEditarProducto } from '../../../shared/validators/productoValidators';
 
 export default function EditarProducto() {
   const navigation = useNavigation();
   const route = useRoute<any>();
   const productController = new ProductController();
-  
+
   const productoId = route.params?.id_producto ?? route.params?.producto?.id_producto;
-  
+
   const [imagen, setImagen] = useState<string | null>(null);
   const [imagenOriginal, setImagenOriginal] = useState<string | null>(null);
   const [subiendo, setSubiendo] = useState(false);
@@ -56,7 +57,7 @@ export default function EditarProducto() {
       try {
         setCargandoProducto(true);
         const producto = await productController.getProductoById(productoId);
-        
+
         if (!producto) {
           Alert.alert('Error', 'No se encontró el producto.');
           navigation.goBack();
@@ -127,98 +128,75 @@ export default function EditarProducto() {
   };
 
   const editarProducto = async () => {
-    if (!categoriaSeleccionada) {
-      Alert.alert('Campo requerido', 'Debes seleccionar una categoría.');
-      return;
-    }
+      const imagenFinal = imagen || imagenOriginal;
 
-    if (!formData.nombre.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el nombre del producto.');
-      return;
-    }
-
-    if (!formData.descripcion.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar una descripción del producto.');
-      return;
-    }
-
-    if (!formData.marca.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar la marca del producto.');
-      return;
-    }
-
-    if (!formData.precio || parseFloat(formData.precio) <= 0) {
-      Alert.alert('Campo requerido', 'Debes ingresar un precio válido mayor a 0.');
-      return;
-    }
-
-    if (!formData.material.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el material del producto.');
-      return;
-    }
-
-    if (!formData.color.trim()) {
-      Alert.alert('Campo requerido', 'Debes ingresar el color del producto.');
-      return;
-    }
-
-    const imagenFinal = imagen || imagenOriginal;
-
-    if (!imagenFinal) {
-      Alert.alert('Campo requerido', 'Debes seleccionar una imagen para el producto.');
-      return;
-    }
-
-    try {
-      setSubiendo(true);
-
-      console.log('Editando producto ID:', productoId);
-      console.log('Datos enviados:', {
-        id_categoria: categoriaSeleccionada.id_categoria,
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim(),
-        marca: formData.marca.trim(),
-        precio: parseFloat(formData.precio),
-        imagen: imagenFinal,
-        material: formData.material.trim(),
-        color: formData.color.trim(),
+      // validación con el validador compartido
+      const check = validarFormularioEditarProducto({
+        id_categoria: categoriaSeleccionada?.id_categoria,
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        marca: formData.marca,
+        precio: formData.precio,
+        imagen: imagenFinal || '',
+        material: formData.material,
+        color: formData.color
       });
 
-      const resultado = await productController.actualizarProducto(productoId, {
-        id_categoria: categoriaSeleccionada.id_categoria,
-        nombre: formData.nombre.trim(),
-        descripcion: formData.descripcion.trim(),
-        marca: formData.marca.trim(),
-        precio: parseFloat(formData.precio),
-        imagen: imagenFinal,
-        material: formData.material.trim(),
-        color: formData.color.trim(),
-      });
-
-      console.log('Resultado edición:', resultado);
-
-      if (!resultado.success) {
-        Alert.alert('Error', resultado.message);
+      if (!check.valido) {
+        Alert.alert('Campo inválido', check.mensaje || 'Datos inválidos');
         return;
       }
 
-      Alert.alert(
-        '¡Producto editado!',
-        'El producto fue actualizado correctamente.',
-        [
-          {
-            text: 'Ver productos',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    } catch (error: any) {
-      console.error('Error editando producto:', error);
-      Alert.alert('Error', error?.message || 'No fue posible editar el producto.');
-    } finally {
-      setSubiendo(false);
-    }
-  };
+      try {
+        setSubiendo(true);
+
+        console.log('Editando producto ID:', productoId);
+        console.log('Datos enviados:', {
+          id_categoria: categoriaSeleccionada!.id_categoria,
+          nombre: formData.nombre.trim(),
+          descripcion: formData.descripcion.trim(),
+          marca: formData.marca.trim(),
+          precio: parseFloat(formData.precio),
+          imagen: imagenFinal!,
+          material: formData.material.trim(),
+          color: formData.color.trim(),
+        });
+
+        const resultado = await productController.actualizarProducto(productoId, {
+          id_categoria: categoriaSeleccionada!.id_categoria,
+          nombre: formData.nombre.trim(),
+          descripcion: formData.descripcion.trim(),
+          marca: formData.marca.trim(),
+          precio: parseFloat(formData.precio),
+          imagen: imagenFinal!,
+          material: formData.material.trim(),
+          color: formData.color.trim(),
+        });
+
+        console.log('Resultado edición:', resultado);
+
+        if (!resultado.success) {
+          Alert.alert('Error', resultado.message);
+          return;
+        }
+
+        Alert.alert(
+          '¡Producto editado!',
+          'El producto fue actualizado correctamente.',
+          [
+            {
+              text: 'Ver productos',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } catch (error: any) {
+        console.error('Error editando producto:', error);
+        Alert.alert('Error', error?.message || 'No fue posible editar el producto.');
+      } finally {
+        setSubiendo(false);
+      }
+    };
 
   if (cargandoProducto) {
     return (
@@ -296,6 +274,7 @@ export default function EditarProducto() {
               placeholder="Ingrese el nombre del producto"
               value={formData.nombre}
               onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+              maxLength={45}
             />
           </View>
 
@@ -309,6 +288,7 @@ export default function EditarProducto() {
               scrollEnabled={true}
               value={formData.descripcion}
               onChangeText={(text) => setFormData({ ...formData, descripcion: text })}
+              maxLength={45}
             />
           </View>
 
@@ -319,6 +299,7 @@ export default function EditarProducto() {
               placeholder="Ingrese la marca del producto"
               value={formData.marca}
               onChangeText={(text) => setFormData({ ...formData, marca: text })}
+              maxLength={45}
             />
           </View>
 
@@ -330,6 +311,7 @@ export default function EditarProducto() {
               keyboardType="numeric"
               value={formData.precio}
               onChangeText={(text) => setFormData({ ...formData, precio: text })}
+              maxLength={10}
             />
           </View>
 
@@ -340,6 +322,7 @@ export default function EditarProducto() {
               placeholder="Ingrese el material del producto"
               value={formData.material}
               onChangeText={(text) => setFormData({ ...formData, material: text })}
+              maxLength={45}
             />
           </View>
 
@@ -350,6 +333,7 @@ export default function EditarProducto() {
               placeholder="Ingrese el color del producto"
               value={formData.color}
               onChangeText={(text) => setFormData({ ...formData, color: text })}
+              maxLength={45}
             />
           </View>
 
@@ -366,8 +350,8 @@ export default function EditarProducto() {
             {imagen && (
               <View style={styles.previewContainer}>
                 <Image source={{ uri: imagen }} style={styles.preview} resizeMode="cover" />
-                <TouchableOpacity 
-                  style={styles.removeImageButton} 
+                <TouchableOpacity
+                  style={styles.removeImageButton}
                   onPress={() => {
                     setImagen(null);
                     setImagenOriginal(null);

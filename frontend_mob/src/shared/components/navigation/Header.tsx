@@ -252,15 +252,29 @@ const role = getMainRole();
           admin: true,
         });
 
+    items.push({
+        id: 'admin-formulas',
+        label: 'Fórmulas',
+        icon: 'eye-outline',
+        route: 'GestionarFormulas',
+        admin: true,
+      });
 
         items.push({
           id: 'admin-pedidos',
           label: 'Pedidos',
           icon: 'cart-outline',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
           admin: true,
         });
 
+        items.push({
+            id: 'admin-distribuciones',
+            label: 'Distribuciones',
+            icon: 'bicycle-outline',
+            route: 'GestionarDistribucionesAdmin',
+            admin: true,
+          });
 
         items.push({
           id: 'admin-repartidores',
@@ -275,7 +289,7 @@ const role = getMainRole();
           id: 'admin-reportes',
           label: 'Reportes',
           icon: 'pie-chart-outline',
-          route: 'AdminReportes',
+          route: 'ReportesAdmin',
           admin: true,
         });
 
@@ -289,7 +303,7 @@ const role = getMainRole();
           id: 'repartidor-historial',
           label: 'Historial',
           icon: 'time-outline',
-          route: 'PrincipalRepartidor',
+          route: 'HistorialEntregas',
         });
 
       }
@@ -305,6 +319,12 @@ const role = getMainRole();
           route: 'CatalogoCliente',
         });
 
+        items.push({
+            id: 'mis-formulas',
+            label: 'Mis Fórmulas',
+            icon: 'document-text-outline',
+            route: 'MisFormulasScreen',
+          });
 
         items.push({
           id: 'carrito',

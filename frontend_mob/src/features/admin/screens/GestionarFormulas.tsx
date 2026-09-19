@@ -30,6 +30,7 @@ import {
   FormulaModel,
   EstadoFormula,
 } from '../../../core/models/FormulaModel';
+import { checkId } from '../../../shared/validators/formulaValidators';
 
 const formulaController = new FormulaController();
 
@@ -194,24 +195,31 @@ export default function GestionarFormulas() {
 
     // Función para rechazar fórmula
     const rechazarFormula = async () => {
-      try {
-        const resultado = await formulaController.actualizarEstadoFormula(
-          item.id_formula,
-          'Rechazado'
-        );
+          // Validar ID
+          const checkIdResult = checkId(item.id_formula);
+          if (!checkIdResult.valido) {
+            Alert.alert('Error', checkIdResult.mensaje || 'ID de fórmula inválido');
+            return;
+          }
 
-        if (resultado.success) {
-          console.log('Fórmula rechazada correctamente');
-          cargarFormulas();
-        } else {
-          console.error('Error al rechazar:', resultado.message);
-          Alert.alert('Error', resultado.message || 'No se pudo rechazar la fórmula');
-        }
-      } catch (error) {
-        console.error('Error al rechazar fórmula:', error);
-        Alert.alert('Error', 'Ocurrió un error al rechazar la fórmula');
-      }
-    };
+          try {
+            const resultado = await formulaController.actualizarEstadoFormula(
+              item.id_formula,
+              'Rechazado'
+            );
+
+            if (resultado.success) {
+              console.log('Fórmula rechazada correctamente');
+              cargarFormulas();
+            } else {
+              console.error('Error al rechazar:', resultado.message);
+              Alert.alert('Error', resultado.message || 'No se pudo rechazar la fórmula');
+            }
+          } catch (error) {
+            console.error('Error al rechazar fórmula:', error);
+            Alert.alert('Error', 'Ocurrió un error al rechazar la fórmula');
+          }
+        };
 
     const mostrarMenuOpciones = () => {
       if (estado === 'Rechazado' || estado === 'Aprobado') {

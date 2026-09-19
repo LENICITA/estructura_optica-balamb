@@ -6,3 +6,5 @@ export * from './PedidoModel';
 export * from './ProductModel';
 export * from './MensajeContacto';
 export * from './FormulaModel';
+export * from './PagoModel';
+export * from './ReporteModel';

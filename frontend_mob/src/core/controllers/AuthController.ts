@@ -2,6 +2,9 @@
 import { AuthService } from '../services/AuthService';
 import { UserRepository } from '../repositories/UserRepository';
 import { UserModel } from '../models/UserModel';
+import {
+  validarFormularioCliente
+} from '../../shared/validators/userValidators';
 
 export interface LoginResult {
   success: boolean;
@@ -102,18 +105,27 @@ export class AuthController {
 
   async register(userData: any): Promise<RegisterResult> {
     try {
-      if (!userData.nombre_completo || !userData.email || !userData.contrasena) {
-        return { success: false, message: 'Nombre, email y contraseña son requeridos' };
-      }
-      if (userData.contrasena.length < 8) {
-        return { success: false, message: 'La contraseña debe tener al menos 8 caracteres' };
-      }
+      // Validación con el validador compartido
+            const check = validarFormularioCliente({
+              nombre_completo: userData.nombre_completo,
+              telefono: userData.telefono,
+              fecha_nacimiento: userData.fecha_nacimiento,
+              documento: userData.documento,
+              ciudad: userData.ciudad,
+              direccion: userData.direccion,
+              email: userData.email,
+              contrasena: userData.contrasena,
+            });
 
-      const dataToSend = {
-        ...userData,
-        rol: 'CLIENTE',
-        email: userData.email.trim().toLowerCase(),
-      };
+            if (!check.valido) {
+              return { success: false, message: check.mensaje || 'Datos inválidos' };
+            }
+
+            const dataToSend = {
+              ...userData,
+              rol: 'CLIENTE',
+              email: userData.email.trim().toLowerCase(),
+            };
 
       const response = await this.authService.register(dataToSend);
 

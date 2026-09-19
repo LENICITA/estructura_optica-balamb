@@ -5,13 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  TouchableWithoutFeedback,
   Keyboard,
   Alert,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   useNavigation,
   NavigationProp,
@@ -21,15 +21,8 @@ import {
 import { UserController } from "../../../core/controllers/UserController";
 
 type RootStackParamList = {
-  DetalleRepartidor: {
-    id: number;
-  };
-
-  EditarRepartidor: {
-    repartidorId: number;
-    repartidorData: Repartidor;
-  };
-
+  DetalleRepartidor: { id: number };
+  EditarRepartidor: { repartidorId: number; repartidorData: Repartidor };
   RegistrarRepartidor: undefined;
 };
 
@@ -48,75 +41,34 @@ export default function DashboardRepartidores() {
   const [repartidores, setRepartidores] = useState<Repartidor[]>([]);
   const [loading, setLoading] = useState(true);
   const [buscar, setBuscar] = useState("");
-  const [seleccionado, setSeleccionado] =
-    useState<Repartidor | null>(null);
   const [filtro, setFiltro] = useState("todos");
 
-  const navigation =
-    useNavigation<NavigationProp<RootStackParamList>>();
-
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const userController = new UserController();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
       const cargarRepartidores = async () => {
         try {
           setLoading(true);
-
           const data = await userController.getRepartidores();
 
-          console.log(
-            "REPARTIDORES RECIBIDOS:",
-            JSON.stringify(data, null, 2)
-          );
-
-          const repartidoresMapeados: Repartidor[] = data.map(
-            (r: any) => ({
-              id: r.id_usuario || r.id || 0,
-
-              nombre:
-                r.nombre_completo ||
-                r.nombre ||
-                "Sin nombre",
-
-              estado:
-                r.estado ||
-                "INACTIVO",
-
-              correo:
-                r.email ||
-                r.correo ||
-                "",
-
-              telefono:
-                r.telefono ||
-                "",
-
-              ciudad:
-                r.ciudad ||
-                "",
-
-              pedidos:
-                r.pedidos ||
-                0,
-
-              fecha_registro:
-                r.fecha_registro ||
-                new Date().toISOString(),
-            })
-          );
+          const repartidoresMapeados: Repartidor[] = data.map((r: any) => ({
+            id: r.id_usuario || r.id || 0,
+            nombre: r.nombre_completo || r.nombre || "Sin nombre",
+            estado: r.estado || "INACTIVO",
+            correo: r.email || r.correo || "",
+            telefono: r.telefono || "",
+            ciudad: r.ciudad || "",
+            pedidos: r.pedidos || 0,
+            fecha_registro: r.fecha_registro || new Date().toISOString(),
+          }));
 
           setRepartidores(repartidoresMapeados);
         } catch (error) {
-          console.error(
-            "Error al cargar repartidores:",
-            error
-          );
-
-          Alert.alert(
-            "Error",
-            "No se pudieron cargar los repartidores."
-          );
+          console.error("Error al cargar repartidores:", error);
+          Alert.alert("Error", "No se pudieron cargar los repartidores.");
         } finally {
           setLoading(false);
         }
@@ -131,813 +83,550 @@ export default function DashboardRepartidores() {
       "Eliminar Repartidor",
       `¿Estás seguro de eliminar a "${item.nombre}"?\n\nEsta acción no se puede deshacer.`,
       [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Eliminar",
           style: "destructive",
-
           onPress: async () => {
             try {
-              const response =
-                await userController.eliminarRepartidor(
-                  item.id
-                );
-
+              const response = await userController.eliminarRepartidor(item.id);
               if (!response.success) {
                 Alert.alert(
                   "Error",
-                  response.message ||
-                    "No se pudo eliminar el repartidor."
+                  response.message || "No se pudo eliminar el repartidor."
                 );
-
                 return;
               }
-
-              setRepartidores((prev) =>
-                prev.filter(
-                  (r) => r.id !== item.id
-                )
-              );
-
+              setRepartidores((prev) => prev.filter((r) => r.id !== item.id));
               Alert.alert(
                 "Eliminado",
                 `El repartidor "${item.nombre}" fue eliminado correctamente.`
               );
             } catch (error) {
-              console.error(
-                "Error al eliminar repartidor:",
-                error
-              );
-
-              Alert.alert(
-                "Error",
-                "No se pudo eliminar el repartidor."
-              );
+              console.error("Error al eliminar repartidor:", error);
+              Alert.alert("Error", "No se pudo eliminar el repartidor.");
             }
           },
         },
       ],
-      {
-        cancelable: false,
-      }
+      { cancelable: false }
     );
   };
 
-  const filtrarRepartidores =
-    repartidores.filter((repartidor) => {
-      const cumpleFiltro =
-        filtro === "todos" ||
-        repartidor.estado === filtro;
+  const filtrarRepartidores = repartidores.filter((repartidor) => {
+    const cumpleFiltro = filtro === "todos" || repartidor.estado === filtro;
+    const cumpleBusqueda = repartidor.nombre
+      .toLowerCase()
+      .includes(buscar.toLowerCase());
+    return cumpleFiltro && cumpleBusqueda;
+  });
 
-      const cumpleBusqueda =
-        repartidor.nombre
-          .toLowerCase()
-          .includes(buscar.toLowerCase());
+  const cantidadActivos = repartidores.filter(
+    (r) => r.estado === "ACTIVO"
+  ).length;
+  const cantidadInactivos = repartidores.filter(
+    (r) => r.estado === "INACTIVO"
+  ).length;
 
-      return (
-        cumpleFiltro &&
-        cumpleBusqueda
-      );
-    });
-
-  const cantidadActivos =
-    repartidores.filter(
-      (r) => r.estado === "ACTIVO"
-    ).length;
-
-  const cantidadInactivos =
-    repartidores.filter(
-      (r) => r.estado === "INACTIVO"
-    ).length;
+  const filtros = [
+    { key: "todos", label: "Todos", count: repartidores.length },
+    { key: "ACTIVO", label: "Activos", count: cantidadActivos },
+    { key: "INACTIVO", label: "Inactivos", count: cantidadInactivos },
+  ];
 
   return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        Keyboard.dismiss();
-        setSeleccionado(null);
-      }}
-    >
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
+        scrollEventThrottle={16}
+      >
+        {/* HEADER */}
+        <LinearGradient
+          colors={["#B90F0F", "#7F0A0A"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
-          <Text style={styles.titulo}>
-            Gestión de Repartidores
-          </Text>
-
-          <Text style={styles.subtitulo}>
-            Administra el equipo de entregas
-          </Text>
-
-          <View style={styles.cardContainer}>
-            <View
-              style={[
-                styles.cardInfo,
-                styles.cardTotal,
-              ]}
-            >
-              <View style={styles.iconWrapper}>
-                <Ionicons
-                  name="people-outline"
-                  size={24}
-                  color="#B90F0F"
-                />
-              </View>
-
-              <Text style={styles.cardNumero}>
-                {repartidores.length}
-              </Text>
-
-              <Text style={styles.cardLabel}>
-                Repartidores
-              </Text>
+          <View style={styles.headerTop}>
+            <View style={styles.headerIconWrapper}>
+              <Ionicons name="bicycle-outline" size={24} color="#FFF" />
             </View>
-
-            <View
-              style={[
-                styles.cardInfo,
-                styles.cardActivos,
-              ]}
-            >
-              <View style={styles.checkCircle}>
-                <Ionicons
-                  name="checkmark"
-                  size={16}
-                  color="white"
-                />
-              </View>
-
-              <Text style={styles.cardNumero}>
-                {cantidadActivos}
-              </Text>
-
-              <Text style={styles.cardLabel}>
-                Activos
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.cardInfo,
-                styles.cardInactivos,
-              ]}
-            >
-              <View style={styles.circleIcon}>
-                <View
-                  style={styles.verticalLine}
-                />
-
-                <View
-                  style={styles.verticalLine}
-                />
-              </View>
-
-              <Text style={styles.cardNumero}>
-                {cantidadInactivos}
-              </Text>
-
-              <Text style={styles.cardLabel}>
-                Inactivos
+            <View style={{ flex: 1 }}>
+              <Text style={styles.headerTitle}>Repartidores</Text>
+              <Text style={styles.headerSubtitle}>
+                Administra el equipo de entregas
               </Text>
             </View>
           </View>
 
-          <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={20}
-              color="#666"
-              style={{ marginRight: 10 }}
-            />
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{repartidores.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={styles.statWithDot}>
+                <View style={[styles.dot, { backgroundColor: "#4ADE80" }]} />
+                <Text style={styles.statValue}>{cantidadActivos}</Text>
+              </View>
+              <Text style={styles.statLabel}>Activos</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <View style={styles.statWithDot}>
+                <View style={[styles.dot, { backgroundColor: "#F87171" }]} />
+                <Text style={styles.statValue}>{cantidadInactivos}</Text>
+              </View>
+              <Text style={styles.statLabel}>Inactivos</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
-            <TextInput
-              placeholder="Buscar repartidor"
-              placeholderTextColor="#999"
-              value={buscar}
-              onChangeText={setBuscar}
-              style={styles.searchInput}
-            />
+        {/* BUSCADOR */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color="#9CA3AF" />
+          <TextInput
+            placeholder="Buscar repartidor..."
+            placeholderTextColor="#9CA3AF"
+            value={buscar}
+            onChangeText={setBuscar}
+            style={styles.searchInput}
+            returnKeyType="search"
+          />
+          {buscar !== "" && (
+            <TouchableOpacity onPress={() => setBuscar("")}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
 
-            {buscar !== "" && (
+        {/* FILTROS CHIP */}
+        <View style={styles.filtroContainer}>
+          {filtros.map((f) => {
+            const activo = filtro === f.key;
+            return (
               <TouchableOpacity
-                onPress={() =>
-                  setBuscar("")
-                }
+                key={f.key}
+                style={[styles.chip, activo && styles.chipActivo]}
+                onPress={() => setFiltro(f.key)}
+                activeOpacity={0.8}
               >
-                <Ionicons
-                  name="close-circle"
-                  size={20}
-                  color="#999"
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View style={styles.filtroContainer}>
-            <TouchableOpacity
-              style={[
-                styles.cardFiltro,
-                filtro === "todos" &&
-                  styles.botonSeleccionado,
-              ]}
-              onPress={() =>
-                setFiltro("todos")
-              }
-            >
-              <Text
-                style={[
-                  styles.textoFiltro,
-                  filtro === "todos" &&
-                    styles.textoSeleccionado,
-                ]}
-              >
-                Todos ({repartidores.length})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.cardFiltro,
-                filtro === "ACTIVO" &&
-                  styles.botonSeleccionado,
-              ]}
-              onPress={() =>
-                setFiltro("ACTIVO")
-              }
-            >
-              <Text
-                style={[
-                  styles.textoFiltro,
-                  filtro === "ACTIVO" &&
-                    styles.textoSeleccionado,
-                ]}
-              >
-                Activos ({cantidadActivos})
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.cardFiltro,
-                filtro === "INACTIVO" &&
-                  styles.botonSeleccionado,
-              ]}
-              onPress={() =>
-                setFiltro("INACTIVO")
-              }
-            >
-              <Text
-                style={[
-                  styles.textoFiltro,
-                  filtro === "INACTIVO" &&
-                    styles.textoSeleccionado,
-                ]}
-              >
-                Inactivos ({cantidadInactivos})
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ marginBottom: 5 }}>
-            {filtrarRepartidores.map((item) => (
-              <TouchableWithoutFeedback key={item.id.toString()}>
-                <View style={styles.card}>
-                  <View
-                    style={styles.headerCard}
+                <Text style={[styles.chipText, activo && styles.chipTextActivo]}>
+                  {f.label}
+                </Text>
+                <View
+                  style={[styles.chipBadge, activo && styles.chipBadgeActivo]}
+                >
+                  <Text
+                    style={[
+                      styles.chipBadgeText,
+                      activo && styles.chipBadgeTextActivo,
+                    ]}
                   >
-                    <View style={styles.avatar}>
-                      <Ionicons
-                        name="person"
-                        size={22}
-                        color="#B90F0F"
-                      />
-                    </View>
+                    {f.count}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-                    <View
-                      style={
-                        styles.infoPrincipal
-                      }
-                    >
-                      <View
-                        style={styles.nombreRow}
-                      >
-                        <Text
-                          style={styles.nombre}
-                        >
-                          {item.nombre}
-                        </Text>
-
-                        <View
-                          style={[
-                            styles.estadoBadge,
-
-                            item.estado ===
-                              "ACTIVO"
-                              ? styles.estadoActivo
-                              : styles.estadoInactivo,
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.estadoDot,
-
-                              item.estado ===
-                                "ACTIVO"
-                                ? styles.dotVerde
-                                : styles.dotRojo,
-                            ]}
-                          />
-
-                          <Text
-                            style={[
-                              styles.estadoTexto,
-
-                              item.estado ===
-                                "ACTIVO"
-                                ? styles.estadoTextoActivo
-                                : styles.estadoTextoInactivo,
-                            ]}
-                          >
-                            {item.estado}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View
-                        style={styles.infoRow}
-                      >
-                        <Ionicons
-                          name="call-outline"
-                          size={13}
-                          color="#888"
-                        />
-
-                        <Text
-                          style={styles.infoText}
-                        >
-                          {item.telefono ||
-                            "No disponible"}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={styles.infoRow}
-                      >
-                        <Ionicons
-                          name="mail-outline"
-                          size={13}
-                          color="#888"
-                        />
-
-                        <Text
-                          style={styles.infoText}
-                        >
-                          {item.correo ||
-                            "No disponible"}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={styles.infoRow}
-                      >
-                        <Ionicons
-                          name="location-outline"
-                          size={14}
-                          color="#888"
-                        />
-
-                        <Text
-                          style={styles.infoText}
-                        >
-                          {item.ciudad ||
-                            "No especificada"}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.menuButton}
-                      onPress={() => {
-                        Alert.alert(
-                          "Eliminar repartidor",
-                          `¿Deseas eliminar a ${item.nombre}?`,
-                          [
-                            {
-                              text: "Cancelar",
-                              style: "cancel",
-                            },
-                            {
-                              text: "Eliminar",
-                              style: "destructive",
-                              onPress: () =>
-                                eliminarRepartidor(
-                                  item
-                                ),
-                            },
-                          ]
-                        );
-                      }}
-                    >
-                      <Ionicons
-                        name="ellipsis-vertical"
-                        size={20}
-                        color="#888"
-                      />
-                    </TouchableOpacity>
+        {/* LISTA */}
+        {filtrarRepartidores.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="people-outline" size={48} color="#D1D5DB" />
+            <Text style={styles.emptyTitle}>Sin resultados</Text>
+            <Text style={styles.emptyText}>
+              No se encontraron repartidores con esos criterios
+            </Text>
+          </View>
+        ) : (
+          filtrarRepartidores.map((item) => {
+            const activo = item.estado === "ACTIVO";
+            return (
+              <View key={item.id.toString()} style={styles.card}>
+                {/* HEADER CARD */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {item.nombre.charAt(0).toUpperCase()}
+                    </Text>
                   </View>
 
-                  <View
-                    style={styles.resumen}
-                  >
+                  <View style={styles.infoPrincipal}>
+                    <Text style={styles.nombre} numberOfLines={1}>
+                      {item.nombre}
+                    </Text>
+
                     <View
-                      style={styles.resumenItem}
+                      style={[
+                        styles.estadoBadge,
+                        activo ? styles.estadoActivo : styles.estadoInactivo,
+                      ]}
                     >
-                      <Ionicons
-                        name="cube-outline"
-                        size={17}
-                        color="#B90F0F"
+                      <View
+                        style={[
+                          styles.estadoDot,
+                          activo ? styles.dotVerde : styles.dotRojo,
+                        ]}
                       />
-
                       <Text
-                        style={
-                          styles.resumenText
-                        }
+                        style={[
+                          styles.estadoTexto,
+                          activo
+                            ? styles.estadoTextoActivo
+                            : styles.estadoTextoInactivo,
+                        ]}
                       >
-                        {item.pedidos || 0}{" "}
-                        pedidos asignados
-                      </Text>
-                    </View>
-
-                    <View
-                      style={styles.divisor}
-                    />
-
-                    <View
-                      style={styles.resumenItem}
-                    >
-                      <Ionicons
-                        name="calendar-outline"
-                        size={17}
-                        color="#B90F0F"
-                      />
-
-                      <Text
-                        style={
-                          styles.resumenText
-                        }
-                      >
-                        Último pedido
+                        {item.estado}
                       </Text>
                     </View>
                   </View>
 
                   <TouchableOpacity
-                    style={styles.detalles}
-                    onPress={() => {
-                      navigation.navigate(
-                        "DetalleRepartidor",
-                        {
-                          id: item.id,
-                        }
-                      );
-                    }}
+                    style={styles.menuButton}
+                    onPress={() =>
+                      Alert.alert(
+                        "Eliminar repartidor",
+                        `¿Deseas eliminar a ${item.nombre}?`,
+                        [
+                          { text: "Cancelar", style: "cancel" },
+                          {
+                            text: "Eliminar",
+                            style: "destructive",
+                            onPress: () => eliminarRepartidor(item),
+                          },
+                        ]
+                      )
+                    }
                   >
-                    <Text
-                      style={
-                        styles.detallesText
-                      }
-                    >
-                      Ver detalles →
-                    </Text>
+                    <Ionicons
+                      name="ellipsis-vertical"
+                      size={18}
+                      color="#9CA3AF"
+                    />
                   </TouchableOpacity>
                 </View>
-              </TouchableWithoutFeedback>
-            ))}
-          </View>
 
-          <View style={{ height: 100 }} />
-        </ScrollView>
+                {/* INFO ROWS */}
+                <View style={styles.infoBlock}>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="call-outline" size={14} color="#9CA3AF" />
+                    <Text style={styles.infoText} numberOfLines={1}>
+                      {item.telefono || "No disponible"}
+                    </Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="mail-outline" size={14} color="#9CA3AF" />
+                    <Text style={styles.infoText} numberOfLines={1}>
+                      {item.correo || "No disponible"}
+                    </Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons
+                      name="location-outline"
+                      size={14}
+                      color="#9CA3AF"
+                    />
+                    <Text style={styles.infoText} numberOfLines={1}>
+                      {item.ciudad || "No especificada"}
+                    </Text>
+                  </View>
+                </View>
 
-        <View
-          style={
-            styles.containerFlotante
-          }
-        >
-          <TouchableOpacity
-            style={styles.botonFlotante}
-            onPress={() => {
-              navigation.navigate(
-                "RegistrarRepartidor"
-              );
-            }}
-          >
-            <Text style={styles.plus}>
-              +
-            </Text>
-          </TouchableOpacity>
+                {/* RESUMEN */}
+                <View style={styles.resumen}>
+                  <View style={styles.resumenItem}>
+                    <Ionicons name="cube-outline" size={16} color="#B90F0F" />
+                    <Text style={styles.resumenText}>
+                      {item.pedidos || 0}{" "}
+                      {(item.pedidos || 0) === 1
+                        ? "pedido entregado"
+                        : "pedidos entregados"}
+                    </Text>
+                  </View>
+                </View>
 
-          <Text
-            style={styles.textoFlotante}
-          >
-            Agregar Repartidor
-          </Text>
-        </View>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+                {/* VER DETALLES */}
+                <TouchableOpacity
+                  style={styles.detalles}
+                  activeOpacity={0.7}
+                  onPress={() =>
+                    navigation.navigate("DetalleRepartidor", { id: item.id })
+                  }
+                >
+                  <Text style={styles.detallesText}>Ver detalles</Text>
+                  <Ionicons name="arrow-forward" size={14} color="#B90F0F" />
+                </TouchableOpacity>
+              </View>
+            );
+          })
+        )}
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate("RegistrarRepartidor")}
+      >
+        <Ionicons name="add" size={22} color="#FFF" />
+        <Text style={styles.fabText}>Agregar</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
-    padding: 10,
+    backgroundColor: "#F9FAFB",
   },
-
   scrollContent: {
     paddingBottom: 20,
   },
 
-  titulo: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 5,
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-
-  subtitulo: {
-    color: "#666",
-    marginBottom: 15,
-  },
-
-  cardContainer: {
+  headerTop: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 2,
-    marginBottom: 8,
+    alignItems: "center",
+    marginBottom: 20,
   },
-
-  cardInfo: {
-    width: "31%",
-    height: 100,
-    backgroundColor: "#FFFFFF",
+  headerIconWrapper: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    padding: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 3,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    marginRight: 12,
   },
-
-  cardTotal: {
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-  },
-
-  cardActivos: {
-    borderWidth: 1,
-    borderColor: "#DCFCE7",
-  },
-
-  cardInactivos: {
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-  },
-
-  iconWrapper: {
-    marginBottom: 2,
-  },
-
-  cardNumero: {
+  headerTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-    color: "#1A1A1A",
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
     marginTop: 2,
   },
-
-  cardLabel: {
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 16,
+    paddingVertical: 12,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statWithDot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  statLabel: {
     fontSize: 11,
-    color: "#888",
-    marginTop: 1,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 2,
     fontWeight: "500",
   },
-
-  checkCircle: {
-    width: 32,
-    height: 32,
-    backgroundColor: "#22C55E",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    marginBottom: 2,
-  },
-
-  circleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#666",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 5,
-    marginBottom: 2,
-  },
-
-  verticalLine: {
-    width: 1.5,
-    height: 12,
-    backgroundColor: "#666",
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
 
   searchContainer: {
-    height: 45,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    height: 46,
     backgroundColor: "#FFF",
-    marginBottom: 10,
-    marginTop: 10,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    gap: 10,
   },
-
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: "#1A1A1A",
+    fontSize: 14,
+    color: "#111827",
+    paddingVertical: 0,
   },
 
   filtroContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    gap: 8,
   },
-
-  cardFiltro: {
-    width: "31%",
-    height: 48,
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 10,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    gap: 6,
+  },
+  chipActivo: {
+    backgroundColor: "#B90F0F",
+    borderColor: "#B90F0F",
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  chipTextActivo: {
+    color: "#FFF",
+  },
+  chipBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    backgroundColor: "#F3F4F6",
     alignItems: "center",
     justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
   },
-
-  botonSeleccionado: {
-    backgroundColor: "#B90F0F",
-    elevation: 4,
-
-    shadowColor: "#B90F0F",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+  chipBadgeActivo: {
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
-
-  textoFiltro: {
-    color: "#B90F0F",
-    fontWeight: "600",
-    fontSize: 12,
+  chipBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#6B7280",
   },
-
-  textoSeleccionado: {
+  chipBadgeTextActivo: {
     color: "#FFF",
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 0,
-    marginVertical: 8,
-    elevation: 3,
-
+    marginHorizontal: 16,
+    marginTop: 12,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
     shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F3F4F6",
   },
-
-  headerCard: {
+  cardHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
-
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
-
+  avatarText: {
+    color: "#B90F0F",
+    fontSize: 18,
+    fontWeight: "700",
+  },
   infoPrincipal: {
     flex: 1,
   },
-
-  nombreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-    flexWrap: "wrap",
-  },
-
   nombre: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#1A1A1A",
-    marginRight: 6,
+    color: "#111827",
+    marginBottom: 4,
   },
-
   estadoBadge: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
+    alignSelf: "flex-start",
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-
   estadoActivo: {
     backgroundColor: "#DCFCE7",
   },
-
   estadoInactivo: {
     backgroundColor: "#FEE2E2",
   },
-
   estadoDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 5,
   },
-
   dotVerde: {
     backgroundColor: "#22C55E",
   },
-
   dotRojo: {
     backgroundColor: "#EF4444",
   },
-
   estadoTexto: {
-    fontSize: 9,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "700",
     textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
-
   estadoTextoActivo: {
-    color: "#16A34A",
+    color: "#15803D",
   },
-
   estadoTextoInactivo: {
-    color: "#DC2626",
+    color: "#B91C1C",
+  },
+  menuButton: {
+    padding: 6,
   },
 
+  infoBlock: {
+    marginTop: 14,
+    gap: 6,
+  },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 3,
+    gap: 8,
   },
-
   infoText: {
     fontSize: 12,
-    color: "#666",
-    marginLeft: 7,
-  },
-
-  menuButton: {
-    padding: 4,
+    color: "#6B7280",
+    flex: 1,
   },
 
   resumen: {
@@ -945,79 +634,76 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FEF2F2",
     borderRadius: 10,
-    marginTop: 12,
-    paddingVertical: 9,
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-
   resumenItem: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
   },
-
   resumenText: {
-    fontSize: 11,
-    color: "#444",
-    marginLeft: 5,
-    fontWeight: "500",
-  },
-
-  divisor: {
-    width: 1,
-    height: 25,
-    backgroundColor: "#E5CCCC",
+    fontSize: 12,
+    color: "#7F1D1D",
+    fontWeight: "600",
   },
 
   detalles: {
-    alignItems: "center",
-    marginTop: 8,
-    paddingVertical: 4,
-  },
-
-  detallesText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#B90F0F",
-    letterSpacing: 0.3,
-  },
-
-  containerFlotante: {
-    position: "absolute",
-    right: 20,
-    bottom: 25,
-    alignItems: "center",
-  },
-
-  botonFlotante: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#B90F0F",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 6,
-
-    shadowColor: "#B90F0F",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#FFF5F5",
+    gap: 6,
   },
-
-  plus: {
-    color: "#fff",
-    fontSize: 30,
-    fontWeight: "300",
-    lineHeight: 34,
-  },
-
-  textoFlotante: {
+  detallesText: {
+    fontSize: 13,
+    fontWeight: "700",
     color: "#B90F0F",
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
+  },
+
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#374151",
+    marginTop: 12,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginTop: 4,
+    textAlign: "center",
+  },
+
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#B90F0F",
+    paddingHorizontal: 18,
+    height: 52,
+    borderRadius: 26,
+    gap: 6,
+    shadowColor: "#B90F0F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

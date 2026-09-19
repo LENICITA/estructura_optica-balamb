@@ -1,6 +1,7 @@
 // src/core/controllers/ChatBotController.ts
 import { ChatBotService } from '../services/ChatBotService';
 import { ChatBotButton } from '../services/ChatBotService';
+import { checkMensajeChatbot } from '../../shared/validators/chatbotValidators';
 
 export interface ChatBotMessage {
   id: string;
@@ -24,10 +25,13 @@ export class ChatBotController {
     error?: string;
   }> {
     try {
-      if (!mensaje || mensaje.trim() === '') {
+      // Validación con el validador compartido
+      const check = checkMensajeChatbot(mensaje);
+
+      if (!check.valido) {
         return {
           success: false,
-          error: 'El mensaje no puede estar vacío',
+          error: check.mensaje || 'Mensaje inválido',
         };
       }
 
@@ -36,7 +40,7 @@ export class ChatBotController {
       if (!response.success) {
         return {
           success: false,
-          error: 'Error al procesar el mensaje',
+          error: response.mensaje || 'Error al procesar el mensaje',
         };
       }
 
@@ -46,11 +50,14 @@ export class ChatBotController {
         intencion: response.intencion,
       };
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(' Error en enviarMensaje:', error);
+
+      // Mensaje de error más específico si el backend lo da
+      const mensajeBackend = error.response?.data?.message;
       return {
         success: false,
-        error: 'Error de conexión con el servidor',
+        error: mensajeBackend || 'Error de conexión con el servidor',
       };
     }
   }
