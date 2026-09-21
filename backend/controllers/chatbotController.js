@@ -1,44 +1,92 @@
 // controllers/chatbotController.js
 import ChatBot from '../models/chatbot.js';
 
-// ========== ENVIAR MENSAJE ==========
+// HELPER: Manejo centralizado de errores
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
 
-// 1. Enviar mensaje y recibir respuesta automática
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'El valor ya existe en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+// CONSTANTES
+const MENSAJE_MAX_LENGTH = 300;
+
+// ENVIAR MENSAJE
 export const enviarMensaje = (req, res) => {
   try {
     const { mensaje } = req.body;
 
-    if (!mensaje || mensaje.trim() === "") {
+    // 1. Validar que venga el mensaje
+    if (!mensaje) {
       return res.status(400).json({
         success: false,
-        message: "Debes enviar un mensaje"
+        message: 'Debes enviar un mensaje'
       });
     }
 
-    // Detectar intención del mensaje
+    // 2. Validar que no sea string vacío
+    if (typeof mensaje !== 'string' || mensaje.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'El mensaje no puede estar vacío'
+      });
+    }
+
+    // 3. Validar longitud máxima
+    if (mensaje.length > MENSAJE_MAX_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `El mensaje no puede superar los ${MENSAJE_MAX_LENGTH} caracteres`
+      });
+    }
+
+    // 4. Detectar intención
     const intencion = ChatBot.detectarIntencion(mensaje);
 
-    // Obtener respuesta automática
+    // 5. Obtener respuesta
     const respuesta = ChatBot.obtenerRespuesta(intencion);
 
-    // No se guarda nada en base de datos
+    // 6. Responder (no se guarda nada en BD)
     res.json({
       success: true,
-      mensaje_usuario: mensaje,
+      mensaje_usuario: mensaje.trim(),
       respuesta_chatbot: respuesta,
       intencion: intencion,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error("Error al procesar mensaje:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al procesar el mensaje"
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
+// OBTENER BOTONES RÁPIDOS
 export const getBotones = (req, res) => {
   try {
     const botones = [
@@ -57,11 +105,8 @@ export const getBotones = (req, res) => {
       count: botones.length,
       botones: botones
     });
+
   } catch (error) {
-    console.error("Error al obtener botones:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener los botones"
-    });
+    return manejarErrorValidacion(error, res);
   }
 };

@@ -7,6 +7,52 @@ import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { createTransport } from 'nodemailer';
 
+// HELPER: Manejo centralizado de errores
+
+const manejarErrorValidacion = (error, res) => {
+    if (error.name === 'SequelizeValidationError') {
+        const mensajes = error.errors.map(e => e.message);
+        return res.status(400).json({
+            success: false,
+            message: mensajes[0],
+            errores: mensajes
+        });
+    }
+    if (error.name === 'SequelizeUniqueConstraintError') {
+        const campo = error.errors[0]?.path || 'campo';
+        const mensajes = {
+            email: 'El email ya está registrado',
+            documento: 'El documento ya está registrado',
+            placa: 'La placa ya está registrada'
+        };
+        return res.status(400).json({
+            success: false,
+            message: mensajes[campo] || `El ${campo} ya está registrado`
+        });
+    }
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Referencia inválida en la base de datos'
+        });
+    }
+    console.error('Error interno no controlado:', error);
+    return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+};
+
+// VALIDADORES REUTILIZABLES
+const REGEX_TELEFONO = /^3\d{9}$/;
+const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validarTelefono = (telefono) => REGEX_TELEFONO.test(telefono);
+const validarCiudad = (ciudad) => REGEX_CIUDAD.test(ciudad);
+const validarEmail = (email) => REGEX_EMAIL.test(email);
+
 // LOGIN
 export const login = async (req, res) => {
     try {
@@ -55,7 +101,7 @@ export const login = async (req, res) => {
             });
         }
 
-        const token = generateToken(usuario.id_usuario);
+         const { token } = generateToken(usuario.id_usuario);
         const roles = usuario.roles?.map(rol => rol.nombre) || [];
 
         console.log(`Login exitoso: ${usuario.nombre_completo}`);
@@ -77,11 +123,7 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en login:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -115,6 +157,30 @@ export const register = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'La contraseña debe tener al menos 8 caracteres'
+            });
+        }
+
+        if (!validarEmail(email)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
+        if (telefono && !validarTelefono(telefono)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El teléfono debe empezar por 3 y tener 10 dígitos'
+            });
+        }
+
+        if (ciudad && !validarCiudad(ciudad)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La ciudad solo puede contener letras y espacios'
             });
         }
 
@@ -192,7 +258,7 @@ export const register = async (req, res) => {
         });
 
         const roles = usuarioConRoles.roles?.map(r => r.nombre) || [];
-        const token = generateToken(usuario.id_usuario);
+        const { token } = generateToken(usuario.id_usuario);
 
         console.log(`Usuario registrado: ${usuario.nombre_completo}`);
 
@@ -214,11 +280,7 @@ export const register = async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error en register:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -260,11 +322,7 @@ export const verifyToken = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en verifyToken:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+       return manejarErrorValidacion(error, res);
     }
 };
 
@@ -276,11 +334,7 @@ export const logout = async (req, res) => {
             message: 'Sesión cerrada exitosamente'
         });
     } catch (error) {
-        console.error('Error en logout:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -295,6 +349,13 @@ export const solicitarRecuperacion = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'El email es requerido'
+            });
+        }
+
+        if (!validarEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
             });
         }
 
@@ -384,11 +445,7 @@ export const solicitarRecuperacion = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en solicitarRecuperacion:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al procesar la solicitud'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -486,11 +543,7 @@ export const verificarTokenRecuperacion = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en verificarTokenRecuperacion:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al verificar el token'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -573,10 +626,6 @@ export const resetearPassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en resetearPassword:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al resetear la contraseña: ' + error.message
-        });
+        return manejarErrorValidacion(error, res);
     }
 };

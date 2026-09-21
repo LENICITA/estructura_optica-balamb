@@ -14,6 +14,7 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     validate: {
       notEmpty: { msg: "EL nombre completo es requerido" },
+      notNull:  { msg: "El nombre completo es requerido" },
       len: { args: [3, 100], msg: "El nombre debe ser entre 3 y 100 caracteres" }
     }
   },
@@ -22,7 +23,11 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     validate: {
       notEmpty: { msg: "El telefono es requerido" },
-      is: { args: /^[0-9+\-\s()]{7,20}$/, msg: "Teléfono inválido" }
+      notNull: { msg: "El telefono es requerido" },
+      is: {
+        args: /^3\d{9}$/,
+        msg: "El teléfono debe empezar por 3 y tener 10 dígitos"
+      }
     }
   },
   fecha_nacimiento: {
@@ -30,7 +35,8 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     validate: {
       notEmpty: { msg: "La fecha de nacimiento es requerida" },
-      isDate: { msg: 'Fecha invalida' }
+      notNull:  { msg: "La fecha de nacimiento es requerida" },
+      isDate:   { msg: "La fecha de nacimiento no es válida" }
     }
   },
   documento: {
@@ -39,26 +45,33 @@ const Usuario = sequelize.define('Usuario', {
     unique: true,
     validate: {
       notEmpty: { msg: "EL documento es requerido" },
-      isInt: { msg: "Documento invalido" }
+      notNull:  { msg: "El documento es requerido" },
+      isInt:    { msg: "El documento debe contener solo números" }
     }
   },
   ciudad: {
     type: DataTypes.STRING(20),
     allowNull: false,
     validate: {
-      notEmpty: { msg: "La ciudad es requerida" }
+      notEmpty: { msg: "La ciudad es requerida" },
+      notNull:  { msg: "La ciudad es requerida" },
+      is: {
+        args: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        msg: "La ciudad solo puede contener letras y espacios"
+      }
     }
   },
   direccion: {
     type: DataTypes.STRING(45),
     allowNull: false,
     validate: {
-      notEmpty: { msg: "La direccion es requerida" }
+      notEmpty: { msg: "La direccion es requerida" },
+      notNull: { msg: "La dirección es requerida" }
     }
   },
   fecha_registro: {
-    type: DataTypes.DATEONLY,
-    defaultValue: DataTypes.NOW 
+    type: DataTypes.DATE,    
+    defaultValue: DataTypes.NOW
   },
   email: {
     type: DataTypes.STRING(100),
@@ -66,7 +79,8 @@ const Usuario = sequelize.define('Usuario', {
     unique: true,
     validate: {
       notEmpty: { msg: "El email es requerido" },
-      isEmail: { msg: "Email invalido"}
+      notNull:  { msg: "El email es requerido" },
+      isEmail: { msg: "El email no tiene un formato válido"}
     }
   },
   contrasena: {
@@ -74,6 +88,7 @@ const Usuario = sequelize.define('Usuario', {
     allowNull: false,
     validate: {
       notEmpty: { msg: "La contraseña es requerida" },
+      notNull:  { msg: "La contraseña es requerida" },
       len: { args: [8, 255], msg: "La contraseña debe tener al menos 8 caracteres" }
     }
   },
@@ -128,12 +143,6 @@ Usuario.authenticate = async function (email, contrasena) {
   const isMatch = await user.comparePassword(contrasena);
   if (!isMatch) throw new Error("Contraseña incorrecta");
   return user;
-};
-
-// Obtener roles del usuario
-Usuario.prototype.getRoles = async function() {
-  const roles = await this.getRoles();
-  return roles.map(role => role.nombre);
 };
 
 export default Usuario;

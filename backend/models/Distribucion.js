@@ -14,6 +14,10 @@ const Distribucion = sequelize.define('Distribucion', {
     references: {
       model: 'PEDIDOS',
       key: 'id_pedido'
+    },
+    validate: {
+      notNull: { msg: 'El pedido es requerido' },
+      isInt:   { msg: 'El ID del pedido debe ser un número' }
     }
   },
   id_usuario: {
@@ -22,12 +26,24 @@ const Distribucion = sequelize.define('Distribucion', {
     references: {
       model: 'USUARIOS',
       key: 'id_usuario'
+    },
+    validate: {
+      notNull: { msg: 'El repartidor es requerido' },
+      isInt:   { msg: 'El ID del repartidor debe ser un número' }
     }
   },
   estado: {
     type: DataTypes.ENUM('PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO'),
     allowNull: false,
-    defaultValue: 'PENDIENTE'
+    defaultValue: 'PENDIENTE',
+    validate: {
+      notNull: { msg: 'El estado es requerido' },
+      notEmpty: { msg: 'El estado es requerido' },
+      isIn: {
+        args: [['PENDIENTE', 'EN_ENTREGA', 'ENTREGADO', 'CANCELADO']],
+        msg: 'Estado inválido. Debe ser: PENDIENTE, EN_ENTREGA, ENTREGADO o CANCELADO'
+      }
+    }
   },
   fecha_asignacion: {
     type: DataTypes.DATE,
@@ -40,17 +56,25 @@ const Distribucion = sequelize.define('Distribucion', {
   },
   observaciones: {
     type: DataTypes.TEXT,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: {
+        args: [0, 5000],
+        msg: 'Las observaciones no pueden superar los 5000 caracteres'
+      }
+    }
   }
 }, {
   tableName: 'DISTRIBUCIONES',
   timestamps: false,
   hooks: {
     beforeCreate: (distribucion) => {
-      distribucion.estado = distribucion.estado.toUpperCase();
+      if (distribucion.estado) {
+        distribucion.estado = distribucion.estado.toUpperCase();
+      }
     },
     beforeUpdate: (distribucion) => {
-      if (distribucion.changed('estado')) {
+      if (distribucion.changed('estado') && distribucion.estado) {
         distribucion.estado = distribucion.estado.toUpperCase();
       }
       if (distribucion.estado === 'ENTREGADO' && !distribucion.fecha_entrega) {
@@ -81,7 +105,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
         },
         {
           model: sequelize.models.Usuario,
@@ -95,23 +119,22 @@ const DistribucionModelo = {
 
   // Obtener todas las distribuciones (admin)
   obtenerTodas: async () => {
-    const distribuciones = await Distribucion.findAll({
-      include: [
-        {
-          model: sequelize.models.Pedido,
-          as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio', 'total', 'fecha_estimada']
-        },
-        {
-          model: sequelize.models.Usuario,
-          as: 'repartidor',
-          attributes: ['id_usuario', 'nombre_completo']
-        }
-      ],
-      order: [['fecha_asignacion', 'DESC']]
-    });
-    return distribuciones;
-  },
+  const distribuciones = await sequelize.query(
+    `SELECT d.*, 
+            p.id_pedido, p.direccion_entrega, p.ciudad_envio, p.total, p.fecha_estimada,
+            u.nombre_completo as cliente_nombre,
+            r.nombre_completo as repartidor_nombre,
+            v.tipo as vehiculo_tipo, v.placa as vehiculo_placa
+     FROM DISTRIBUCIONES d
+     LEFT JOIN PEDIDOS p ON d.id_pedido = p.id_pedido
+     LEFT JOIN USUARIOS u ON p.id_usuario = u.id_usuario
+     LEFT JOIN USUARIOS r ON d.id_usuario = r.id_usuario
+     LEFT JOIN VEHICULOS v ON r.id_usuario = v.id_usuario
+     ORDER BY d.fecha_asignacion DESC`,
+    { type: sequelize.QueryTypes.SELECT }
+  );
+  return distribuciones;
+},
 
 
   //Obtener distribuciones de un usuario específico (admin o repartidor)
@@ -145,7 +168,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'ASC']]
@@ -175,7 +198,7 @@ const DistribucionModelo = {
           {
             model: sequelize.models.Pedido,
             as: 'pedido',
-            attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+            attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
           }
         ],
         order: [['fecha_asignacion', 'DESC']]
@@ -202,7 +225,7 @@ const DistribucionModelo = {
         {
           model: sequelize.models.Pedido,
           as: 'pedido',
-          attributes: ['id_pedido', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
+          attributes: ['id_pedido', 'id_usuario', 'direccion_entrega', 'ciudad_envio','total', 'fecha_estimada']
         }
       ],
       order: [['fecha_entrega', 'DESC']]
@@ -252,6 +275,12 @@ const DistribucionModelo = {
   cancelarEntrega: async (id_distribucion, observacion) => {
     const distribucion = await Distribucion.findByPk(id_distribucion);
     if (!distribucion) return null;
+
+    if (distribucion.estado !== 'PENDIENTE') {
+      throw new Error(
+        `Solo se pueden cancelar distribuciones en estado PENDIENTE. Estado actual: ${distribucion.estado}`
+      );
+    }
     
     await distribucion.update({
       estado: 'CANCELADO',
