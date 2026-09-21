@@ -1,0 +1,4 @@
+// src/shared/index.ts
+export * from './components';
+export * from './constants';
+export * from './validators';
