@@ -24,12 +24,12 @@ export const Principal = () => {
     >
       {/* ===== BANNER HERO ===== */}
       <ImageBackground
-        source={require('../../../../assets/img/imagen-bg.jpeg')}
-        style={[styles.hero, { height: height * 0.4 }]}
-        resizeMode="cover"
+        source={require('../../../../assets/img/gafas_2.png')}
+        style={[styles.hero, { height: height * 0.45 }]}
+        imageStyle={{ resizeMode: 'contain', backgroundColor: '#AD0E0E' }}
       >
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { marginTop: 200 }]}
           onPress={() => navigation.navigate('Iniciosesion' as never)}
           activeOpacity={0.8}
         >
@@ -107,9 +107,10 @@ const styles = StyleSheet.create({
   },
   hero: {
     width: width,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     marginBottom: 15,
+    paddingTop: 40,
   },
   button: {
     backgroundColor: '#B90F0F',

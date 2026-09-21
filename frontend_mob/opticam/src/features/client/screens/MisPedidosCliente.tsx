@@ -68,10 +68,18 @@ export const MisPedidosCliente = ({ navigation }: Props) => {
   };
 
   const irADetalle = (pedido: PedidoModel) => {
-    navigation.navigate('DetallePedidoCliente', {
-      id_pedido: pedido.id_pedido,
-    });
-  };
+  if (!pedido?.id_pedido) {
+    Alert.alert(
+      'Error',
+      'No se pudo identificar el pedido.'
+    );
+    return;
+  }
+
+  navigation.navigate('DetallePedidoCliente', {
+    id_pedido: Number(pedido.id_pedido),
+  });
+};
 
   const mostrarMenu = (pedido: PedidoModel) => {
     setSelectedPedido(pedido);
@@ -165,12 +173,26 @@ export const MisPedidosCliente = ({ navigation }: Props) => {
     }
   };
 
+const obtenerNombresProductos = (productos: any[]) => {
+  if (!productos || productos.length === 0) return 'Sin productos';
+
+  const nombres = productos.map((p: any) => {
+    return p?.nombre || p?.producto?.nombre || p?.nombre_producto || '';
+  }).filter(Boolean);
+
+  if (nombres.length === 0) return 'Sin productos';
+  if (nombres.length === 1) return nombres[0];
+  if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`;
+  return `${nombres.slice(0, 2).join(', ')} y ${nombres.length - 2} más`;
+};
+
   // ===== RENDER PEDIDO =====
   const renderPedido = ({ item }: { item: PedidoModel }) => {
     const estadoColor = obtenerColorEstado(item.estado);
     const estadoFondo = obtenerFondoEstado(item.estado);
     const estadoIcono = obtenerIconoEstado(item.estado);
     const puedeCancelar = item.estado === 'Pendiente';
+    const puedePagar = item.estado === 'Pendiente' || item.estado === 'Listo';
 
     return (
       <TouchableOpacity
@@ -211,6 +233,58 @@ export const MisPedidosCliente = ({ navigation }: Props) => {
               </Text>
             </View>
           </View>
+          {/* PRODUCTOS */}
+            {item.productos && item.productos.length > 0 && (
+              <View style={styles.productosContainer}>
+                <Ionicons name="cube-outline" size={14} color="#666" />
+                <Text style={styles.productosText} numberOfLines={1}>
+                  {obtenerNombresProductos(item.productos)}
+                </Text>
+              </View>
+            )}
+        {/* TOTAL Y SALDO */}
+                <View style={styles.pedidoFooter}>
+                  <View style={styles.pedidoTotal}>
+                    <Text style={styles.pedidoTotalLabel}>Total</Text>
+                    <Text style={styles.pedidoTotalValue}>
+                      {item.totalFormateado}
+                    </Text>
+                  </View>
+                  {item.estado === 'Pendiente' && (
+                    <Text style={styles.saldoText}>Saldo: {item.totalFormateado}</Text>
+                  )}
+                  {item.estado === 'Listo' && (
+                    <Text style={styles.saldoText}>Saldo pendiente: {item.totalFormateado}</Text>
+                  )}
+                  {item.estado === 'Abonado' && (
+                    <Text style={styles.saldoText}>Abonado 50%</Text>
+                  )}
+                  {item.estado === 'Pagado' && (
+                    <Text style={[styles.saldoText, styles.saldoPagado]}> Pagado</Text>
+                  )}
+                </View>
+              {/* BOTÓN DE PAGO */}
+                      {puedePagar && (
+                        <TouchableOpacity
+                          style={[
+                            styles.botonPagarCard,
+                            item.estado === 'Listo' && styles.botonPagarCardListo,
+                          ]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            navigation.navigate('PagosCliente', { id_pedido: item.id_pedido });
+                          }}
+                        >
+                          <Ionicons
+                            name={item.estado === 'Listo' ? 'checkmark-circle-outline' : 'card-outline'}
+                            size={18}
+                            color="#FFF"
+                          />
+                          <Text style={styles.botonPagarCardText}>
+                            {item.estado === 'Listo' ? 'Pagar saldo restante' : 'Pagar ahora'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
         </View>
       </TouchableOpacity>
     );
@@ -540,4 +614,64 @@ const styles = StyleSheet.create({
     marginLeft: 14,
     color: '#333',
   },
+pedidoFooter: {
+  marginTop: 10,
+  paddingTop: 10,
+  borderTopWidth: 1,
+  borderTopColor: '#F0F0F0',
+},
+pedidoTotal: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+pedidoTotalLabel: {
+  fontSize: 13,
+  color: '#666',
+},
+pedidoTotalValue: {
+  fontSize: 15,
+  fontWeight: '700',
+  color: COLORS.primary,
+},
+saldoText: {
+  fontSize: 12,
+  color: '#666',
+  marginTop: 4,
+  textAlign: 'right',
+},
+saldoPagado: {
+  color: '#059669',
+  fontWeight: '600',
+},
+botonPagarCard: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: COLORS.primary,
+  paddingVertical: 10,
+  borderRadius: 10,
+  marginTop: 12,
+  gap: 8,
+},
+botonPagarCardListo: {
+  backgroundColor: '#059669',
+},
+botonPagarCardText: {
+  color: '#FFF',
+  fontSize: 14,
+  fontWeight: '600',
+},
+productosContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+  marginTop: 8,
+  paddingVertical: 4,
+},
+productosText: {
+  fontSize: 13,
+  color: '#444',
+  flex: 1,
+},
 });

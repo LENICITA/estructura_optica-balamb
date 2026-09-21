@@ -2,6 +2,14 @@
 
 import { FormulaService } from '../services/FormulaService';
 import { FormulaModel, EstadoFormula } from '../models/FormulaModel';
+import {
+  checkCondicion,
+  checkImagen,
+  checkObservaciones,
+  checkCosto,
+  checkId,
+  validarFormularioFormula
+} from '../../shared/validators/formulaValidators';
 
 export class FormulaController {
   private formulaService: FormulaService;
@@ -55,12 +63,19 @@ export class FormulaController {
     try {
       console.log(' Controller - crearFormula:', data);
 
-      if (!data.id_usuario || !data.condicion || !data.imagen_formula) {
-        return {
-          success: false,
-          message: 'Usuario, condición e imagen de la fórmula son requeridos',
-        };
-      }
+      const check = validarFormularioFormula({
+              id_usuario: data.id_usuario,
+              condicion: data.condicion,
+              imagen_formula: data.imagen_formula,
+              observaciones: data.observaciones
+            });
+
+            if (!check.valido) {
+              return {
+                success: false,
+                message: check.mensaje || 'Datos inválidos'
+              };
+            }
 
       const response = await this.formulaService.crearFormula(data);
 
@@ -86,20 +101,15 @@ export class FormulaController {
     try {
       console.log('Controller - eliminarFormula ID:', id_formula);
 
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El ID de la fórmula es requerido',
-        };
-      }
+      const checkIdResult = checkId(id_formula);
+            if (!checkIdResult.valido) {
+              return {
+                success: false,
+                message: checkIdResult.mensaje || 'ID de fórmula inválido',
+              };
+            }
 
-      const idNumber = Number(id_formula);
-      if (isNaN(idNumber) || idNumber <= 0) {
-        return {
-          success: false,
-          message: 'ID de fórmula inválido',
-        };
-      }
+            const idNumber = Number(id_formula);
 
       const response = await this.formulaService.eliminarFormula(idNumber);
 
@@ -144,19 +154,20 @@ export class FormulaController {
         'Rechazado',
       ];
 
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El ID de la fórmula es requerido',
-        };
-      }
+      const checkIdResult = checkId(id_formula);
+            if (!checkIdResult.valido) {
+              return {
+                success: false,
+                message: checkIdResult.mensaje || 'ID de fórmula inválido',
+              };
+            }
 
-      if (!estadosPermitidos.includes(estado)) {
-        return {
-          success: false,
-          message: 'Estado de fórmula no válido',
-        };
-      }
+            if (!estadosPermitidos.includes(estado)) {
+              return {
+                success: false,
+                message: 'Estado de fórmula no válido',
+              };
+            }
 
       const response = await this.formulaService.actualizarEstadoFormula(
         id_formula,
@@ -191,26 +202,30 @@ export class FormulaController {
   ): Promise<{
     success: boolean;
     message: string;
+    data?: FormulaModel;
   }> {
     try {
-      if (!id_formula) {
-        return {
-          success: false,
-          message: 'El ID de la fórmula es requerido',
-        };
-      }
+      const checkIdResult = checkId(id_formula);
+            if (!checkIdResult.valido) {
+              return {
+                success: false,
+                message: checkIdResult.mensaje || 'ID de fórmula inválido',
+              };
+            }
 
-      if (costo < 0) {
-        return {
-          success: false,
-          message: 'El costo no puede ser negativo',
-        };
-      }
+            // Validar costo con el validador compartido
+            const checkCostoResult = checkCosto(costo);
+            if (!checkCostoResult.valido) {
+              return {
+                success: false,
+                message: checkCostoResult.mensaje || 'Costo inválido',
+              };
+            }
 
       const response = await this.formulaService.actualizarCostoFormula(
-        id_formula,
-        costo
-      );
+              id_formula,
+              Number(costo)
+            );
 
       return {
         success: response.success,

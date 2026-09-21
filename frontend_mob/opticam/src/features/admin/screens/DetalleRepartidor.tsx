@@ -39,7 +39,6 @@ type RepartidorEditar = {
   id: number;
   nombre: string;
   estado: string;
-  pedidos?: number;
   correo?: string;
   telefono?: string;
   ciudad?: string;
@@ -140,10 +139,6 @@ export const DetalleRepartidor = () => {
   const ciudad =
     user?.ciudad ??
     'No especificada';
-
-  const pedidos =
-    user?.pedidos_count ??
-    0;
 
   const fechaRegistro =
     user?.fecha_registro ??
@@ -377,36 +372,6 @@ export const DetalleRepartidor = () => {
                 {ciudad || 'No especificada'}
               </Text>
             </View>
-          </View>
-        </View>
-
-        {/* RESUMEN */}
-
-        <View style={styles.resumen}>
-          <View style={styles.resumenItem}>
-            <Ionicons
-              name="cube-outline"
-              size={18}
-              color="#B90F0F"
-            />
-
-            <Text style={styles.resumenText}>
-              {pedidos || 0} pedidos asignados
-            </Text>
-          </View>
-
-          <View style={styles.divisor} />
-
-          <View style={styles.resumenItem}>
-            <Ionicons
-              name="calendar-outline"
-              size={18}
-              color="#B90F0F"
-            />
-
-            <Text style={styles.resumenText}>
-              Último pedido
-            </Text>
           </View>
         </View>
       </View>
@@ -755,35 +720,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginLeft: 8,
-  },
-
-  resumen: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    marginTop: 14,
-    paddingVertical: 10,
-  },
-
-  resumenItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  resumenText: {
-    fontSize: 11,
-    color: '#444',
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-
-  divisor: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#E5CCCC',
   },
 
   sectionCard: {

@@ -88,7 +88,7 @@ export const BottomNavigation = () => {
           label: 'Pedidos',
           icon: 'cart-outline',
           activeIcon: 'cart',
-          route: 'AdminPedidos',
+          route: 'GestionarPedidosAdmin',
         },
         {
           label: 'Repartidores',
@@ -100,7 +100,7 @@ export const BottomNavigation = () => {
           label: 'Reportes',
           icon: 'bar-chart-outline',
           activeIcon: 'bar-chart',
-          route: 'AdminReportes',
+          route: 'ReportesAdmin',
         },
         {
           label: 'Perfil',
@@ -125,7 +125,7 @@ export const BottomNavigation = () => {
           label: 'Historial',
           icon: 'time-outline',
           activeIcon: 'time',
-          route: 'HistorialRepartidor',
+          route: 'HistorialEntregas',
         },
         {
           label: 'Perfil',

@@ -2,6 +2,11 @@
 
 import { ProductService } from '../services/ProductService';
 import { ProductModel } from '../models/ProductModel';
+import {
+  validarFormularioProducto,
+  validarFormularioEditarProducto,
+  checkIdProducto
+} from '../../shared/validators/productoValidators';
 
 export class ProductController {
   private productService: ProductService;
@@ -36,6 +41,11 @@ export class ProductController {
   async getProductoById(id: number): Promise<ProductModel | null> {
     try {
       console.log('Controller - getProductoById con ID:', id);
+      const checkId = checkIdProducto(id);
+            if (!checkId.valido) {
+              console.error('ID de producto inválido:', id);
+              return null;
+            }
           const producto = await this.productService.getProductoById(id);
           console.log('Controller - producto obtenido:', producto);
           return producto;
@@ -129,28 +139,52 @@ export class ProductController {
     imagen: string;
     material: string;
     color: string;
-  }): Promise<{ success: boolean; message: string; id_producto?: number }> {
+  }): Promise<{
+    success: boolean;
+    message: string;
+    id_producto?: number
+  }> {
     try {
-      if (!data.id_categoria || !data.nombre || !data.precio) {
-        return { success: false, message: 'Categoría, nombre y precio son requeridos' };
-      }
+      console.log('Controller - crearProducto:', {
+        id_categoria: data.id_categoria,
+        nombre: data.nombre,
+        tieneImagen: !!data.imagen,
+      });
+
+      // Validaciones
+      const check = validarFormularioProducto({
+              id_categoria: data.id_categoria,
+              nombre: data.nombre,
+              descripcion: data.descripcion,
+              marca: data.marca,
+              precio: data.precio,
+              imagen: data.imagen,
+              material: data.material,
+              color: data.color
+            });
+
+            if (!check.valido) {
+              return {
+                success: false,
+                message: check.mensaje || 'Datos inválidos'
+              };
+            }
+
       const response = await this.productService.crearProducto(data);
-      if (!response.success) {
-        return { success: false, message: response.message || 'Error al crear producto' };
-      }
-      return {
-        success: true,
-        message: response.message || 'Producto creado exitosamente',
-        id_producto: response.id_producto,
-      };
+
+      console.log('Controller - Respuesta creación:', response);
+
+      return response;
+
     } catch (error: any) {
-      console.error(' Error en crearProducto:', error);
+      console.error('Error en crearProducto:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al crear producto',
+        message: error.response?.data?.message || 'Error al crear el producto',
       };
     }
   }
+
 
   async actualizarProducto(id: number, data: {
     id_categoria?: number;
@@ -163,6 +197,31 @@ export class ProductController {
     color?: string;
   }): Promise<{ success: boolean; message: string; data?: any }> {
     try {
+        const checkId = checkIdProducto(id);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de producto inválido'
+                };
+              }
+
+           const check = validarFormularioEditarProducto({
+                  id_categoria: data.id_categoria,
+                  nombre: data.nombre,
+                  descripcion: data.descripcion,
+                  marca: data.marca,
+                  precio: data.precio,
+                  imagen: data.imagen,
+                  material: data.material,
+                  color: data.color
+                });
+
+                if (!check.valido) {
+                  return {
+                    success: false,
+                    message: check.mensaje || 'Datos inválidos'
+                  };
+                }
       const response = await this.productService.actualizarProducto(id, data);
       if (!response.success) {
         return { success: false, message: response.message || 'Error al actualizar producto' };
@@ -183,6 +242,13 @@ export class ProductController {
 
   async eliminarProducto(id: number): Promise<{ success: boolean; message: string }> {
     try {
+        const checkId = checkIdProducto(id);
+              if (!checkId.valido) {
+                return {
+                  success: false,
+                  message: checkId.mensaje || 'ID de producto inválido'
+                };
+              }
       const response = await this.productService.eliminarProducto(id);
       if (!response.success) {
         return { success: false, message: response.message || 'Error al eliminar producto' };
