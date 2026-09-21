@@ -13,7 +13,11 @@ const Pedido = sequelize.define('Pedido', {
     allowNull: false,
     references: {
       model: 'USUARIOS',
-      key: 'id_usuario'
+      key: 'id_usuario',
+    },
+    validate: {
+      notNull: { msg: 'El usuario es requerido' },
+      isInt:   { msg: 'El ID del usuario debe ser un número' }
     }
   },
   id_formula: {
@@ -31,29 +35,61 @@ const Pedido = sequelize.define('Pedido', {
   },
   fecha_estimada: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull:  { msg: 'La fecha estimada es requerida' },
+      notEmpty: { msg: 'La fecha estimada es requerida' },
+      isDate:   { msg: 'La fecha estimada no es válida' }
+    }
   },
   direccion_entrega: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull:  { msg: 'La dirección de entrega es requerida' },
+      notEmpty: { msg: 'La dirección de entrega es requerida' },
+      len: { args: [5, 45], msg: 'La dirección debe tener entre 5 y 45 caracteres' }
+    }
   },
   ciudad_envio: {  
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull:  { msg: 'La ciudad de envío es requerida' },
+      notEmpty: { msg: 'La ciudad de envío es requerida' },
+      is: {
+        args: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        msg: 'La ciudad solo puede contener letras y espacios'
+      }
+    }
   },
   estado: {
     type: DataTypes.ENUM('Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado'),
     allowNull: false,
-    defaultValue: 'Pendiente'
+    defaultValue: 'Pendiente',
+    validate: {
+      isIn: {
+        args: [['Pendiente', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado', 'Cancelado']],
+        msg: 'Estado inválido'
+      }
+    }
   },
   costo_envio: {
     type: DataTypes.FLOAT,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: 0,
+    validate: {
+      min: { args: [0], msg: 'El costo de envío no puede ser negativo' }
+    }
   },
   total: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El total es requerido' },
+      isFloat: { msg: 'El total debe ser un número' },
+      min: { args: [0.01], msg: 'El total debe ser mayor a 0' }
+    }
   }
 }, {
   tableName: 'PEDIDOS',
@@ -130,10 +166,12 @@ const PedidoModelo = {
   obtenerTodos: async () => {
     const pedidos = await sequelize.query(
       `SELECT p.*, u.nombre_completo as cliente, u.email, u.telefono, u.ciudad,
-              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula
+              f.id_formula, f.condicion, f.imagen_formula, f.observaciones, f.costo as costo_formula, r.nombre_completo as repartidor_nombre
        FROM PEDIDOS p
        JOIN USUARIOS u ON p.id_usuario = u.id_usuario
        LEFT JOIN FORMULAS f ON p.id_formula = f.id_formula
+       LEFT JOIN DISTRIBUCIONES d ON p.id_pedido = d.id_pedido AND d.estado IN ('PENDIENTE', 'EN_ENTREGA') 
+       LEFT JOIN USUARIOS r ON d.id_usuario = r.id_usuario
        WHERE p.estado NOT IN ('Pendiente', 'Cancelado')
        ORDER BY p.fecha_pedido DESC`,
       { type: sequelize.QueryTypes.SELECT }

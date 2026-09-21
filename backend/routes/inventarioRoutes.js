@@ -10,12 +10,12 @@ const router = express.Router();
 // ========== RUTAS PÚBLICAS (NO requieren autenticación) ==========
 
 // Productos
-
 /**
  * @swagger
  * /api/inventario/productos:
  *   get:
  *     summary: Obtener todos los productos
+ *     description: Devuelve la lista completa de productos con su categoría e imagen.
  *     tags: [Inventario]
  *     responses:
  *       200:
@@ -27,12 +27,16 @@ const router = express.Router();
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
+ *                   example: 25
  *                 productos:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Producto'
+ *       500:
+ *         description: Error interno del servidor
  */
 router.get("/productos", inventarioController.getProductos);
 
@@ -41,6 +45,7 @@ router.get("/productos", inventarioController.getProductos);
  * /api/inventario/productos/destacados:
  *   get:
  *     summary: Obtener productos destacados
+ *     description: Devuelve los últimos 6 productos agregados al inventario.
  *     tags: [Inventario]
  *     responses:
  *       200:
@@ -52,12 +57,16 @@ router.get("/productos", inventarioController.getProductos);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
+ *                   example: 6
  *                 productos:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Producto'
+ *       500:
+ *         description: Error interno del servidor
  */
 router.get("/productos/destacados", inventarioController.getProductosDestacados);
 
@@ -66,6 +75,7 @@ router.get("/productos/destacados", inventarioController.getProductosDestacados)
  * /api/inventario/productos/buscar:
  *   get:
  *     summary: Buscar productos por texto
+ *     description: Busca productos cuyo nombre, marca o descripción coincidan con el término.
  *     tags: [Inventario]
  *     parameters:
  *       - in: query
@@ -74,6 +84,7 @@ router.get("/productos/destacados", inventarioController.getProductosDestacados)
  *           type: string
  *         required: true
  *         description: Término de búsqueda (nombre, marca o descripción)
+ *         example: Rayban
  *     responses:
  *       200:
  *         description: Productos encontrados
@@ -84,6 +95,7 @@ router.get("/productos/destacados", inventarioController.getProductosDestacados)
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 query:
  *                   type: string
  *                 count:
@@ -101,7 +113,8 @@ router.get("/productos/buscar", inventarioController.buscarProductos);
  * @swagger
  * /api/inventario/productos/filtros:
  *   get:
- *     summary: Filtrar productos por precio, marca, color, material o categoría
+ *     summary: Filtrar productos
+ *     description: Filtra productos por precio, marca, color, material o categoría.
  *     tags: [Inventario]
  *     parameters:
  *       - in: query
@@ -134,6 +147,11 @@ router.get("/productos/buscar", inventarioController.buscarProductos);
  *         schema:
  *           type: integer
  *         description: ID de la categoría
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Búsqueda textual adicional
  *     responses:
  *       200:
  *         description: Productos filtrados
@@ -144,6 +162,7 @@ router.get("/productos/buscar", inventarioController.buscarProductos);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
  *                 filtros:
@@ -168,6 +187,7 @@ router.get("/productos/filtros", inventarioController.filtrarProductos);
  *           type: integer
  *         required: true
  *         description: ID de la categoría
+ *         example: 1
  *     responses:
  *       200:
  *         description: Productos de la categoría
@@ -178,6 +198,7 @@ router.get("/productos/filtros", inventarioController.filtrarProductos);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 id_categoria:
  *                   type: integer
  *                 count:
@@ -202,6 +223,7 @@ router.get("/productos/categoria/:id_categoria", inventarioController.getProduct
  *           type: string
  *         required: true
  *         description: Marca del producto
+ *         example: Rayban
  *     responses:
  *       200:
  *         description: Productos de la marca
@@ -212,6 +234,7 @@ router.get("/productos/categoria/:id_categoria", inventarioController.getProduct
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 marca:
  *                   type: string
  *                 count:
@@ -236,6 +259,7 @@ router.get("/productos/marca/:marca", inventarioController.getProductosByMarca);
  *           type: integer
  *         required: true
  *         description: ID del producto
+ *         example: 1
  *     responses:
  *       200:
  *         description: Producto encontrado
@@ -246,6 +270,7 @@ router.get("/productos/marca/:marca", inventarioController.getProductosByMarca);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 producto:
  *                   $ref: '#/components/schemas/Producto'
  *       404:
@@ -271,12 +296,14 @@ router.get("/productos/:id", inventarioController.getProductoById);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
  *                 marcas:
  *                   type: array
  *                   items:
  *                     type: string
+ *                   example: ["Rayban", "Oakley", "Vogue"]
  */
 router.get("/marcas", inventarioController.getMarcas);
 
@@ -296,12 +323,14 @@ router.get("/marcas", inventarioController.getMarcas);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
  *                 colores:
  *                   type: array
  *                   items:
  *                     type: string
+ *                   example: ["Negro", "Café", "Dorado"]
  */
 router.get("/colores", inventarioController.getColores);
 
@@ -323,44 +352,16 @@ router.get("/colores", inventarioController.getColores);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 count:
  *                   type: integer
  *                 categorias:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Categoria'
+ *                     type: string
+ *                   example: ["ACCESORIOS", "GAFAS DE SOL", "MONTURAS"]
  */
 router.get("/categorias", inventarioController.getCategorias);
-
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   get:
- *     summary: Obtener categoría por ID
- *     tags: [Inventario]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     responses:
- *       200:
- *         description: Categoría encontrada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 categoria:
- *                   $ref: '#/components/schemas/Categoria'
- *       404:
- *         description: Categoría no encontrada
- */
-router.get("/categorias/:id", inventarioController.getCategoriaById);
 
 // ========== RUTAS PROTEGIDAS (SOLO ADMIN) ==========
 
@@ -371,44 +372,62 @@ router.get("/categorias/:id", inventarioController.getCategoriaById);
  * /api/inventario/productos:
  *   post:
  *     summary: Crear un nuevo producto (Admin)
- *     tags: [Inventario]
+ *     description: Crea un producto. Requiere rol ADMIN. La imagen se envía como archivo (multipart/form-data) y se sube a Cloudinary.
+ *     tags: [Inventario (Admin)]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - id_categoria
  *               - nombre
+ *               - descripcion
+ *               - marca
  *               - precio
+ *               - material
+ *               - color
+ *               - imagen
  *             properties:
  *               id_categoria:
  *                 type: integer
+ *                 enum: [1, 2, 3]
+ *                 description: 1=MONTURAS, 2=ACCESORIOS, 3=GAFAS DE SOL
  *                 example: 1
  *               nombre:
  *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
  *                 example: "Montura Elegance"
  *               descripcion:
  *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
  *                 example: "Montura moderna de alta calidad"
  *               marca:
  *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
  *                 example: "Rayban"
  *               precio:
  *                 type: number
+ *                 minimum: 0.01
  *                 example: 250000
- *               imagen:
- *                 type: string
- *                 example: "https://opticam.com/img/montura1.jpg"
  *               material:
  *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
  *                 example: "Policarbonato"
  *               color:
  *                 type: string
  *                 example: "Negro"
+ *               imagen:
+ *                 type: string
+ *                 format: binary
+ *                 description: Imagen del producto
  *     responses:
  *       201:
  *         description: Producto creado exitosamente
@@ -419,12 +438,17 @@ router.get("/categorias/:id", inventarioController.getCategoriaById);
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
+ *                   example: Producto creado exitosamente
  *                 id_producto:
  *                   type: integer
+ *                   example: 12
+ *                 imagen_cloudinary:
+ *                   type: string
  *       400:
- *         description: Campos obligatorios faltantes
+ *         description: Datos inválidos o imagen faltante
  *       401:
  *         description: No autorizado
  *       403:
@@ -435,70 +459,10 @@ router.post("/productos", authMiddleware, adminMiddleware,upload.single("imagen"
 /**
  * @swagger
  * /api/inventario/productos/{id}:
- *   put:
- *     summary: Actualizar un producto (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID del producto
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id_categoria:
- *                 type: integer
- *               nombre:
- *                 type: string
- *               descripcion:
- *                 type: string
- *               marca:
- *                 type: string
- *               precio:
- *                 type: number
- *               imagen:
- *                 type: string
- *               material:
- *                 type: string
- *               color:
- *                 type: string
- *     responses:
- *       200:
- *         description: Producto actualizado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 producto:
- *                   $ref: '#/components/schemas/Producto'
- *       404:
- *         description: Producto no encontrado
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.put("/productos/:id", authMiddleware, adminMiddleware,upload.single("imagen"), inventarioController.updateProducto);
-
-/**
- * @swagger
- * /api/inventario/productos/{id}:
  *   delete:
  *     summary: Eliminar un producto (Admin)
- *     tags: [Inventario]
+ *     description: Elimina un producto y su imagen de Cloudinary. Requiere rol ADMIN.
+ *     tags: [Inventario (Admin)]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -508,140 +472,21 @@ router.put("/productos/:id", authMiddleware, adminMiddleware,upload.single("imag
  *           type: integer
  *         required: true
  *         description: ID del producto
+ *         example: 1
  *     responses:
  *       200:
  *         description: Producto eliminado
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/MensajeExito'
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado (requiere admin)
  *       404:
  *         description: Producto no encontrado
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
  */
 router.delete("/productos/:id", authMiddleware, adminMiddleware, inventarioController.deleteProducto);
-
-// Categorías - CRUD admin
-
-/**
- * @swagger
- * /api/inventario/categorias:
- *   post:
- *     summary: Crear una nueva categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - tipo_categoria
- *             properties:
- *               tipo_categoria:
- *                 type: string
- *                 enum: [MONTURAS, ACCESORIOS, GAFAS DE SOL]
- *                 example: "ACCESORIOS"
- *               descripcion:
- *                 type: string
- *                 example: "Lentes de contacto y accesorios"
- *     responses:
- *       201:
- *         description: Categoría creada
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 id_categoria:
- *                   type: integer
- *       400:
- *         description: Campos obligatorios faltantes
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.post("/categorias", authMiddleware, adminMiddleware, inventarioController.createCategoria);
-
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   put:
- *     summary: Actualizar una categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               tipo_categoria:
- *                 type: string
- *                 enum: [MONTURAS, ACCESORIOS, GAFAS DE SOL]
- *               descripcion:
- *                 type: string
- *     responses:
- *       200:
- *         description: Categoría actualizada
- *       404:
- *         description: Categoría no encontrada
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.put("/categorias/:id", authMiddleware, adminMiddleware, inventarioController.updateCategoria);
-
-/**
- * @swagger
- * /api/inventario/categorias/{id}:
- *   delete:
- *     summary: Eliminar una categoría (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID de la categoría
- *     responses:
- *       200:
- *         description: Categoría eliminada
- *       404:
- *         description: Categoría no encontrada
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.delete("/categorias/:id", authMiddleware, adminMiddleware, inventarioController.deleteCategoria);
 
 export default router;

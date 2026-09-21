@@ -1,15 +1,104 @@
 import DistribucionModelo from '../models/Distribucion.js';
 import sequelize from '../config/database.js';
 
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    const campo = error.errors[0]?.path || 'campo';
+    return res.status(400).json({
+      success: false,
+      message: `El ${campo} ya está registrado`
+    });
+  }
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+  // Errores de transición lanzados desde el modelo
+  if (error.message && (
+    error.message.includes('No se puede') ||
+    error.message.includes('Solo se pueden')
+  )) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+// ============================================
+// VALIDADORES REUTILIZABLES
+// ============================================
+
+const validarId = (id) => {
+  if (id === undefined || id === null || id === '') return false;
+  const num = Number(id);
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+const validarObservacion = (obs) => {
+  if (obs === undefined || obs === null) return true;
+  if (typeof obs !== 'string') return false;
+  return obs.length <= 5000;
+};
+
+// TRANSICIONES DE ESTADO PERMITIDAS
+
+const TRANSICIONES_PERMITIDAS = {
+  'PENDIENTE': ['EN_ENTREGA', 'CANCELADO'],
+  'EN_ENTREGA': ['ENTREGADO'],      
+  'ENTREGADO': [],
+  'CANCELADO': []
+};
+
+const esTransicionValida = (actual, nueva) => {
+  if (!TRANSICIONES_PERMITIDAS[actual]) return false;
+  return TRANSICIONES_PERMITIDAS[actual].includes(nueva);
+};
+
 // ADMIN - ASIGNAR PEDIDO A REPARTIDOR
 export const asignarPedido = async (req, res) => {
   try {
     const { id_pedido, id_usuario, observaciones } = req.body;
 
-    if (!id_pedido || !id_usuario) {
+    if (!validarId(id_pedido)) {
       return res.status(400).json({
         success: false,
-        message: 'Faltan campos requeridos: id_pedido, id_usuario'
+        message: 'ID de pedido inválido'
+      });
+    }
+    if (!validarId(id_usuario)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de repartidor inválido'
+      });
+    }
+    if (!validarObservacion(observaciones)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las observaciones no pueden superar los 5000 caracteres'
       });
     }
 
@@ -33,12 +122,6 @@ export const asignarPedido = async (req, res) => {
         message: `El pedido debe estar en estado "Pagado". Estado actual: ${pedido.estado}`
       });
     }
-
-    // OBTENER CIUDAD DEL USUARIO DEL PEDIDO
-    const [usuarioPedido] = await sequelize.query(
-      'SELECT ciudad FROM USUARIOS WHERE id_usuario = ?',
-      { replacements: [pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
-    );
 
     const ciudad = pedido.ciudad_envio?.toLowerCase().trim() || '';
     const esBogota = ciudad === 'bogotá' || ciudad === 'bogota';
@@ -134,7 +217,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     // Crear la distribución
     const distribucion = await DistribucionModelo.crear({
       id_pedido,
-      id_usuario,
+      id_usuario: usuarioAsignado,
       observaciones: observacionesFinal || null
     });
 
@@ -179,12 +262,7 @@ ${observaciones ? 'Observaciones: ' + observaciones : ''}`;
     });
 
   } catch (error) {
-    console.error('Error al asignar pedido:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al asignar el pedido',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -283,12 +361,7 @@ export const obtenerPendientes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos pendientes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener pedidos pendientes',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -383,12 +456,7 @@ export const obtenerEnEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener pedidos en entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener pedidos en entrega',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -397,6 +465,13 @@ export const obtenerDistribucionPorId = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+     if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -428,12 +503,44 @@ export const obtenerDistribucionPorId = async (req, res) => {
     let clienteData = null;
     if (distribucion.pedido) {
       const [cliente] = await sequelize.query(
-        `SELECT nombre_completo, telefono, ciudad 
+        `SELECT nombre_completo, telefono, email, ciudad 
          FROM USUARIOS 
          WHERE id_usuario = ?`,
         { replacements: [distribucion.pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
       );
       clienteData = cliente;
+    }
+
+    let vehiculoInfo = null;
+    if (distribucion.repartidor) {
+      const [rol] = await sequelize.query(
+        `SELECT r.nombre as rol
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ?
+           AND r.nombre IN ('ADMIN', 'REPARTIDOR')
+         ORDER BY CASE r.nombre
+           WHEN 'ADMIN' THEN 1
+           WHEN 'REPARTIDOR' THEN 2
+         END
+         LIMIT 1`,
+        { replacements: [distribucion.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (rol?.rol === 'ADMIN') {
+        vehiculoInfo = 'N/A';
+      } else if (rol?.rol === 'REPARTIDOR') {
+        const [vehiculo] = await sequelize.query(
+          `SELECT tipo, modelo, placa, color FROM VEHICULOS WHERE id_usuario = ?`,
+          { replacements: [distribucion.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        if (vehiculo) {
+          vehiculoInfo = `${vehiculo.tipo} ${vehiculo.modelo} - Placa: ${vehiculo.placa}`;
+        } else {
+          vehiculoInfo = 'Sin vehículo asignado';
+        }
+      }
     }
 
     res.json({
@@ -453,6 +560,7 @@ export const obtenerDistribucionPorId = async (req, res) => {
           cliente: clienteData ? {
             nombre: clienteData.nombre_completo,
             telefono: clienteData.telefono,
+            email: clienteData.email,
             ciudad: clienteData.ciudad
           } : null
         } : null,
@@ -460,18 +568,14 @@ export const obtenerDistribucionPorId = async (req, res) => {
           id: distribucion.repartidor.id_usuario,
           nombre: distribucion.repartidor.nombre_completo,
           email: distribucion.repartidor.email,
-          telefono: distribucion.repartidor.telefono
+          telefono: distribucion.repartidor.telefono,
+          vehiculo: vehiculoInfo
         } : null
       }
     });
 
   } catch (error) {
-    console.error('Error al obtener distribución:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribución',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -480,6 +584,13 @@ export const iniciarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -534,12 +645,12 @@ export const iniciarEntrega = async (req, res) => {
       }
     }
 
-    if (distribucion.estado !== 'PENDIENTE') {
-      return res.status(400).json({
-        success: false,
-        message: `No puedes iniciar una entrega en estado ${distribucion.estado}`
-      });
-    }
+    if (!esTransicionValida(distribucion.estado, 'EN_ENTREGA')) {
+  return res.status(400).json({
+    success: false,
+    message: `No puedes iniciar una entrega en estado ${distribucion.estado}`
+  });
+}
 
     const distribucionActualizada = await DistribucionModelo.iniciarEntrega(id);
 
@@ -556,12 +667,7 @@ export const iniciarEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al iniciar entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al iniciar la entrega',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -571,6 +677,20 @@ export const marcarEntregado = async (req, res) => {
     const { id } = req.params;
     const { observacion } = req.body;
     const usuario = req.user;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
+
+    if (!validarObservacion(observacion)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La observación no puede superar los 5000 caracteres'
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
@@ -625,12 +745,12 @@ export const marcarEntregado = async (req, res) => {
       }
     }
 
-    if (distribucion.estado !== 'EN_ENTREGA') {
-      return res.status(400).json({
-        success: false,
-        message: `No puedes marcar como entregado en estado ${distribucion.estado}`
-      });
-    }
+    if (!esTransicionValida(distribucion.estado, 'ENTREGADO')) {
+  return res.status(400).json({
+    success: false,
+    message: `No puedes marcar como entregado en estado ${distribucion.estado}`
+  });
+}
 
     // Agregar observación si se proporcionó
     if (observacion) {
@@ -655,12 +775,7 @@ export const marcarEntregado = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al marcar entregado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al marcar como entregado',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -717,10 +832,30 @@ export const obtenerHistorial = async (req, res) => {
 
     console.log(`${historial.length} entregas completadas encontradas`);
 
+    const historialConCliente = await Promise.all(
+      historial.map(async d => {
+        if (!d.pedido?.id_usuario) {
+          return { distribucion: d, cliente: null };
+        }
+
+        const [cliente] = await sequelize.query(
+          `SELECT nombre_completo, telefono, ciudad
+           FROM USUARIOS
+           WHERE id_usuario = ?`,
+          {
+            replacements: [d.pedido.id_usuario],
+            type: sequelize.QueryTypes.SELECT
+          }
+        );
+
+        return { distribucion: d, cliente };
+      })
+    );
+
     res.json({
       success: true,
       count: historial.length,
-      data: historial.map(d => ({
+      data: historialConCliente.map(({ distribucion: d, cliente }) => ({
         id_distribucion: d.id_distribucion,
         estado: d.estado,
         fecha_asignacion: d.fecha_asignacion,
@@ -732,18 +867,17 @@ export const obtenerHistorial = async (req, res) => {
           ciudad_envio: d.pedido.ciudad_envio || 'Sin ciudad', 
           total: d.pedido.total || 0,
           fecha_estimada: d.pedido.fecha_estimada || null,
-          cliente: d.cliente || 'Cliente'
+          cliente: cliente ? {
+            nombre: cliente.nombre_completo,
+            telefono: cliente.telefono,
+            ciudad: cliente.ciudad
+          } : null
         } : null
       }))
     });
 
   } catch (error) {
-    console.error('Error al obtener historial:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener historial',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -752,34 +886,42 @@ export const obtenerTodas = async (req, res) => {
   try {
     const distribuciones = await DistribucionModelo.obtenerTodas();
 
+    const distribucionesFormateadas = distribuciones.map((d) => ({
+      id_distribucion: d.id_distribucion,
+      estado: d.estado,
+      fecha_asignacion: d.fecha_asignacion,
+      fecha_entrega: d.fecha_entrega,
+      observaciones: d.observaciones,
+      pedido: {
+        id_pedido: d.id_pedido || 0,
+        direccion_entrega: d.direccion_entrega || 'Sin dirección',
+        ciudad_envio: d.ciudad_envio || 'Sin ciudad',
+        total: d.total || 0,
+        fecha_estimada: d.fecha_estimada || null,
+        cliente: {
+          nombre: d.cliente_nombre || 'Sin cliente',
+          telefono: d.cliente_telefono || '',
+          email: d.cliente_email || '',
+          ciudad: d.cliente_ciudad || '',
+        }
+      },
+      repartidor: {
+        id: d.id_usuario || 0,
+        nombre: d.repartidor_nombre || 'No asignado',
+        email: d.repartidor_email || '',
+        telefono: d.repartidor_telefono || '',
+        vehiculo: d.vehiculo_tipo ? `${d.vehiculo_tipo} - ${d.vehiculo_placa || 'N/A'}` : 'N/A',
+      }
+    }));
+
     res.json({
       success: true,
-      count: distribuciones.length,
-      data: distribuciones.map(d => ({
-        id_distribucion: d.id_distribucion,
-        estado: d.estado,
-        fecha_asignacion: d.fecha_asignacion,
-        pedido: {
-          id_pedido: d.pedido?.id_pedido,
-          direccion_entrega: d.pedido?.direccion_entrega,
-          ciudad_envio: d.pedido?.ciudad_envio,
-          fecha_estimada: d.pedido?.fecha_estimada,
-          total: d.pedido?.total
-        },
-        repartidor: {
-          id: d.repartidor?.id_usuario,
-          nombre: d.repartidor?.nombre_completo
-        }
-      }))
+      count: distribucionesFormateadas.length,
+      data: distribucionesFormateadas
     });
 
   } catch (error) {
-    console.error('Error al obtener distribuciones:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribuciones',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -788,6 +930,20 @@ export const cancelarEntrega = async (req, res) => {
   try {
     const { id } = req.params;
     const { observacion } = req.body;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de distribución inválido'
+      });
+    }
+
+    if (!validarObservacion(observacion)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La observación no puede superar los 5000 caracteres'
+      });
+    }
 
     const distribucion = await DistribucionModelo.obtenerPorId(id);
 
@@ -798,10 +954,20 @@ export const cancelarEntrega = async (req, res) => {
       });
     }
 
-    if (distribucion.estado === 'ENTREGADO') {
+    if (!esTransicionValida(distribucion.estado, 'CANCELADO')) {
+      let mensaje = '';
+      if (distribucion.estado === 'EN_ENTREGA') {
+        mensaje = 'No se puede cancelar una entrega que ya está en camino. El repartidor debe completarla o contactar al administrador.';
+      } else if (distribucion.estado === 'ENTREGADO') {
+        mensaje = 'No se puede cancelar una entrega ya entregada';
+      } else if (distribucion.estado === 'CANCELADO') {
+        mensaje = 'Esta distribución ya está cancelada';
+      } else {
+        mensaje = `No se puede cancelar en estado ${distribucion.estado}`;
+      }
       return res.status(400).json({
         success: false,
-        message: 'No se puede cancelar una entrega ya entregada'
+        message: mensaje
       });
     }
 
@@ -819,12 +985,7 @@ export const cancelarEntrega = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al cancelar entrega:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al cancelar la entrega',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -876,7 +1037,8 @@ export const obtenerDistribucionesExternas = async (req, res) => {
               id: admin.id_usuario,
               nombre_completo: admin.nombre_completo,
               email: admin.email,
-              telefono: admin.telefono
+              telefono: admin.telefono,
+              vehiculo: 'N/A' 
             },
             cliente: {
               id: usuario?.id_usuario || null,
@@ -903,11 +1065,127 @@ export const obtenerDistribucionesExternas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener distribuciones externas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener distribuciones externas',
-      error: error.message
+    return manejarErrorValidacion(error, res);
+  }
+};
+// REPARTIDOR - VER TODAS MIS DISTRIBUCIONES (TODOS LOS ESTADOS)
+export const obtenerMisDistribuciones = async (req, res) => {
+  try {
+    const usuario = req.user;
+
+    if (!usuario) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado'
+      });
+    }
+
+    // Verificar que sea repartidor
+    const esRepartidor = usuario.roles?.includes('REPARTIDOR') || false;
+    if (!esRepartidor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Solo los repartidores pueden ver sus distribuciones'
+      });
+    }
+
+    // Obtener TODAS las distribuciones del repartidor
+    const distribuciones = await DistribucionModelo.obtenerPorUsuario(usuario.id);
+
+    // Enriquecer con datos del cliente y vehículo
+    const distribucionesConDetalles = [];
+    for (const d of distribuciones) {
+      // Obtener datos del cliente
+      let clienteData = null;
+      if (d.pedido) {
+        const [cliente] = await sequelize.query(
+          `SELECT nombre_completo, telefono, ciudad, email
+           FROM USUARIOS 
+           WHERE id_usuario = ?`,
+          { replacements: [d.pedido.id_usuario], type: sequelize.QueryTypes.SELECT }
+        );
+        clienteData = cliente;
+      }
+
+      // Obtener vehículo del repartidor
+      let vehiculoData = null;
+      const [vehiculo] = await sequelize.query(
+        `SELECT tipo, modelo, placa, color 
+         FROM VEHICULOS 
+         WHERE id_usuario = ?`,
+        { replacements: [usuario.id], type: sequelize.QueryTypes.SELECT }
+      );
+      if (vehiculo) {
+        vehiculoData = {
+          tipo: vehiculo.tipo,
+          modelo: vehiculo.modelo,
+          placa: vehiculo.placa,
+          color: vehiculo.color,
+          descripcion: `${vehiculo.tipo} ${vehiculo.modelo} - ${vehiculo.color} - Placa: ${vehiculo.placa}`
+        };
+      }
+
+      // Obtener el rol del usuario asignado
+      const [rolAsignado] = await sequelize.query(
+        `SELECT r.nombre as rol
+         FROM USUARIOS u
+         JOIN ROL_USUARIO ru ON u.id_usuario = ru.id_usuario
+         JOIN ROLES r ON ru.id_rol = r.id_rol
+         WHERE u.id_usuario = ?`,
+        { replacements: [d.id_usuario], type: sequelize.QueryTypes.SELECT }
+      );
+
+      distribucionesConDetalles.push({
+        id_distribucion: d.id_distribucion,
+        estado: d.estado,
+        fecha_asignacion: d.fecha_asignacion,
+        fecha_entrega: d.fecha_entrega || null,
+        observaciones: d.observaciones,
+        
+        // Datos del cliente
+        cliente: clienteData ? {
+          id: d.pedido.id_usuario,
+          nombre: clienteData.nombre_completo,
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          ciudad: clienteData.ciudad
+        } : null,
+
+        // Datos del pedido
+        pedido: d.pedido ? {
+          id_pedido: d.pedido.id_pedido,
+          direccion_entrega: d.pedido.direccion_entrega || 'Sin dirección',
+          ciudad_envio: d.pedido.ciudad_envio || 'Sin ciudad',
+          total: d.pedido.total || 0,
+          fecha_estimada: d.pedido.fecha_estimada || null
+        } : null,
+
+        // Datos del repartidor asignado
+        repartidor_asignado: {
+          id: usuario.id,
+          nombre: usuario.nombre_completo,
+          email: usuario.email,
+          telefono: usuario.telefono,
+          rol: rolAsignado?.rol || 'REPARTIDOR',
+          vehiculo: vehiculoData
+        },
+
+        // Tipo de asignación (Bogotá o externa)
+        tipo_asignacion: d.pedido?.ciudad_envio ? 
+          (d.pedido.ciudad_envio.toLowerCase().trim() === 'bogotá' || 
+           d.pedido.ciudad_envio.toLowerCase().trim() === 'bogota' ? 
+            'BOGOTÁ' : 'EXTERNA') 
+          : 'DESCONOCIDA'
+      });
+    }
+
+    res.json({
+      success: true,
+      count: distribucionesConDetalles.length,
+      data: distribucionesConDetalles
     });
+
+  } catch (error) {
+    return manejarErrorValidacion(error, res);
   }
 };

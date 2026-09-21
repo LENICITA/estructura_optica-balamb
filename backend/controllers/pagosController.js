@@ -1,11 +1,77 @@
 import PagoModel from '../models/pagoModel.js';
 import sequelize from '../config/database.js';
-import boldClient from '../config/bold.js';
+import { boldClient } from '../config/bold.js';
+
+const esDesarrollo = process.env.NODE_ENV === 'development' || process.env.BOLD_MODO === 'TEST';
+
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'El valor ya existe en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+const validarId = (id) => {
+  if (id === undefined || id === null || id === '') return false;
+  const num = Number(id);
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+const validarEleccionPago = (eleccion) => {
+  return ['50%', '100%'].includes(eleccion);
+};
+
+const validarMonto = (monto) => {
+  if (monto === undefined || monto === null || monto === '') return false;
+  const num = Number(monto);
+  return !isNaN(num) && num > 0;
+};
 
 // ========== OBTENER PAGOS POR PEDIDO ==========
 export const obtenerPagosPorPedido = async (req, res) => {
   try {
     const { pedidoId } = req.params;
+
+    if (!validarId(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
+
     const pagos = await PagoModel.obtenerPorPedido(pedidoId);
     const totalPagado = await PagoModel.obtenerTotalPagado(pedidoId);
     const tieneCompleto = await PagoModel.tienePagoCompletoPorSuma(pedidoId);
@@ -18,8 +84,7 @@ export const obtenerPagosPorPedido = async (req, res) => {
       data: pagos 
     });
   } catch (error) {
-    console.error('Error al obtener pagos del pedido:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener los pagos del pedido', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -37,11 +102,24 @@ export const crearPago = async (req, res) => {
       });
     }
 
-    // Validar elección de pago
-    if (!['50%', '100%'].includes(eleccion_pago)) {
+    if (!validarId(id_pedido)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El ID del pedido debe ser un número válido'
+      });
+    }
+
+    if (!validarEleccionPago(eleccion_pago)) {
       return res.status(400).json({ 
         success: false, 
         message: 'eleccion_pago debe ser 50% o 100%' 
+      });
+    }
+
+    if (!validarMonto(monto)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El monto debe ser un número mayor a 0'
       });
     }
 
@@ -161,8 +239,53 @@ export const crearPago = async (req, res) => {
     }
 
     // ==========================================
-    // CONEXIÓN CON BOLD
+    //  SIMULAR PAGO 
     // ==========================================
+    
+    if (esDesarrollo) {
+      console.log('🔧 [MODO DESARROLLO] Simulando pago');
+
+      const bold_link = `https://bold.co/demo/pago-${id_pedido}-${Date.now()}`;
+      const payment_link = `LNK_DEMO_${Date.now()}`;
+
+      const nuevoId = await PagoModel.crear({
+        id_pedido,
+        eleccion_pago,
+        canal_pago,
+        monto,
+        bold_reference: payment_link,
+        bold_link: bold_link
+      });
+
+      console.log(` Pago #${nuevoId} creado (simulado)`);
+
+      // Auto-confirmar después de 2 segundos
+      setTimeout(async () => {
+        try {
+          await PagoModel.confirmarPago(nuevoId);
+          console.log(` Pago #${nuevoId} auto-confirmado (simulado)`);
+        } catch (err) {
+          console.error(' Error auto-confirmando pago:', err);
+        }
+      }, 2000);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Link de pago generado exitosamente (MODO SIMULADO)',
+        data: {
+          id_pago: nuevoId,
+          bold_link: bold_link,
+          bold_reference: payment_link,
+          simulado: true
+        }
+      });
+    }
+
+    // ==========================================
+    // CONEXIÓN REAL CON BOLD (PRODUCCIÓN)
+    // ==========================================
+
+    console.log('🌐 [PRODUCCIÓN] Conectando con Bold real');
 
     // Calcular IVA (19%)
     const valorIva = Math.round(monto * 0.19);
@@ -187,6 +310,8 @@ export const crearPago = async (req, res) => {
       description: `Pago ${eleccion_pago} del pedido #${id_pedido}`,
       payer_email: usuario.email || 'cliente@email.com'
     });
+
+    console.log(' Bold Response:', boldResponse.data);
 
     // Extraer datos de la respuesta de Bold
     const { payment_link, url: bold_link } = boldResponse.data.payload;
@@ -215,7 +340,7 @@ export const crearPago = async (req, res) => {
 
   } catch (error) {
     console.error('Error al crear pago:', error.response?.data || error.message);
-    res.status(500).json({ success: false, message: 'Error al crear el pago', error: error.response?.data || error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -223,6 +348,13 @@ export const crearPago = async (req, res) => {
 export const confirmarPago = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pago inválido'
+      });
+    }
 
     const pago = await PagoModel.obtenerPorId(id);
     if (!pago) {
@@ -261,8 +393,7 @@ export const confirmarPago = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al confirmar pago:', error);
-    res.status(500).json({ success: false, message: 'Error al confirmar el pago', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -271,6 +402,13 @@ export const rechazarPago = async (req, res) => {
   try {
     const { id } = req.params;
     const { motivo } = req.body;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pago inválido'
+      });
+    }
 
     const pago = await PagoModel.obtenerPorId(id);
     if (!pago) {
@@ -295,8 +433,7 @@ export const rechazarPago = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al rechazar pago:', error);
-    res.status(500).json({ success: false, message: 'Error al rechazar el pago', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -304,6 +441,13 @@ export const rechazarPago = async (req, res) => {
 export const verificarSaldoPedido = async (req, res) => {
   try {
     const { pedidoId } = req.params;
+
+    if (!validarId(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
 
     const [pedido] = await sequelize.query(
       'SELECT * FROM PEDIDOS WHERE id_pedido = ?',
@@ -339,8 +483,7 @@ export const verificarSaldoPedido = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar saldo:', error);
-    res.status(500).json({ success: false, message: 'Error al verificar saldo', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 

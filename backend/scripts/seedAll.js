@@ -523,8 +523,8 @@ const formulasData = [
 ];
 // 5. VEHÍCULO
 const vehiculosData = [
-  { id_usuario: 7, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
-  { id_usuario: 8, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
+  { id_usuario: 8, tipo: "Moto", modelo: "Yamaha NMAX 2023", placa: "ABC123", color: "Negro" }, // Ana
+  { id_usuario: 9, tipo: "Moto", modelo: "Honda Navi 2024", placa: "DEF456", color: "Rojo" } // Luis
 ];
 // 6. PEDIDOS (12 PEDIDOS
 const pedidosData = [
@@ -578,7 +578,7 @@ const pedidosData = [
     id_formula: null,
     direccion_entrega: "Calle 100 #20-30",
     ciudad_envio: "Bogotá",  
-    estado: "En Proceso",
+    estado: "Abonado",
     costo_envio: 0,
     total: 210000,
     fecha_estimada: "2025-02-01"
@@ -933,7 +933,7 @@ const seedAll = async () => {
       "juan@email.com": ["CLIENTE"],
       "patricia@email.com": ["CLIENTE"],
       "carmen@email.com": ["CLIENTE"],
-      "ana@email.com": ["CLIENTE", "REPARTIDOR"],
+      "ana@email.com": ["REPARTIDOR"],
       "luis@email.com": ["REPARTIDOR"],
       "diego@email.com": ["CLIENTE"],
       "roberto@email.com": ["CLIENTE"],
@@ -1178,7 +1178,7 @@ const seedAll = async () => {
     console.log(` Pedido 2: ${pedidosData[1].estado} (50% abonado, esperando segundo pago)`);
     console.log(` Pedido 3: ${pedidosData[2].estado} (100% pagado → Distribución)`);
     console.log(` Pedido 4: ${pedidosData[3].estado} (50% abonado, gafas listas para segundo pago)`);
-    console.log(` Pedido 5: ${pedidosData[4].estado} (50% abonado, en proceso)`);
+    console.log(` Pedido 5: ${pedidosData[4].estado} (50% abonado, esperando segundo pago)`);
     console.log(` Pedido 6: ${pedidosData[5].estado} (pendiente de pago - SIN PAGOS)`);
     console.log(` Pedido 7: ${pedidosData[6].estado} (entregado)`);
     console.log(` Pedido 8: ${pedidosData[7].estado} (DOS pagos 50% completados → Distribución) `);

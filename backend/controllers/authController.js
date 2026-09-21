@@ -5,6 +5,53 @@ import { generateToken } from "../utils/generadorToken.js";
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
+import { createTransport } from 'nodemailer';
+
+// HELPER: Manejo centralizado de errores
+
+const manejarErrorValidacion = (error, res) => {
+    if (error.name === 'SequelizeValidationError') {
+        const mensajes = error.errors.map(e => e.message);
+        return res.status(400).json({
+            success: false,
+            message: mensajes[0],
+            errores: mensajes
+        });
+    }
+    if (error.name === 'SequelizeUniqueConstraintError') {
+        const campo = error.errors[0]?.path || 'campo';
+        const mensajes = {
+            email: 'El email ya está registrado',
+            documento: 'El documento ya está registrado',
+            placa: 'La placa ya está registrada'
+        };
+        return res.status(400).json({
+            success: false,
+            message: mensajes[campo] || `El ${campo} ya está registrado`
+        });
+    }
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Referencia inválida en la base de datos'
+        });
+    }
+    console.error('Error interno no controlado:', error);
+    return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+};
+
+// VALIDADORES REUTILIZABLES
+const REGEX_TELEFONO = /^3\d{9}$/;
+const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validarTelefono = (telefono) => REGEX_TELEFONO.test(telefono);
+const validarCiudad = (ciudad) => REGEX_CIUDAD.test(ciudad);
+const validarEmail = (email) => REGEX_EMAIL.test(email);
 
 // LOGIN
 export const login = async (req, res) => {
@@ -54,7 +101,7 @@ export const login = async (req, res) => {
             });
         }
 
-        const token = generateToken(usuario.id_usuario);
+         const { token } = generateToken(usuario.id_usuario);
         const roles = usuario.roles?.map(rol => rol.nombre) || [];
 
         console.log(`Login exitoso: ${usuario.nombre_completo}`);
@@ -76,11 +123,7 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en login:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -114,6 +157,30 @@ export const register = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'La contraseña debe tener al menos 8 caracteres'
+            });
+        }
+
+        if (!validarEmail(email)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
+        if (telefono && !validarTelefono(telefono)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'El teléfono debe empezar por 3 y tener 10 dígitos'
+            });
+        }
+
+        if (ciudad && !validarCiudad(ciudad)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                success: false,
+                message: 'La ciudad solo puede contener letras y espacios'
             });
         }
 
@@ -191,7 +258,7 @@ export const register = async (req, res) => {
         });
 
         const roles = usuarioConRoles.roles?.map(r => r.nombre) || [];
-        const token = generateToken(usuario.id_usuario);
+        const { token } = generateToken(usuario.id_usuario);
 
         console.log(`Usuario registrado: ${usuario.nombre_completo}`);
 
@@ -213,11 +280,7 @@ export const register = async (req, res) => {
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error en register:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -259,11 +322,7 @@ export const verifyToken = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en verifyToken:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+       return manejarErrorValidacion(error, res);
     }
 };
 
@@ -275,11 +334,7 @@ export const logout = async (req, res) => {
             message: 'Sesión cerrada exitosamente'
         });
     } catch (error) {
-        console.error('Error en logout:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -297,13 +352,19 @@ export const solicitarRecuperacion = async (req, res) => {
             });
         }
 
+        if (!validarEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El email no tiene un formato válido'
+            });
+        }
+
         const usuario = await Usuario.findOne({
             where: { email: email.toLowerCase() }
         });
 
         if (!usuario) {
-            console.log('Email no encontrado:', email);
-            return res.status(404).json({
+             return res.status(404).json({
                 success: false,
                 message: 'No existe una cuenta con este email'
             });
@@ -317,26 +378,127 @@ export const solicitarRecuperacion = async (req, res) => {
             reset_token_expiry: resetTokenExpiry
         });
 
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+        const resetLink = `http://192.168.0.4:5000/reset-password?token=${resetToken}`;
 
-        console.log('Token generado:', resetToken);
+        console.log('Token generado para:', email);
         console.log('Enlace:', resetLink);
+
+        // INTENTAR ENVIAR AL USUARIO PRIMERO
+
+        let envioExitoso = false;
+        let emailFalso = false;
+
+        try {
+            await enviarCorreoRecuperacion({
+                emailDestino: usuario.email,
+                nombre: usuario.nombre_completo,
+                resetLink,
+                emailOriginal: usuario.email,
+                esFalso: false
+            });
+            console.log(' Correo enviado a:', usuario.email);
+            envioExitoso = true;
+        } catch (emailError) {
+
+            // SI EL CORREO REBOTA (EMAIL NO EXISTE)
+
+            console.log(' Error al enviar a:', usuario.email);
+            console.log('Error:', emailError.message);
+            
+            // Verificar si es error de "usuario no existe"
+            if (emailError.message?.includes('550') || 
+                emailError.message?.includes('Recipient address rejected') ||
+                emailError.message?.includes('User unknown') ||
+                emailError.message?.includes('Invalid recipient')) {
+                
+                console.log(' El email NO EXISTE en la vida real');
+                emailFalso = true;
+                
+                // Enviar al admin
+                await enviarCorreoRecuperacion({
+                    emailDestino: process.env.CONTACT_EMAIL || 'opticampostman@gmail.com',
+                    nombre: usuario.nombre_completo,
+                    resetLink,
+                    emailOriginal: usuario.email,
+                    esFalso: true
+                });
+                console.log(' Reenviado al administrador');
+                envioExitoso = true;
+            } else {
+                // Otro tipo de error
+                throw emailError;
+            }
+        }
+
+        if (!envioExitoso) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error al enviar el correo de recuperación'
+            });
+        }
 
         res.json({
             success: true,
-            message: 'Se ha enviado un enlace de recuperación a tu correo',
-            resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
-            token: resetToken
+            message: emailFalso 
+                ? 'El email no existe en la vida real. El enlace ha sido enviado al administrador.'
+                : 'Se ha enviado un enlace de recuperación a tu correo'
         });
 
     } catch (error) {
-        console.error('Error en solicitarRecuperacion:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al procesar la solicitud'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
+
+// ============================================
+// FUNCIÓN: Enviar correo de recuperación
+// ============================================
+const enviarCorreoRecuperacion = async ({ emailDestino, nombre, resetLink, emailOriginal, esFalso }) => {
+    const transporter = createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+
+    let subject = '🔐 Recuperación de contraseña - Óptica Balamb';
+    let html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #B90F0F;">🔐 Recuperación de contraseña</h2>
+            <p>Hola <strong>${nombre}</strong>,</p>
+            <p>Copia y pega el siguiente enlace en la app:</p>
+            <div style="background-color: #f0f0f0; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace;">
+                ${resetLink}
+            </div>
+            <p>Expira en 1 hora.</p>
+        </div>
+    `;
+
+    if (esFalso) {
+        subject = '⚠️ [ADMIN] Email no existe - Óptica Balamb';
+        html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #B90F0F; border-radius: 8px;">
+                <h2 style="color: #B90F0F;">⚠️ EL EMAIL NO EXISTE</h2>
+                <p><strong>Usuario:</strong> ${nombre}</p>
+                <p><strong>Email que intentó recuperar:</strong> ${emailOriginal}</p>
+                <p>Enlace para restablecer:</p>
+                <div style="background-color: #f0f0f0; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace;">
+                    ${resetLink}
+                </div>
+            </div>
+        `;
+    }
+
+    await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Óptica Balamb" <${process.env.SMTP_USER}>`,
+        to: emailDestino,
+        subject: subject,
+        html: html,
+    });
+};
+
 
 // RECUPERAR CONTRASEÑA - Verificar token
 export const verificarTokenRecuperacion = async (req, res) => {
@@ -381,11 +543,7 @@ export const verificarTokenRecuperacion = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en verificarTokenRecuperacion:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al verificar el token'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -468,10 +626,6 @@ export const resetearPassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en resetearPassword:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al resetear la contraseña: ' + error.message
-        });
+        return manejarErrorValidacion(error, res);
     }
 };

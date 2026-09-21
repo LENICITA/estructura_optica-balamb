@@ -1,9 +1,77 @@
 import sequelize from "../config/database.js";
-import { Op } from 'sequelize';
 import PDFDocument from 'pdfkit';
 import Inventario from '../models/inventario.js';
+import {
+    generarGraficoBarras,
+    generarGraficoLineas,
+    generarGraficoDona,
+    generarGraficoBarrasHorizontales
+} from '../utils/chartGenerator.js';
 
-// REPORTE 1: Ventas por período
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+const REGEX_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+const TIPOS_PDF_VALIDOS = [
+  'ventas',
+  'inventario',
+  'repartidores',
+  'clientes',
+  'productos-mas-vendidos',
+  'estado-pedidos',
+  'ventas-categoria'
+];
+
+const PERIODOS_VALIDOS = ['diario', 'semanal', 'mensual', 'anual', 'personalizado'];
+
+const LIMITE_MAX = 100;
+
+const validarFecha = (fecha) => {
+  if (!fecha || typeof fecha !== 'string') return false;
+  if (!REGEX_FECHA.test(fecha)) return false;
+  const date = new Date(`${fecha}T00:00:00`);
+  return !isNaN(date.getTime());
+};
+
+const validarRangoFechas = (fechaInicio, fechaFin) => {
+  if (!validarFecha(fechaInicio) || !validarFecha(fechaFin)) return false;
+  const inicio = new Date(`${fechaInicio}T00:00:00`);
+  const fin = new Date(`${fechaFin}T00:00:00`);
+  return inicio <= fin;
+};
+
+const validarLimite = (limite) => {
+  const num = Number(limite);
+  if (isNaN(num)) return false;
+  if (!Number.isInteger(num)) return false;
+  if (num < 1 || num > LIMITE_MAX) return false;
+  return true;
+};
+
 export const reporteVentasPorPeriodo = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -14,6 +82,13 @@ export const reporteVentasPorPeriodo = async (req, res) => {
                 message: 'Se requieren fechas de inicio y fin (YYYY-MM-DD)'
             });
         }
+
+        if (!validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         const query = `
             SELECT 
@@ -61,18 +136,34 @@ export const reporteVentasPorPeriodo = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de ventas por período:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 2: Productos más vendidos
 export const reporteProductosMasVendidos = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
+
+        if (!validarLimite(limite)) {
+      return res.status(400).json({
+        success: false,
+        message: `El límite debe ser un número entero entre 1 y ${LIMITE_MAX}`
+      });
+    }
+
+    if ((fecha_inicio && !fecha_fin) || (!fecha_inicio && fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debes enviar ambas fechas o ninguna'
+      });
+    }
+
+    if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = { limite: parseInt(limite) };
@@ -108,24 +199,23 @@ export const reporteProductosMasVendidos = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        res.json({
-            success: true,
-            data: results
-        });
+        res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de productos más vendidos:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 3: Desempeño de repartidores (CORREGIDO)
 export const reporteDesempenoRepartidores = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -166,24 +256,23 @@ export const reporteDesempenoRepartidores = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        res.json({
-            success: true,
-            data: results
-        });
+        res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de desempeño de repartidores:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 4: Estado de pedidos
 export const reporteEstadoPedidos = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -232,25 +321,31 @@ export const reporteEstadoPedidos = async (req, res) => {
 
         res.json({
             success: true,
-            data: {
-                resumen: totales,
-                detalle: results
-            }
+            data: { resumen: totales, detalle: results }
         });
 
     } catch (error) {
-        console.error('Error en reporte de estado de pedidos:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 5: Clientes frecuentes
 export const reporteClientesFrecuentes = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
+
+        if (!validarLimite(limite)) {
+      return res.status(400).json({
+        success: false,
+        message: `El límite debe ser un número entero entre 1 y ${LIMITE_MAX}`
+      });
+    }
+
+    if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = { limite: parseInt(limite) };
@@ -291,21 +386,13 @@ export const reporteClientesFrecuentes = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        res.json({
-            success: true,
-            data: results
-        });
+        res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de clientes frecuentes:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 6: Resumen general del negocio (CORREGIDO)
 export const reporteResumenGeneral = async (req, res) => {
     try {
         const queries = {
@@ -323,9 +410,7 @@ export const reporteResumenGeneral = async (req, res) => {
                 INNER JOIN ROLES r ON ru.id_rol = r.id_rol
                 WHERE r.nombre = 'REPARTIDOR'
             `,
-            total_productos: `
-                SELECT COUNT(*) as total FROM PRODUCTOS
-            `,
+            total_productos: `SELECT COUNT(*) as total FROM PRODUCTOS`,
             total_pedidos: `
                 SELECT COUNT(*) as total, SUM(total) as monto_total 
                 FROM PEDIDOS 
@@ -388,18 +473,20 @@ export const reporteResumenGeneral = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte resumen general:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 7: Ventas por categoría
 export const reporteVentasPorCategoria = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -440,22 +527,14 @@ export const reporteVentasPorCategoria = async (req, res) => {
 
         res.json({
             success: true,
-            data: {
-                resumen: totales,
-                detalle: results
-            }
+            data: { resumen: totales, detalle: results }
         });
 
     } catch (error) {
-        console.error('Error en reporte de ventas por categoría:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 8: Análisis de fórmulas (CORREGIDO)
 export const reporteAnalisisFormulas = async (req, res) => {
     try {
         const query = `
@@ -491,7 +570,6 @@ export const reporteAnalisisFormulas = async (req, res) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Estadísticas adicionales de fórmulas
         const queryEstadisticas = `
             SELECT 
                 estado,
@@ -516,26 +594,52 @@ export const reporteAnalisisFormulas = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de análisis de fórmulas:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor'
-        });
+        return manejarErrorValidacion(error, res);
     }
 };
 
-// REPORTE 9: Generar PDF (CORREGIDO)
 export const generarReportePDF = async (req, res) => {
     try {
         const { tipo, periodo, fecha_inicio, fecha_fin } = req.body;
 
-        console.log(`📡 Generando PDF: ${tipo} - ${periodo}`);
+        if (!tipo || !TIPOS_PDF_VALIDOS.includes(tipo)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de reporte inválido. Debe ser uno de: ${TIPOS_PDF_VALIDOS.join(', ')}`
+            });
+        }
+
+        if (!periodo || !PERIODOS_VALIDOS.includes(periodo)) {
+            return res.status(400).json({
+                success: false,
+                message: `Período inválido. Debe ser uno de: ${PERIODOS_VALIDOS.join(', ')}`
+            });
+        }
+
+        if (periodo === 'personalizado') {
+            if (!fecha_inicio || !fecha_fin) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Debes enviar fecha_inicio y fecha_fin para el período personalizado'
+                });
+            }
+
+            if (!validarRangoFechas(fecha_inicio, fecha_fin)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+                });
+            }
+        }
+
+        console.log(`Generando PDF: ${tipo} - ${periodo}`);
 
         let datos = await obtenerDatosParaPDF(tipo, periodo, fecha_inicio, fecha_fin);
 
         const doc = new PDFDocument({
             size: 'A4',
             margin: 50,
+            bufferPages: true,
             info: {
                 Title: `Reporte de ${tipo}`,
                 Author: 'Óptica Balamb',
@@ -547,20 +651,21 @@ export const generarReportePDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=Reporte_${tipo}_${new Date().toISOString().split('T')[0]}.pdf`);
 
         doc.pipe(res);
+
+        res.on('finish', () => console.log('PDF enviado correctamente'));
+        res.on('error', (err) => console.error('Error en stream:', err));
+
         await dibujarReportePDF(doc, datos, tipo, periodo);
         doc.end();
 
     } catch (error) {
-        console.error('❌ Error al generar PDF:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al generar el reporte',
-            error: error.message
-        });
+        console.error('Error al generar PDF:', error);
+        if (!res.headersSent) {
+            return manejarErrorValidacion(error, res);
+        }
     }
 };
 
-// ==================== FUNCIONES DE OBTENCIÓN DE DATOS PARA PDF (CORREGIDAS) ====================
 
 const obtenerDatosParaPDF = async (tipo, periodo, fechaInicio, fechaFin) => {
     const hoy = new Date();
@@ -673,25 +778,19 @@ const obtenerDatosVentasSQL = async (replacements) => {
         type: sequelize.QueryTypes.SELECT
     });
 
-    return {
-        titulo: 'Reporte de Ventas',
-        resumen: resumen,
-        detalle: detalle
-    };
+    return { titulo: 'Reporte de Ventas', resumen, detalle };
 };
 
 const obtenerDatosInventarioSQL = async () => {
     const productos = await Inventario.getAll();
-    
+
     const totalProductos = productos.length;
     const valorTotal = productos.reduce((sum, p) => sum + (parseFloat(p.precio) || 0), 0);
 
     const porCategoria = {};
     productos.forEach(p => {
         const cat = p.tipo_categoria || 'Sin categoría';
-        if (!porCategoria[cat]) {
-            porCategoria[cat] = { cantidad: 0, valor: 0 };
-        }
+        if (!porCategoria[cat]) porCategoria[cat] = { cantidad: 0, valor: 0 };
         porCategoria[cat].cantidad++;
         porCategoria[cat].valor += parseFloat(p.precio) || 0;
     });
@@ -817,10 +916,7 @@ const obtenerProductosMasVendidosSQL = async (replacements) => {
         type: sequelize.QueryTypes.SELECT
     });
 
-    return {
-        titulo: 'Productos Más Vendidos',
-        productos
-    };
+    return { titulo: 'Productos Más Vendidos', productos };
 };
 
 const obtenerEstadoPedidosSQL = async (replacements) => {
@@ -858,11 +954,7 @@ const obtenerEstadoPedidosSQL = async (replacements) => {
         return acc;
     }, { total_pedidos: 0, monto_total: 0 });
 
-    return {
-        titulo: 'Estado de Pedidos',
-        resumen: totales,
-        detalle
-    };
+    return { titulo: 'Estado de Pedidos', resumen: totales, detalle };
 };
 
 const obtenerVentasCategoriaSQL = async (replacements) => {
@@ -893,157 +985,387 @@ const obtenerVentasCategoriaSQL = async (replacements) => {
         return acc;
     }, { total_unidades: 0, total_ingresos: 0 });
 
-    return {
-        titulo: 'Ventas por Categoría',
-        resumen: totales,
-        detalle
-    };
+    return { titulo: 'Ventas por Categoría', resumen: totales, detalle };
 };
 
-// FUNCIÓN PARA DIBUJAR EL PDF
-const dibujarReportePDF = async (doc, datos, tipo, periodo) => {
-    // Logo y título
-    doc.fontSize(24)
-       .fillColor('#B90F0F')
-       .text('ÓPTICA BALAMB', { align: 'center' })
-       .moveDown();
 
+const dibujarEncabezado = (doc, datos, periodo) => {
+    // Banda roja superior
+    doc.rect(0, 0, doc.page.width, 80).fill('#B90F0F');
+
+    doc.fontSize(22)
+       .fillColor('#FFFFFF')
+       .font('Helvetica-Bold')
+       .text('ÓPTICA BALAMB', 50, 25, { align: 'left' });
+
+    doc.fontSize(10)
+       .fillColor('#FFE5E5')
+       .font('Helvetica')
+       .text('Sistema de Reportes', 50, 52);
+
+    // Título del reporte
     doc.fontSize(18)
        .fillColor('#333333')
-       .text(datos.titulo || `Reporte de ${tipo}`, { align: 'center' })
-       .moveDown();
+       .font('Helvetica-Bold')
+       .text(datos.titulo || 'Reporte', 50, 110, { align: 'center' });
 
-    // Información del reporte
-    doc.fontSize(10)
+    // Info del período
+    doc.fontSize(9)
        .fillColor('#666666')
+       .font('Helvetica')
        .text(`Generado: ${datos.fechaGeneracion}`, { align: 'right' })
        .text(`Período: ${periodo}`, { align: 'right' })
-       .text(`Fecha Inicio: ${datos.fechaInicio || 'N/A'}`, { align: 'right' })
-       .text(`Fecha Fin: ${datos.fechaFin || 'N/A'}`, { align: 'right' })
-       .moveDown(2);
+       .text(`Desde: ${datos.fechaInicio || 'N/A'}  |  Hasta: ${datos.fechaFin || 'N/A'}`, { align: 'right' })
+       .moveDown(1.5);
+};
 
-    // Línea separadora
-    doc.strokeColor('#CCCCCC')
-       .lineWidth(1)
-       .moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke()
-       .moveDown();
+const dibujarSeccion = (doc, titulo) => {
+    if (doc.y > doc.page.height - 150) doc.addPage();
 
-    // SECCIÓN: Resumen
-    doc.fontSize(14)
+    doc.rect(50, doc.y, 5, 20).fill('#B90F0F');
+    doc.fontSize(13)
        .fillColor('#B90F0F')
-       .text('📊 RESUMEN', { underline: true })
-       .moveDown(0.5);
+       .font('Helvetica-Bold')
+       .text(titulo, 62, doc.y + 3)
+       .moveDown(0.8);
+    doc.font('Helvetica').fillColor('#333333');
+};
 
-    doc.fontSize(11)
-       .fillColor('#333333');
+const dibujarTarjetasResumen = (doc, items) => {
+    const startX = 50;
+    const startY = doc.y;
+    const cardWidth = 155;
+    const cardHeight = 60;
+    const gap = 10;
 
-    if (datos.resumen) {
-        const resumen = datos.resumen;
-        Object.entries(resumen).forEach(([key, value]) => {
-            const label = {
-                total_pedidos: 'Total Pedidos',
-                ventas_totales: 'Ventas Totales',
-                promedio_venta: 'Promedio Venta',
-                clientes_unicos: 'Clientes Únicos',
-                monto_total: 'Monto Total',
-                total_unidades: 'Unidades Vendidas',
-                total_ingresos: 'Ingresos Totales'
-            }[key] || key;
+    items.forEach((item, i) => {
+        const x = startX + i * (cardWidth + gap);
+        const y = startY;
 
-            let formattedValue = value;
-            if (key.includes('total') || key.includes('ventas') || key.includes('ingresos') || key.includes('monto')) {
-                formattedValue = `$${parseFloat(value || 0).toLocaleString('es-CO')}`;
-            }
+        doc.roundedRect(x, y, cardWidth, cardHeight, 6)
+           .fillAndStroke('#F8F9FA', '#DDDDDD');
 
-            doc.text(`  • ${label}: ${formattedValue}`);
+        doc.fontSize(8)
+           .fillColor('#888888')
+           .font('Helvetica')
+           .text(item.label.toUpperCase(), x + 10, y + 10, { width: cardWidth - 20 });
+
+        doc.fontSize(14)
+           .fillColor(item.color || '#B90F0F')
+           .font('Helvetica-Bold')
+           .text(String(item.valor), x + 10, y + 30, { width: cardWidth - 20 });
+    });
+
+    doc.y = startY + cardHeight + 20;
+    doc.font('Helvetica').fillColor('#333333');
+};
+
+const dibujarTabla = (doc, columnas, filas) => {
+    const startX = 50;
+    let y = doc.y;
+    const rowHeight = 22;
+    const totalWidth = 500;
+    const colWidths = columnas.map(c => c.width || totalWidth / columnas.length);
+
+    // Encabezado
+    doc.rect(startX, y, totalWidth, rowHeight).fill('#B90F0F');
+    let x = startX;
+    doc.fontSize(9).fillColor('#FFFFFF').font('Helvetica-Bold');
+    columnas.forEach((col, i) => {
+        doc.text(col.label, x + 5, y + 6, { width: colWidths[i] - 10, align: col.align || 'left' });
+        x += colWidths[i];
+    });
+
+    y += rowHeight;
+    doc.font('Helvetica').fillColor('#333333').fontSize(9);
+
+    // Filas
+    filas.forEach((fila, idx) => {
+        if (y > doc.page.height - 80) {
+            doc.addPage();
+            y = 60;
+            doc.rect(startX, y, totalWidth, rowHeight).fill('#B90F0F');
+            let hx = startX;
+            doc.fontSize(9).fillColor('#FFFFFF').font('Helvetica-Bold');
+            columnas.forEach((col, i) => {
+                doc.text(col.label, hx + 5, y + 6, { width: colWidths[i] - 10, align: col.align || 'left' });
+                hx += colWidths[i];
+            });
+            y += rowHeight;
+            doc.font('Helvetica').fillColor('#333333').fontSize(9);
+        }
+
+        if (idx % 2 === 0) {
+            doc.rect(startX, y, totalWidth, rowHeight).fill('#F8F9FA');
+        }
+
+        let cx = startX;
+        columnas.forEach((col, i) => {
+            const valor = fila[col.key] ?? '';
+            doc.fillColor('#333333').text(String(valor), cx + 5, y + 6, {
+                width: colWidths[i] - 10,
+                align: col.align || 'left',
+                ellipsis: true
+            });
+            cx += colWidths[i];
         });
-    } else if (tipo === 'repartidores') {
-        doc.text(`  • Total Repartidores: ${datos.totalRepartidores || 0}`);
-    } else if (tipo === 'inventario') {
-        doc.text(`  • Total Productos: ${datos.totalProductos || 0}`);
-        doc.text(`  • Valor Total: $${(datos.valorTotal || 0).toLocaleString('es-CO')}`);
+
+        doc.strokeColor('#EEEEEE').lineWidth(0.5)
+           .moveTo(startX, y + rowHeight)
+           .lineTo(startX + totalWidth, y + rowHeight)
+           .stroke();
+
+        y += rowHeight;
+    });
+
+    doc.y = y + 15;
+};
+
+const dibujarGrafico = (doc, buffer, titulo) => {
+    if (doc.y > doc.page.height - 300) doc.addPage();
+
+    if (titulo) {
+        doc.fontSize(10).fillColor('#666666').font('Helvetica-Bold')
+           .text(titulo, { align: 'center' }).moveDown(0.3);
     }
 
-    doc.moveDown(2);
+    const imgWidth = 480;
+    const imgHeight = 240;
+    const x = (doc.page.width - imgWidth) / 2;
 
-    // SECCIÓN: Detalle
-    doc.fontSize(14)
-       .fillColor('#B90F0F')
-       .text('📋 DETALLE', { underline: true })
-       .moveDown(0.5);
+    doc.image(buffer, x, doc.y, { width: imgWidth, height: imgHeight });
+    doc.y += imgHeight + 15;
+    doc.font('Helvetica').fillColor('#333333');
+};
 
-    doc.fontSize(9)
-       .fillColor('#333333');
+
+const dibujarReportePDF = async (doc, datos, tipo, periodo) => {
+    dibujarEncabezado(doc, datos, periodo);
+
+    dibujarSeccion(doc, 'Resumen Ejecutivo');
+
+    const tarjetas = [];
+    if (tipo === 'ventas' && datos.resumen) {
+        tarjetas.push(
+            { label: 'Total Pedidos', valor: datos.resumen.total_pedidos || 0 },
+            { label: 'Ventas Totales', valor: `$${Number(datos.resumen.ventas_totales || 0).toLocaleString('es-CO')}` },
+            { label: 'Promedio', valor: `$${Number(datos.resumen.promedio_venta || 0).toLocaleString('es-CO')}` }
+        );
+    } else if (tipo === 'inventario') {
+        tarjetas.push(
+            { label: 'Productos', valor: datos.totalProductos || 0 },
+            { label: 'Valor Inventario', valor: `$${Number(datos.valorTotal || 0).toLocaleString('es-CO')}` },
+            { label: 'Categorías', valor: Object.keys(datos.porCategoria || {}).length }
+        );
+    } else if (tipo === 'repartidores') {
+        tarjetas.push({ label: 'Repartidores', valor: datos.totalRepartidores || 0 });
+    } else if (tipo === 'clientes') {
+        tarjetas.push({ label: 'Clientes Activos', valor: datos.totalClientes || 0 });
+    } else if (tipo === 'ventas-categoria' && datos.resumen) {
+        tarjetas.push(
+            { label: 'Unidades', valor: datos.resumen.total_unidades || 0 },
+            { label: 'Ingresos', valor: `$${Number(datos.resumen.total_ingresos || 0).toLocaleString('es-CO')}` }
+        );
+    } else if (tipo === 'estado-pedidos' && datos.resumen) {
+        tarjetas.push(
+            { label: 'Total Pedidos', valor: datos.resumen.total_pedidos || 0 },
+            { label: 'Monto Total', valor: `$${Number(datos.resumen.monto_total || 0).toLocaleString('es-CO')}` }
+        );
+    }
+
+    if (tarjetas.length > 0) dibujarTarjetasResumen(doc, tarjetas);
+
+    dibujarSeccion(doc, 'Análisis Visual');
+
+    try {
+        if (tipo === 'ventas' && datos.detalle?.length) {
+            const top = datos.detalle.slice(0, 15).reverse();
+            const buffer = await generarGraficoLineas({
+                labels: top.map(d => new Date(d.fecha).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })),
+                data: top.map(d => Number(d.ventas_totales || 0)),
+                label: 'Ventas por día'
+            });
+            dibujarGrafico(doc, buffer, 'Evolución de ventas en el período');
+        }
+        else if (tipo === 'inventario' && datos.porCategoria) {
+            const buffer = await generarGraficoDona({
+                labels: Object.keys(datos.porCategoria),
+                data: Object.values(datos.porCategoria).map(c => c.cantidad)
+            });
+            dibujarGrafico(doc, buffer, 'Distribución de productos por categoría');
+        }
+        else if (tipo === 'productos-mas-vendidos' && datos.productos?.length) {
+            const buffer = await generarGraficoBarrasHorizontales({
+                labels: datos.productos.map(p => p.producto?.substring(0, 25)),
+                data: datos.productos.map(p => Number(p.total_vendidos || 0)),
+                label: 'Unidades vendidas'
+            });
+            dibujarGrafico(doc, buffer, 'Top productos más vendidos');
+        }
+        else if (tipo === 'estado-pedidos' && datos.detalle?.length) {
+            const buffer = await generarGraficoDona({
+                labels: datos.detalle.map(d => d.estado),
+                data: datos.detalle.map(d => Number(d.cantidad))
+            });
+            dibujarGrafico(doc, buffer, 'Distribución de pedidos por estado');
+        }
+        else if (tipo === 'ventas-categoria' && datos.detalle?.length) {
+            const buffer = await generarGraficoBarras({
+                labels: datos.detalle.map(d => d.categoria),
+                data: datos.detalle.map(d => Number(d.ingresos || 0)),
+                label: 'Ingresos ($)'
+            });
+            dibujarGrafico(doc, buffer, 'Ingresos por categoría');
+        }
+        else if (tipo === 'repartidores' && datos.repartidores?.length) {
+            const buffer = await generarGraficoBarrasHorizontales({
+                labels: datos.repartidores.map(r => r.repartidor),
+                data: datos.repartidores.map(r => Number(r.pedidos_entregados || 0)),
+                label: 'Entregas',
+                color: '#06A77D'
+            });
+            dibujarGrafico(doc, buffer, 'Entregas por repartidor');
+        }
+        else if (tipo === 'clientes' && datos.clientes?.length) {
+            const buffer = await generarGraficoBarrasHorizontales({
+                labels: datos.clientes.map(c => c.cliente),
+                data: datos.clientes.map(c => Number(c.total_gastado || 0)),
+                label: 'Total gastado ($)',
+                color: '#F77F00'
+            });
+            dibujarGrafico(doc, buffer, 'Top clientes por gasto');
+        }
+    } catch (err) {
+        console.error('Error generando gráfico:', err);
+        doc.fontSize(9).fillColor('#CC0000').text('(No se pudo generar el gráfico)').moveDown();
+    }
+
+    dibujarSeccion(doc, 'Detalle');
 
     if (tipo === 'ventas' && datos.detalle) {
-        doc.text('Ventas por día:', { underline: true });
-        doc.moveDown(0.3);
-        datos.detalle.slice(0, 15).forEach((item) => {
-            doc.text(
-                `  ${item.fecha} - Pedidos: ${item.total_pedidos} - Ventas: $${(item.ventas_totales || 0).toLocaleString('es-CO')} - Promedio: $${(item.promedio_venta || 0).toLocaleString('es-CO')}`
-            );
-        });
-    } else if (tipo === 'inventario' && datos.porCategoria) {
-        doc.text('Productos por categoría:', { underline: true });
-        doc.moveDown(0.3);
-        Object.entries(datos.porCategoria).forEach(([categoria, data]) => {
-            doc.text(`  ${categoria}: ${data.cantidad} productos ($${data.valor.toLocaleString('es-CO')})`);
-        });
-        if (datos.productos) {
-            doc.moveDown().text('Top productos:', { underline: true });
-            doc.moveDown(0.3);
-            datos.productos.slice(0, 10).forEach((p, i) => {
-                doc.text(`  ${i+1}. ${p.nombre} - $${(p.precio || 0).toLocaleString('es-CO')}`);
-            });
-        }
+        dibujarTabla(doc,
+            [
+                { label: 'Fecha', key: 'fecha', width: 100 },
+                { label: 'Pedidos', key: 'total_pedidos', width: 80, align: 'center' },
+                { label: 'Ventas', key: 'ventas_totales', width: 120, align: 'right' },
+                { label: 'Promedio', key: 'promedio_venta', width: 120, align: 'right' },
+                { label: 'Clientes', key: 'clientes_unicos', width: 80, align: 'center' }
+            ],
+            datos.detalle.slice(0, 20).map(d => ({
+                fecha: new Date(d.fecha).toLocaleDateString('es-CO'),
+                total_pedidos: d.total_pedidos,
+                ventas_totales: `$${Number(d.ventas_totales || 0).toLocaleString('es-CO')}`,
+                promedio_venta: `$${Number(d.promedio_venta || 0).toLocaleString('es-CO')}`,
+                clientes_unicos: d.clientes_unicos
+            }))
+        );
+    } else if (tipo === 'inventario' && datos.productos) {
+        dibujarTabla(doc,
+            [
+                { label: 'Producto', key: 'nombre', width: 220 },
+                { label: 'Marca', key: 'marca', width: 120 },
+                { label: 'Categoría', key: 'tipo_categoria', width: 100 },
+                { label: 'Precio', key: 'precio', width: 80, align: 'right' }
+            ],
+            datos.productos.slice(0, 20).map(p => ({
+                ...p,
+                precio: `$${Number(p.precio || 0).toLocaleString('es-CO')}`
+            }))
+        );
     } else if (tipo === 'repartidores' && datos.repartidores) {
-        doc.text('Repartidores:', { underline: true });
-        doc.moveDown(0.3);
-        datos.repartidores.forEach((r) => {
-            doc.text(
-                `  ${r.repartidor} - ${r.tipo_vehiculo || 'Sin vehículo'} - ${r.pedidos_asignados || 0} entregas - Estado: ${r.estado || 'N/A'}`
-            );
-        });
+        dibujarTabla(doc,
+            [
+                { label: 'Repartidor', key: 'repartidor', width: 160 },
+                { label: 'Ciudad', key: 'ciudad', width: 100 },
+                { label: 'Vehículo', key: 'tipo_vehiculo', width: 90 },
+                { label: 'Asignados', key: 'pedidos_asignados', width: 70, align: 'center' },
+                { label: 'Entregados', key: 'pedidos_entregados', width: 80, align: 'center' }
+            ],
+            datos.repartidores.map(r => ({
+                repartidor: r.repartidor,
+                ciudad: r.ciudad || 'N/A',
+                tipo_vehiculo: r.tipo_vehiculo || 'N/A',
+                pedidos_asignados: r.pedidos_asignados || 0,
+                pedidos_entregados: r.pedidos_entregados || 0
+            }))
+        );
     } else if (tipo === 'clientes' && datos.clientes) {
-        doc.text('Top clientes:', { underline: true });
-        doc.moveDown(0.3);
-        datos.clientes.slice(0, 10).forEach((c, i) => {
-            doc.text(
-                `  ${i+1}. ${c.cliente} - ${c.total_pedidos} pedidos - $${(c.total_gastado || 0).toLocaleString('es-CO')}`
-            );
-        });
+        dibujarTabla(doc,
+            [
+                { label: '#', key: 'idx', width: 40, align: 'center' },
+                { label: 'Cliente', key: 'cliente', width: 180 },
+                { label: 'Ciudad', key: 'ciudad', width: 100 },
+                { label: 'Pedidos', key: 'total_pedidos', width: 70, align: 'center' },
+                { label: 'Total Gastado', key: 'total_gastado', width: 110, align: 'right' }
+            ],
+            datos.clientes.slice(0, 15).map((c, i) => ({
+                idx: i + 1,
+                cliente: c.cliente,
+                ciudad: c.ciudad || 'N/A',
+                total_pedidos: c.total_pedidos,
+                total_gastado: `$${Number(c.total_gastado || 0).toLocaleString('es-CO')}`
+            }))
+        );
     } else if (tipo === 'productos-mas-vendidos' && datos.productos) {
-        doc.text('Top productos:', { underline: true });
-        doc.moveDown(0.3);
-        datos.productos.forEach((p, i) => {
-            doc.text(
-                `  ${i+1}. ${p.producto} - ${p.total_vendidos} vendidos - $${(p.ingreso_total || 0).toLocaleString('es-CO')}`
-            );
-        });
+        dibujarTabla(doc,
+            [
+                { label: '#', key: 'idx', width: 40, align: 'center' },
+                { label: 'Producto', key: 'producto', width: 200 },
+                { label: 'Marca', key: 'marca', width: 100 },
+                { label: 'Vendidos', key: 'total_vendidos', width: 80, align: 'center' },
+                { label: 'Ingresos', key: 'ingreso_total', width: 80, align: 'right' }
+            ],
+            datos.productos.map((p, i) => ({
+                idx: i + 1,
+                producto: p.producto,
+                marca: p.marca || 'N/A',
+                total_vendidos: p.total_vendidos,
+                ingreso_total: `$${Number(p.ingreso_total || 0).toLocaleString('es-CO')}`
+            }))
+        );
     } else if (tipo === 'estado-pedidos' && datos.detalle) {
-        doc.text('Distribución de pedidos:', { underline: true });
-        doc.moveDown(0.3);
-        datos.detalle.forEach((item) => {
-            doc.text(
-                `  ${item.estado}: ${item.cantidad} pedidos - $${(item.monto_total || 0).toLocaleString('es-CO')}`
-            );
-        });
+        dibujarTabla(doc,
+            [
+                { label: 'Estado', key: 'estado', width: 150 },
+                { label: 'Cantidad', key: 'cantidad', width: 100, align: 'center' },
+                { label: 'Monto Total', key: 'monto_total', width: 150, align: 'right' },
+                { label: 'Promedio', key: 'promedio', width: 100, align: 'right' }
+            ],
+            datos.detalle.map(d => ({
+                estado: d.estado,
+                cantidad: d.cantidad,
+                monto_total: `$${Number(d.monto_total || 0).toLocaleString('es-CO')}`,
+                promedio: `$${Number(d.promedio || 0).toLocaleString('es-CO')}`
+            }))
+        );
     } else if (tipo === 'ventas-categoria' && datos.detalle) {
-        doc.text('Ventas por categoría:', { underline: true });
-        doc.moveDown(0.3);
-        datos.detalle.forEach((item) => {
-            doc.text(
-                `  ${item.categoria}: ${item.unidades_vendidas || 0} unidades - $${(item.ingresos || 0).toLocaleString('es-CO')}`
-            );
-        });
+        dibujarTabla(doc,
+            [
+                { label: 'Categoría', key: 'categoria', width: 180 },
+                { label: 'Pedidos', key: 'pedidos', width: 80, align: 'center' },
+                { label: 'Unidades', key: 'unidades_vendidas', width: 90, align: 'center' },
+                { label: 'Ingresos', key: 'ingresos', width: 150, align: 'right' }
+            ],
+            datos.detalle.map(d => ({
+                categoria: d.categoria,
+                pedidos: d.pedidos,
+                unidades_vendidas: d.unidades_vendidas,
+                ingresos: `$${Number(d.ingresos || 0).toLocaleString('es-CO')}`
+            }))
+        );
     }
 
-    // Pie de página
-    doc.moveDown(3)
-       .fontSize(8)
-       .fillColor('#999999')
-       .text('Reporte generado automáticamente por el sistema de Óptica Balamb', { align: 'center' })
-       .text(`Página ${doc.pageNumber}`, { align: 'center' });
+    const rango = doc.bufferedPageRange();
+    for (let i = 0; i < rango.count; i++) {
+        doc.switchToPage(rango.start + i);
+        doc.fontSize(8)
+           .fillColor('#999999')
+           .font('Helvetica')
+           .text(
+               `Óptica Balamb · Reporte generado automáticamente · Página ${i + 1} de ${rango.count}`,
+               50,
+               doc.page.height - 40,
+               { align: 'center', width: doc.page.width - 100 }
+           );
+    }
 };

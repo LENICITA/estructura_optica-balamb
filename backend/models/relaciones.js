@@ -4,6 +4,7 @@ import Role from './Role.js';
 import RolUsuario from './RolUsuario.js';
 import { Pedido } from './pedidos.js';
 import { Distribucion } from './Distribucion.js'; 
+import { Formulas } from './formula.js';
 
 // Relación entre Usuario y Role (Many-to-Many)
 Usuario.belongsToMany(Role, {
@@ -79,6 +80,17 @@ Pedido.hasOne(Distribucion, {
     as: 'distribuciones'
 });
 
+// Un usuario puede tener muchas fórmulas
+Usuario.hasMany(Formulas, {
+    foreignKey: 'id_usuario',
+    as: 'formulas'
+});
+
+// Una fórmula pertenece a un usuario
+Formulas.belongsTo(Usuario, {
+    foreignKey: 'id_usuario',
+    as: 'usuario'
+});
 
 export {
     Usuario,
@@ -86,5 +98,6 @@ export {
     Role,
     RolUsuario,
     Pedido,
-    Distribucion
+    Distribucion,
+    Formulas
 };

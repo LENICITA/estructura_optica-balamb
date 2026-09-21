@@ -10,35 +10,76 @@ const Producto = sequelize.define('Producto', {
   },
   id_categoria: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La categoría es requerida' },
+      isInt:   { msg: 'El ID de la categoría debe ser un número' }
+    }
   },
   nombre: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El nombre es requerido' },
+      notEmpty: { msg: 'El nombre es requerido' },
+      len: { args: [2, 45], msg: 'El nombre debe tener entre 2 y 45 caracteres' }
+    }
   },
   descripcion: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La descripción es requerida' },
+      notEmpty: { msg: 'La descripción es requerida' },
+      len: { args: [2, 45], msg: 'La descripción debe tener entre 2 y 45 caracteres' }
+    }
   },
   marca: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La marca es requerida' },
+      notEmpty: { msg: 'La marca es requerida' },
+      len: { args: [2, 45], msg: 'La marca debe tener entre 2 y 45 caracteres' }
+    }
   },
   precio: {
     type: DataTypes.FLOAT,
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El precio es requerido' },
+      isFloat: { msg: 'El precio debe ser un número válido' },
+      min: { args: [0.01], msg: 'El precio debe ser mayor a 0' }
+    }
   },
   imagen: {
     type: DataTypes.STRING(200),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La imagen es requerida' },
+      notEmpty: { msg: 'La imagen es requerida' }
+    }
   },
   material: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El material es requerido' },
+      notEmpty: { msg: 'El material es requerido' },
+      len: { args: [2, 45], msg: 'El material debe tener entre 2 y 45 caracteres' }
+    }
   },
   color: {
     type: DataTypes.STRING(45),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El color es requerido' },
+      notEmpty: { msg: 'El color es requerido' },
+      is: {
+        args: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+        msg: 'El color solo puede contener letras y espacios'
+      }
+    }
   }
 }, {
   tableName: 'PRODUCTOS',
@@ -54,11 +95,23 @@ const Categoria = sequelize.define('Categoria', {
   },
   tipo_categoria: {
     type: DataTypes.ENUM('MONTURAS', 'ACCESORIOS', 'GAFAS DE SOL'),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'El tipo de categoría es requerido' },
+      isIn: {
+        args: [['MONTURAS', 'ACCESORIOS', 'GAFAS DE SOL']],
+        msg: 'Tipo de categoría inválido. Debe ser: MONTURAS, ACCESORIOS o GAFAS DE SOL'
+      }
+    }
   },
   descripcion: {
     type: DataTypes.STRING(200),
-    allowNull: false
+    allowNull: false,
+    validate: {
+      notNull: { msg: 'La descripción es requerida' },
+      notEmpty: { msg: 'La descripción es requerida' },
+      len: { args: [2, 200], msg: 'La descripción debe tener entre 2 y 200 caracteres' }
+    }
   }
 }, {
   tableName: 'CATEGORIAS',
@@ -174,12 +227,17 @@ const Inventario = {
     try {
       const where = {};
 
-      if (filtros.precio_min) {
-        where.precio = { [Op.gte]: parseFloat(filtros.precio_min) };
-      }
-      if (filtros.precio_max) {
-        where.precio = { ...where.precio, [Op.lte]: parseFloat(filtros.precio_max) };
-      }
+      if (filtros.precio_min !== undefined && filtros.precio_min !== null) {
+      where.precio = { 
+        [Op.gte]: sequelize.literal(Number(filtros.precio_min)) 
+      };
+    }
+    if (filtros.precio_max !== undefined && filtros.precio_max !== null) {
+      where.precio = { 
+        ...where.precio, 
+        [Op.lte]: sequelize.literal(Number(filtros.precio_max)) 
+      };
+    }
       if (filtros.marca) {
         where.marca = filtros.marca;
       }
@@ -418,87 +476,13 @@ const Inventario = {
   getCategorias: async () => {
     try {
       const categorias = await Categoria.findAll({
-        order: [['id_categoria', 'ASC']]
+        order: [['tipo_categoria', 'ASC']],
+        attributes: ['tipo_categoria']
       });
 
-      return categorias.map(c => ({
-        id_categoria: c.id_categoria,
-        tipo_categoria: c.tipo_categoria,
-        descripcion: c.descripcion
-      }));
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Obtener categoría por ID
-  getCategoriaById: async (id) => {
-    try {
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) return null;
-
-      return {
-        id_categoria: categoria.id_categoria,
-        tipo_categoria: categoria.tipo_categoria,
-        descripcion: categoria.descripcion
-      };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Crear categoría
-  createCategoria: async (data) => {
-    try {
-      const { tipo_categoria, descripcion } = data;
-      
-      const categoria = await Categoria.create({
-        tipo_categoria,
-        descripcion: descripcion || ''
-      });
-
-      return { insertId: categoria.id_categoria };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Actualizar categoría
-  updateCategoria: async (id, data) => {
-    try {
-      const { tipo_categoria, descripcion } = data;
-      
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) {
-        throw new Error('Categoría no encontrada');
-      }
-
-      await categoria.update({
-        tipo_categoria: tipo_categoria || categoria.tipo_categoria,
-        descripcion: descripcion !== undefined ? descripcion : categoria.descripcion
-      });
-
-      return { affectedRows: 1 };
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Eliminar categoría
-  deleteCategoria: async (id) => {
-    try {
-      const categoria = await Categoria.findByPk(id);
-      
-      if (!categoria) {
-        throw new Error('Categoría no encontrada');
-      }
-
-      await categoria.destroy();
-      return { affectedRows: 1 };
-    } catch (error) {
-      throw error;
+      return categorias.map(c => c.tipo_categoria);
+  } catch (error) {
+    throw error;
     }
   }
 };

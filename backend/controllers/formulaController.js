@@ -2,6 +2,72 @@ import FormulaModelo from '../models/formula.js';
 import { obtenerUrlImagen } from '../utils/imageUtils.js';
 import cloudinary from '../config/cloudinary.js';
 
+// HELPER: Manejo centralizado de errores
+const manejarErrorValidacion = (error, res) => {
+  // Errores de validación de Sequelize (msg personalizados en el modelo)
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  // Campos únicos duplicados
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'El valor ya existe en la base de datos'
+    });
+  }
+
+  // Error de FK
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+
+  // Error de BD (conexión, sintaxis SQL, etc.)
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  // Cualquier otro error → 500
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+// CONSTANTES Y VALIDADORES
+const CONDICIONES_VALIDAS = ['DALTONISMO', 'ASTIGMATISMO', 'MIOPIA', 'BAJA VISION'];
+const ESTADOS_VALIDOS = ['Pendiente', 'Aprobado', 'Rechazado'];
+
+const validarCondicion = (condicion) => {
+  if (!condicion || typeof condicion !== 'string') return false;
+  return CONDICIONES_VALIDAS.includes(condicion.toUpperCase());
+};
+
+const validarEstado = (estado) => {
+  if (!estado || typeof estado !== 'string') return false;
+  return ESTADOS_VALIDOS.includes(estado);
+};
+
+const validarCosto = (costo) => {
+  if (costo === undefined || costo === null || costo === '') return false;
+  const num = Number(costo);
+  return !isNaN(num) && num > 0;
+};
+
 // ============================================
 // CLIENTE - SUBIR FÓRMULA
 // ============================================
@@ -17,6 +83,13 @@ export const subirFormula = async (req, res) => {
       });
     }
 
+    if (!validarCondicion(condicion)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Condición inválida. Debe ser: DALTONISMO, ASTIGMATISMO, MIOPIA o BAJA VISION'
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -24,17 +97,16 @@ export const subirFormula = async (req, res) => {
       });
     }
 
-    const condicionesValidas = ['DALTONISMO', 'ASTIGMATISMO', 'MIOPIA', 'BAJA VISION'];
-    if (!condicionesValidas.includes(condicion)) {
+    if (observaciones && observaciones.length > 200) {
       return res.status(400).json({
         success: false,
-        message: 'Condición inválida'
+        message: 'Las observaciones no pueden superar los 200 caracteres'
       });
     }
 
     const nuevoId = await FormulaModelo.crear({
       id_usuario: usuario.id,
-      condicion,
+      condicion: condicion.toUpperCase(),
       imagen_formula: req.file.path,
       observaciones: observaciones || null
     });
@@ -42,7 +114,7 @@ export const subirFormula = async (req, res) => {
     const nuevaFormula = await FormulaModelo.obtenerPorId(nuevoId);
 
     const formulaConImagen = {
-      ...nuevaFormula,
+      ...nuevaFormula.toJSON ? nuevaFormula.toJSON() : nuevaFormula,
       imagen_url: obtenerUrlImagen(nuevaFormula.imagen_formula, 400, 400)
     };
 
@@ -53,12 +125,7 @@ export const subirFormula = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al subir fórmula:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al subir la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -115,12 +182,7 @@ export const eliminarFormula = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al eliminar fórmula:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al eliminar la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -133,10 +195,13 @@ export const obtenerMisFormulas = async (req, res) => {
 
     const formulas = await FormulaModelo.obtenerPorCliente(usuario.id);
 
-    const formulasConImagen = formulas.map(f => ({
-      ...f,
-      imagen_url: obtenerUrlImagen(f.imagen_formula, 400, 400)
-    }));
+    const formulasConImagen = formulas.map(f => {
+      const plain = f.toJSON ? f.toJSON() : f;
+      return {
+        ...plain,
+        imagen_url: obtenerUrlImagen(plain.imagen_formula, 400, 400)
+      };
+    });
 
     res.json({
       success: true,
@@ -145,12 +210,7 @@ export const obtenerMisFormulas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener tus fórmulas',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -171,15 +231,17 @@ export const obtenerFormulaPorId = async (req, res) => {
       });
     }
 
-    if (formula.id_usuario !== usuario.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver esta fórmula'
-      });
-    }
+    const esAdmin = usuario.roles?.includes('ADMIN') || false;
+        
+        if (!esAdmin && formula.id_usuario !== usuario.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para ver esta fórmula'
+            });
+        }
 
     const formulaConImagen = {
-      ...formula,
+      ...(formula.toJSON ? formula.toJSON() : formula),
       imagen_url: obtenerUrlImagen(formula.imagen_formula, 400, 400)
     };
 
@@ -189,12 +251,7 @@ export const obtenerFormulaPorId = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmula:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -217,12 +274,7 @@ export const obtenerTodasLasFormulas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener las fórmulas',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -245,12 +297,7 @@ export const obtenerFormulasPendientes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener fórmulas pendientes:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener fórmulas pendientes',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -262,17 +309,31 @@ export const asignarPrecioFormula = async (req, res) => {
     const { id } = req.params;
     const { costo, estado } = req.body;
 
-    if (costo === undefined || costo === null) {
+    if (costo === undefined || costo === null || costo === '') {
       return res.status(400).json({
         success: false,
         message: 'El campo costo es requerido'
       });
     }
 
-    if (costo < 0) {
+    if (isNaN(Number(costo))) {
       return res.status(400).json({
         success: false,
-        message: 'El costo no puede ser negativo'
+        message: 'El costo debe ser un número válido'
+      });
+    }
+
+    if (Number(costo) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El costo debe ser mayor a 0'
+      });
+    }
+
+    if (estado && !validarEstado(estado)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Estado inválido. Debe ser: Pendiente, Aprobado o Rechazado'
       });
     }
 
@@ -284,13 +345,20 @@ export const asignarPrecioFormula = async (req, res) => {
       });
     }
 
+    if (formula.estado === 'Rechazado') {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede asignar precio a una fórmula rechazada'
+      });
+    }
+
     const estadoFinal = estado || 'Aprobado';
-    await FormulaModelo.asignarPrecio(id, costo, estadoFinal);
+    await FormulaModelo.asignarPrecio(id, Number(costo), estadoFinal);
 
     const formulaActualizada = await FormulaModelo.obtenerPorId(id);
 
     const formulaConImagen = {
-      ...formulaActualizada,
+      ...(formulaActualizada.toJSON ? formulaActualizada.toJSON() : formulaActualizada),
       imagen_url: obtenerUrlImagen(formulaActualizada.imagen_formula, 400, 400)
     };
 
@@ -301,12 +369,7 @@ export const asignarPrecioFormula = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al asignar precio:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al asignar precio a la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -318,8 +381,14 @@ export const cambiarEstadoFormula = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado'];
-    if (!estadosValidos.includes(estado)) {
+    if (!estado) {
+      return res.status(400).json({
+        success: false,
+        message: 'El estado es requerido'
+      });
+    }
+
+    if (!validarEstado(estado)) {
       return res.status(400).json({
         success: false,
         message: 'Estado inválido. Debe ser: Pendiente, Aprobado o Rechazado'
@@ -339,7 +408,7 @@ export const cambiarEstadoFormula = async (req, res) => {
     const formulaActualizada = await FormulaModelo.obtenerPorId(id);
 
     const formulaConImagen = {
-      ...formulaActualizada,
+      ...(formulaActualizada.toJSON ? formulaActualizada.toJSON() : formulaActualizada),
       imagen_url: obtenerUrlImagen(formulaActualizada.imagen_formula, 400, 400)
     };
 
@@ -350,12 +419,7 @@ export const cambiarEstadoFormula = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al cambiar estado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al cambiar estado de la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -397,11 +461,6 @@ export const verificarFormulaAprobada = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar fórmula:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al verificar la fórmula',
-      error: error.message
-    });
+    return manejarErrorValidacion(error, res);
   }
 };

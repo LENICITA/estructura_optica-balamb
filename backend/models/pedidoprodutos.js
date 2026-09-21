@@ -9,6 +9,10 @@ const PedidoProducto = sequelize.define('PedidoProducto', {
     references: {
       model: 'PEDIDOS',
       key: 'id_pedido'
+    },
+    validate: {
+      notNull: { msg: 'El pedido es requerido' },
+      isInt:   { msg: 'El ID del pedido debe ser un número' }
     }
   },
   id_producto: {
@@ -18,12 +22,18 @@ const PedidoProducto = sequelize.define('PedidoProducto', {
     references: {
       model: 'PRODUCTOS',
       key: 'id_producto'
+    },
+    validate: {
+      notNull: { msg: 'El producto es requerido' },
+      isInt:   { msg: 'El ID del producto debe ser un número' }
     }
   },
   cant_productos: {
     type: DataTypes.INTEGER,
     allowNull: false,
     validate: {
+      notNull: { msg: 'La cantidad es requerida' },  
+      isInt:   { msg: 'La cantidad debe ser un número entero' }, 
       min: {
         args: [1],
         msg: 'La cantidad debe ser mayor a 0'
