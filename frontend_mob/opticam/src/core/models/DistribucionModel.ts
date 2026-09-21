@@ -180,7 +180,7 @@ export class DistribucionModel implements Distribucion {
 
     const pedidoData = source.pedido || {};
 
-    const clienteData = pedidoData.cliente || source.cliente || {};
+    const clienteData = source.cliente || pedidoData.cliente || {};
 
     const repartidorData =
       source.repartidor ||
@@ -189,47 +189,37 @@ export class DistribucionModel implements Distribucion {
       {};
 
     return new DistribucionModel({
-      id_distribucion:
-        source.id_distribucion || source.id || 0,
+      id_distribucion: source.id_distribucion || source.id || 0,
 
-      id_pedido:
-        source.id_pedido || pedidoData.id_pedido || 0,
+      id_pedido: source.id_pedido || pedidoData.id_pedido || 0,
 
       id_usuario: source.id_usuario || 0,
 
       estado: source.estado || 'PENDIENTE',
 
-      fecha_asignacion:
-        source.fecha_asignacion ||
-        new Date().toISOString(),
+      fecha_asignacion: source.fecha_asignacion || new Date().toISOString(),
 
       fecha_entrega: source.fecha_entrega || null,
 
       observaciones: source.observaciones || null,
 
       pedido: {
-        id_pedido:
-          pedidoData.id_pedido || source.id_pedido || 0,
+        id_pedido: pedidoData.id_pedido || source.id_pedido || 0,
 
         direccion_entrega:
-          pedidoData.direccion_entrega ||
-          source.direccion_entrega ||
-          '',
+          pedidoData.direccion_entrega || source.direccion_entrega || '',
 
         ciudad_envio:
           pedidoData.ciudad_envio ||
           source.ciudad_envio ||
+          clienteData.ciudad ||
+          source.cliente_ciudad ||
           '',
 
-        total:
-          pedidoData.total ||
-          source.total ||
-          0,
+        total: pedidoData.total || source.total || 0,
 
         fecha_estimada:
-          pedidoData.fecha_estimada ||
-          source.fecha_estimada ||
-          '',
+          pedidoData.fecha_estimada || source.fecha_estimada || '',
 
         cliente:
           clienteData.nombre ||
@@ -255,6 +245,8 @@ export class DistribucionModel implements Distribucion {
                 ciudad:
                   clienteData.ciudad ||
                   source.cliente_ciudad ||
+                  pedidoData.ciudad_envio ||
+                  source.ciudad_envio ||
                   '',
               }
             : undefined,
@@ -290,7 +282,7 @@ export class DistribucionModel implements Distribucion {
                 }
                 return null;
               })(),
-          }
+            }
           : undefined,
     });
   }

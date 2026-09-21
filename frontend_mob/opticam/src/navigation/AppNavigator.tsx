@@ -50,6 +50,7 @@ import EditarProducto from '../features/admin/screens/EditarProducto';
 import DetallePedidosAdmin from '../features/admin/screens/DetallePedidosAdmin';
 import { ReportesAdmin } from '../features/admin/screens/ReportesAdmin';
 import { GestionarDistribucionesAdmin } from '../features/admin/screens/GestionarDistribucionesAdmin';
+import DistribucionesExternas from '../features/admin/screens/DistribucionesExternas';
 // ===== SCREENS DELIVERY =====
 import { PrincipalRepartidor } from '../features/delivery/screens/PrincipalRepartidor';
 import { PerfilRepartidor } from '../features/delivery/screens/PerfilRepartidor';
@@ -247,6 +248,13 @@ export default function AppNavigator() {
                              )}
                             </Stack.Screen>
 
+              <Stack.Screen name="DistribucionesExternas">
+                              {() => (
+                                <UserLayout>
+                                  <DistribucionesExternas />
+                                </UserLayout>
+                              )}
+                            </Stack.Screen>
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (

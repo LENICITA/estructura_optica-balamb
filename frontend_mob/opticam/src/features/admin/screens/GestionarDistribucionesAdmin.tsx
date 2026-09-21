@@ -355,7 +355,7 @@ export const GestionarDistribucionesAdmin = ({ navigation }: Props) => {
         <View style={styles.botonExternasContainer}>
           <TouchableOpacity
             style={styles.externasButton}
-            onPress={() => navigation.navigate('DistribucionesExternasAdmin')}
+            onPress={() => navigation.navigate('DistribucionesExternas')}
           >
             <Ionicons name="business-outline" size={18} color="#FFF" />
             <Text style={styles.externasButtonText}>Ver distribuciones externas</Text>

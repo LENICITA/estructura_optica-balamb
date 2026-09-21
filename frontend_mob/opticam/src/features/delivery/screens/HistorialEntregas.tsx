@@ -1,5 +1,3 @@
-// src/features/delivery/screens/HistorialEntregas.tsx
-
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -33,22 +31,17 @@ export default function HistorialEntregas() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const esAdmin = user?.isAdmin || false;
+
   const cargarHistorial = useCallback(async () => {
     try {
       setLoading(true);
 
       const data = await distribucionController.getHistorial();
 
-      // ✅ Solo ENTREGADO
-      const filtrado = data.filter(item => item.estado === 'ENTREGADO');
+      const filtrado = data.filter((item) => item.estado === 'ENTREGADO');
 
-      // 🔒 Filtro extra de seguridad por repartidor
-      const esMio = (item: DistribucionModel) =>
-        !user ||
-        item.id_usuario === (user as any).id_usuario ||
-        item.id_usuario === (user as any).id;
-
-      setHistorial(filtrado.filter(esMio));
+      setHistorial(filtrado);
     } catch (error) {
       console.error('Error cargando historial:', error);
       setHistorial([]);
@@ -56,7 +49,7 @@ export default function HistorialEntregas() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -69,9 +62,6 @@ export default function HistorialEntregas() {
     cargarHistorial();
   };
 
-  // ============================================
-  // LOADING
-  // ============================================
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -81,9 +71,6 @@ export default function HistorialEntregas() {
     );
   }
 
-  // ============================================
-  // ITEM
-  // ============================================
   const renderItem = ({ item }: { item: DistribucionModel }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -148,22 +135,20 @@ export default function HistorialEntregas() {
     </View>
   );
 
-  // ============================================
-  // EMPTY
-  // ============================================
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="cube-outline" size={60} color={COLORS.gray} />
-      <Text style={styles.emptyTitle}>Sin entregas completadas</Text>
+      <Text style={styles.emptyTitle}>
+        {esAdmin ? 'Sin entregas externas' : 'Sin entregas completadas'}
+      </Text>
       <Text style={styles.emptyText}>
-        Cuando completes tus entregas aparecerán aquí.
+        {esAdmin
+          ? 'Cuando se entreguen pedidos fuera de Bogotá aparecerán aquí.'
+          : 'Cuando completes tus entregas aparecerán aquí.'}
       </Text>
     </View>
   );
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -175,7 +160,9 @@ export default function HistorialEntregas() {
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Historial de entregas</Text>
+          <Text style={styles.headerTitle}>
+            {esAdmin ? 'Historial externo' : 'Historial de entregas'}
+          </Text>
           <Text style={styles.headerSubtitle}>
             {historial.length}{' '}
             {historial.length === 1 ? 'entrega' : 'entregas'}
@@ -187,7 +174,7 @@ export default function HistorialEntregas() {
 
       <FlatList
         data={historial}
-        keyExtractor={item => `historial-${item.id_distribucion}`}
+        keyExtractor={(item) => `historial-${item.id_distribucion}`}
         renderItem={renderItem}
         contentContainerStyle={
           historial.length === 0 ? styles.listEmpty : styles.listContent
