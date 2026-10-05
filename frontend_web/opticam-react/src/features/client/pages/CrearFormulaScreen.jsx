@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { useAuth } from '../../auth/context/AuthContext';
-import { validarFormularioFormula } from '../../../shared/validators/formulaValidators';
 
 const condiciones = ['ASTIGMATISMO', 'MIOPIA', 'DALTONISMO', 'BAJA VISION'];
 
@@ -26,7 +25,7 @@ export const CrearFormulaScreen = () => {
   const [mostrarDescripcion, setMostrarDescripcion] = useState(false);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setImagen(file);
       setImagenPreview(URL.createObjectURL(file));
@@ -34,27 +33,21 @@ export const CrearFormulaScreen = () => {
   };
 
   const subirFormula = async () => {
-    const check = validarFormularioFormula({
-      id_usuario: idUsuario ? Number(idUsuario) : undefined,
-      condicion: condicion,
-      imagen_formula: imagen ? imagen.name : '',
-      observaciones: descripcion.trim(),
-    });
-
-    if (!check.valido) return alert(check.mensaje || 'Datos inválidos');
-
     try {
       setSubiendo(true);
 
       const resultado = await formulaController.crearFormula({
         id_usuario: Number(idUsuario),
         condicion: condicion,
-        imagen_formula: imagen,
+        imagen_formula: imagen,                      // 👈 File real
         observaciones: descripcion.trim(),
         fecha_creacion: fecha,
       });
 
-      if (!resultado.success) return alert(resultado.message);
+      if (!resultado.success) {
+        alert(resultado.message);
+        return;
+      }
 
       alert('La fórmula fue registrada correctamente y está en revisión.');
       navigate('/cliente/mis-formulas');
@@ -66,7 +59,7 @@ export const CrearFormulaScreen = () => {
     }
   };
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
 
