@@ -97,6 +97,69 @@ export class FormulaService {
   }
 
   // ==========================================================
+  // HELPER: Adjuntar imagen al FormData (web + React Native)
+  // ==========================================================
+
+  _adjuntarImagen(formData, imagen, campo = 'imagen') {
+    if (!imagen) {
+      console.log('⚠️ _adjuntarImagen: imagen vacía/null');
+      return;
+    }
+
+    // --- WEB: File ---
+    if (typeof File !== 'undefined' && imagen instanceof File) {
+      console.log('✅ Adjuntando File web:', imagen.name, imagen.size, imagen.type);
+      formData.append(campo, imagen, imagen.name);
+      return;
+    }
+
+    // --- WEB: Blob ---
+    if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
+      const ext = (imagen.type?.split('/')[1]) || 'jpg';
+      const name = `formula_${Date.now()}.${ext}`;
+      console.log('✅ Adjuntando Blob web:', name);
+      formData.append(campo, imagen, name);
+      return;
+    }
+
+    // --- RN: { uri, name, type } ---
+    if (typeof imagen === 'object' && typeof imagen.uri === 'string') {
+      const uri = imagen.uri;
+      const uriParts = uri.split('.');
+      const fileType = uriParts[uriParts.length - 1] || 'jpg';
+      const fileName = imagen.name || `formula_${Date.now()}.${fileType}`;
+      let mimeType = imagen.type || 'image/jpeg';
+      if (!imagen.type) {
+        const lower = fileType.toLowerCase();
+        if (lower === 'png') mimeType = 'image/png';
+        else if (lower === 'gif') mimeType = 'image/gif';
+        else if (lower === 'webp') mimeType = 'image/webp';
+      }
+      console.log('✅ Adjuntando RN asset:', fileName);
+      formData.append(campo, { uri, name: fileName, type: mimeType });
+      return;
+    }
+
+    // --- String (uri suelta) ---
+    if (typeof imagen === 'string') {
+      const uriParts = imagen.split('.');
+      const fileType = uriParts[uriParts.length - 1] || 'jpg';
+      const fileName = `formula_${Date.now()}.${fileType}`;
+      let mimeType = 'image/jpeg';
+      const lower = fileType.toLowerCase();
+      if (lower === 'png') mimeType = 'image/png';
+      else if (lower === 'gif') mimeType = 'image/gif';
+      else if (lower === 'webp') mimeType = 'image/webp';
+
+      console.log('✅ Adjuntando string uri:', fileName);
+      formData.append(campo, { uri: imagen, name: fileName, type: mimeType });
+      return;
+    }
+
+    console.log('❌ _adjuntarImagen: tipo no soportado:', typeof imagen);
+  }
+
+  // ==========================================================
   // CREAR FÓRMULA
   // ==========================================================
 
@@ -107,6 +170,11 @@ export class FormulaService {
         condicion: data.condicion,
         observaciones: data.observaciones,
         tieneImagen: !!data.imagen_formula,
+        tipoImagen: data.imagen_formula instanceof File
+          ? 'File (web)'
+          : (data.imagen_formula && typeof data.imagen_formula === 'object' && data.imagen_formula.uri)
+            ? 'RN asset'
+            : typeof data.imagen_formula,
       });
 
       // Validaciones
@@ -123,34 +191,25 @@ export class FormulaService {
       // CREAR FormData
       const formData = new FormData();
 
+      formData.append('id_usuario', String(data.id_usuario));
       formData.append('condicion', data.condicion);
       formData.append('observaciones', data.observaciones || '');
+      if (data.fecha_creacion) {
+        formData.append('fecha_creacion', data.fecha_creacion);
+      }
 
-      // AGREGAR IMAGEN como archivo
-      const uri = data.imagen_formula;
-      const uriParts = uri.split('.');
-      const fileType = uriParts[uriParts.length - 1] || 'jpg';
-      const fileName = `formula_${Date.now()}.${fileType}`;
+      // Adjuntar imagen (web o RN)
+      this._adjuntarImagen(formData, data.imagen_formula, 'imagen');
 
-      let mimeType = 'image/jpeg';
-      if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
-      else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
-      else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
+      // Debug: ver qué entra al FormData
+      for (let [key, val] of formData.entries()) {
+        console.log('FormData entry:', key, '→', val, '| tipo:', val?.constructor?.name);
+      }
 
-      formData.append('imagen', {
-        uri: uri,
-        name: fileName,
-        type: mimeType,
-      });
+      console.log(' Service - Enviando FormData...');
 
-      console.log(' Service - Enviando FormData con imagen:', fileName);
-
-      // ENVIAR
-      const response = await apiClient.post('/formulas', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // ⚠️ NO poner Content-Type manual: axios lo calcula con el boundary
+      const response = await apiClient.post('/formulas', formData);
 
       console.log(' Service - Respuesta del backend:', response.data);
 
@@ -172,6 +231,8 @@ export class FormulaService {
 
     } catch (error) {
       console.error(' Error en FormulaService.crearFormula:', error);
+      console.log(' 🔎 RESPONSE DATA:', error.response?.data);
+      console.log(' 🔎 STATUS:', error.response?.status);
 
       let errorMessage = 'No fue posible crear la fórmula.';
       if (error.response?.data?.message) {
