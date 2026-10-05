@@ -164,6 +164,71 @@ export class ProductService {
   // ADMIN - CRUD
   // ============================================
 
+  // Helper para adjuntar imagen al FormData soportando web y React Native
+  _adjuntarImagen(formData, imagen) {
+    if (!imagen) return;
+
+    // --- WEB: File / Blob ---
+    if (typeof File !== 'undefined' && imagen instanceof File) {
+      formData.append('imagen', imagen);
+      console.log(' Service - Imagen adjuntada (File web):', imagen.name);
+      return;
+    }
+
+    if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
+      const ext = (imagen.type?.split('/')[1]) || 'jpg';
+      formData.append('imagen', imagen, `producto_${Date.now()}.${ext}`);
+      console.log(' Service - Imagen adjuntada (Blob web)');
+      return;
+    }
+
+    // --- REACT NATIVE: { uri, name, type } o string uri ---
+    if (typeof imagen === 'object' && typeof imagen.uri === 'string') {
+      const uri = imagen.uri;
+      const uriParts = uri.split('.');
+      const fileType = uriParts[uriParts.length - 1] || 'jpg';
+      const fileName = imagen.name || `producto_${Date.now()}.${fileType}`;
+
+      let mimeType = imagen.type || 'image/jpeg';
+      if (!imagen.type) {
+        const lower = fileType.toLowerCase();
+        if (lower === 'png') mimeType = 'image/png';
+        else if (lower === 'gif') mimeType = 'image/gif';
+        else if (lower === 'webp') mimeType = 'image/webp';
+      }
+
+      formData.append('imagen', {
+        uri,
+        name: fileName,
+        type: mimeType,
+      });
+
+      console.log(' Service - Imagen adjuntada (RN):', fileName);
+      return;
+    }
+
+    // --- String suelto (uri RN sin objeto) ---
+    if (typeof imagen === 'string') {
+      const uriParts = imagen.split('.');
+      const fileType = uriParts[uriParts.length - 1] || 'jpg';
+      const fileName = `producto_${Date.now()}.${fileType}`;
+
+      let mimeType = 'image/jpeg';
+      const lower = fileType.toLowerCase();
+      if (lower === 'png') mimeType = 'image/png';
+      else if (lower === 'gif') mimeType = 'image/gif';
+      else if (lower === 'webp') mimeType = 'image/webp';
+
+      formData.append('imagen', {
+        uri: imagen,
+        name: fileName,
+        type: mimeType,
+      });
+
+      console.log(' Service - Imagen adjuntada (string uri):', fileName);
+    }
+  }
+
   // ===== CREAR PRODUCTO (ADMIN) =====
   async crearProducto(data) {
     try {
@@ -183,33 +248,21 @@ export class ProductService {
       formData.append('material', data.material || '');
       formData.append('color', data.color || '');
 
-      if (data.imagen) {
-        const uri = data.imagen;
-        const uriParts = uri.split('.');
-        const fileType = uriParts[uriParts.length - 1] || 'jpg';
-        const fileName = `producto_${Date.now()}.${fileType}`;
-
-        let mimeType = 'image/jpeg';
-        if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
-        else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
-        else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
-
-        formData.append('imagen', {
-          uri: uri,
-          name: fileName,
-          type: mimeType,
-        });
-
-        console.log(' Service - Imagen adjuntada:', fileName);
-      }
+      this._adjuntarImagen(formData, data.imagen);
 
       console.log(' Service - Enviando FormData...');
 
-      const response = await apiClient.post('/inventario/productos', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      console.log('🔎 imagen original:', data.imagen);
+      console.log('🔎 instanceof File:', data.imagen instanceof File);
+      console.log('🔎 tipo:', typeof data.imagen);
+
+      for (let pair of formData.entries()) {
+        const [key, val] = pair;
+        console.log('FormData entry:', key, '→', val, '| tipo:', val?.constructor?.name);
+      }
+
+      // NO setear Content-Type manualmente: axios lo hace con el boundary correcto
+      const response = await apiClient.post('/inventario/productos', formData);
 
       console.log(' Service - Respuesta del backend:', response.data);
 
@@ -230,6 +283,9 @@ export class ProductService {
 
     } catch (error) {
       console.error(' Error en ProductService.crearProducto:', error);
+      console.log('  RESPONSE DATA:', error.response?.data);      // 👈 agrega esto
+      console.log('  STATUS:', error.response?.status); 
+
 
       let errorMessage = 'No fue posible crear el producto.';
       if (error.response?.data?.message) {
@@ -253,7 +309,11 @@ export class ProductService {
       console.log(' Service - Actualizando producto ID:', id);
       console.log(' Service - Datos:', {
         tieneImagen: !!data.imagen,
-        esUriLocal: data.imagen ? !data.imagen.startsWith('http') : false,
+        tipo: data.imagen instanceof File
+          ? 'File (web)'
+          : (data.imagen && typeof data.imagen === 'object' && data.imagen.uri)
+            ? 'RN asset'
+            : typeof data.imagen,
       });
 
       const formData = new FormData();
@@ -266,35 +326,17 @@ export class ProductService {
       if (data.material !== undefined) formData.append('material', data.material || '');
       if (data.color !== undefined) formData.append('color', data.color || '');
 
-      // Si la imagen es una URI local (el usuario seleccionó una nueva), la mandamos como archivo
-      // Si es una URL de Cloudinary (la original), NO la mandamos
-      if (data.imagen && !data.imagen.startsWith('http')) {
-        const uri = data.imagen;
-        const uriParts = uri.split('.');
-        const fileType = uriParts[uriParts.length - 1] || 'jpg';
-        const fileName = `producto_${Date.now()}.${fileType}`;
+      // Solo adjuntar imagen si es un archivo nuevo (no una URL existente de Cloudinary)
+      const esUrlExistente =
+        typeof data.imagen === 'string' && data.imagen.startsWith('http');
 
-        let mimeType = 'image/jpeg';
-        if (fileType.toLowerCase() === 'png') mimeType = 'image/png';
-        else if (fileType.toLowerCase() === 'gif') mimeType = 'image/gif';
-        else if (fileType.toLowerCase() === 'webp') mimeType = 'image/webp';
-
-        formData.append('imagen', {
-          uri: uri,
-          name: fileName,
-          type: mimeType,
-        });
-
-        console.log('📷 Service - Nueva imagen adjuntada:', fileName);
+      if (data.imagen && !esUrlExistente) {
+        this._adjuntarImagen(formData, data.imagen);
       } else {
-        console.log('📷 Service - Sin imagen nueva, manteniendo la actual');
+        console.log(' Service - Sin imagen nueva, manteniendo la actual');
       }
 
-      const response = await apiClient.put(`/inventario/productos/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.put(`/inventario/productos/${id}`, formData);
 
       const result = response.data;
 
