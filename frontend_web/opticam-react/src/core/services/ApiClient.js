@@ -9,9 +9,10 @@ export class ApiClient {
 
     this.client = axios.create({
       baseURL: API_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      // ⚠️ NO poner 'Content-Type' aquí.
+      // Axios lo calcula solo:
+      //   - JSON → 'application/json'
+      //   - FormData → 'multipart/form-data; boundary=...'
       timeout: 15000,
     });
 
