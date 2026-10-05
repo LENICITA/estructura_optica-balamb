@@ -1,194 +1,133 @@
-// src/core/services/ProductService.js
+// src/core/services/FormulaService.js
 import { apiClient } from './ApiClient';
-import { ProductModel } from '../../shared/types/ProductModel';
+import { FormulaModel } from '../../shared/types/FormulaModel';
 
-export class ProductService {
+export class FormulaService {
 
-  // ===== OBTENER TODOS LOS PRODUCTOS =====
-  async getProductos() {
-    const response = await apiClient.get('/inventario/productos');
+  // ==========================================================
+  // OBTENER TODAS LAS FÓRMULAS
+  // ==========================================================
+
+  async getTodasLasFormulas() {
+    const response = await apiClient.get('/formulas/admin/todas');
 
     const data = response.data;
 
-    console.log(' Productos recibidos:', data.productos);
-
     if (!data.success) {
-      throw new Error(data.message || 'Error al obtener productos');
+      throw new Error(data.message || 'Error al obtener fórmulas');
     }
 
-    return ProductModel.fromJSONArray(data.productos || []);
+    return Array.isArray(data.data)
+      ? data.data.map((item) => FormulaModel.fromJSON(item))
+      : [];
   }
 
-  // ===== OBTENER PRODUCTOS DESTACADOS =====
-  async getProductosDestacados() {
-    const response = await apiClient.get('/inventario/productos/destacados');
+  // ==========================================================
+  // OBTENER FÓRMULAS DE UN USUARIO
+  // ==========================================================
 
-    const data = response.data;
+  async getFormulasByUsuario(id_usuario) {
+    console.log(' Service - Obteniendo fórmulas para usuario:', id_usuario);
 
-    console.log(' Productos destacados recibidos:', data.productos);
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener productos destacados');
+    if (!id_usuario) {
+      throw new Error('El id_usuario es obligatorio.');
     }
 
-    return ProductModel.fromJSONArray(data.productos || []);
+    try {
+      const response = await apiClient.get('/formulas/mis-formulas');
+
+      const data = response.data;
+      console.log(' Service - Respuesta completa:', data);
+
+      if (!data.success) {
+        throw new Error(data.message || 'Error al obtener fórmulas del usuario');
+      }
+
+      const formulas = Array.isArray(data.data) ? data.data : [];
+
+      const mappedFormulas = formulas.map((item) => {
+        const source = item?.dataValues ?? item;
+        const formulaData = {
+          ...source,
+          id_formula: Number(
+            source?.id_formula ??
+            source?.id_Formula ??
+            source?.id ??
+            0
+          ),
+        };
+        return FormulaModel.fromJSON(formulaData);
+      });
+
+      return mappedFormulas;
+
+    } catch (error) {
+      console.error('Error en FormulaService.getFormulasByUsuario:', error);
+      if (error.response?.status === 404) {
+        console.warn('Ruta /mis-formulas no encontrada');
+        return [];
+      }
+      throw error;
+    }
   }
 
-  // ===== OBTENER PRODUCTO POR ID =====
-  async getProductoById(id) {
-    console.log('🔍 getProductoById llamado con ID:', id);
-    const response = await apiClient.get(`/inventario/productos/${id}`);
+  // ==========================================================
+  // OBTENER UNA FÓRMULA POR ID
+  // ==========================================================
+
+  async getFormulaById(id_formula) {
+
+    if (!id_formula) {
+      throw new Error('El id_formula es obligatorio.');
+    }
+
+    const response = await apiClient.get(`/formulas/${id_formula}`);
 
     const data = response.data;
 
-    console.log('Respuesta del backend:', data);
-
     if (!data.success) {
-      throw new Error(data.message || 'Error al obtener producto');
+      throw new Error(data.message || 'Error al obtener la fórmula');
     }
 
-    if (!data.producto) {
-      console.log('No se encontró el producto');
+    if (!data.data) {
       return null;
     }
 
-    console.log('Producto encontrado:', data.producto);
-    return ProductModel.fromJSON(data.producto);
+    return FormulaModel.fromJSON(data.data);
   }
 
-  // ===== BUSCAR PRODUCTOS =====
-  async buscarProductos(query) {
-    const response = await apiClient.get(
-      `/inventario/productos/buscar?q=${encodeURIComponent(query)}`
-    );
+  // ==========================================================
+  // HELPER: Adjuntar imagen al FormData (web + React Native)
+  // ==========================================================
 
-    const data = response.data;
-
-    console.log('Busqueda:', query);
-    console.log('Resultados:', data.productos);
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al buscar productos');
-    }
-
-    return ProductModel.fromJSONArray(data.productos || []);
-  }
-
-  // ===== FILTRAR PRODUCTOS =====
-  async filtrarProductos(filtros) {
-    // Limpiar filtros vacíos
-    const params = {};
-    if (filtros.precio_min !== undefined) params.precio_min = filtros.precio_min;
-    if (filtros.precio_max !== undefined) params.precio_max = filtros.precio_max;
-    if (filtros.marca) params.marca = filtros.marca;
-    if (filtros.color) params.color = filtros.color;
-    if (filtros.material) params.material = filtros.material;
-    if (filtros.id_categoria !== undefined) params.id_categoria = filtros.id_categoria;
-
-    const response = await apiClient.get('/inventario/productos/filtros', { params });
-
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al filtrar productos');
-    }
-
-    return ProductModel.fromJSONArray(data.productos || []);
-  }
-
-  // ===== OBTENER PRODUCTOS POR CATEGORÍA =====
-  async getProductosByCategoria(id_categoria) {
-    const response = await apiClient.get(
-      `/inventario/productos/categoria/${id_categoria}`
-    );
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener productos por categoría');
-    }
-
-    return ProductModel.fromJSONArray(data.productos || []);
-  }
-
-  // ===== OBTENER PRODUCTOS POR MARCA =====
-  async getProductosByMarca(marca) {
-    const response = await apiClient.get(
-      `/inventario/productos/marca/${encodeURIComponent(marca)}`
-    );
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener productos por marca');
-    }
-
-    return ProductModel.fromJSONArray(data.productos || []);
-  }
-
-  // ===== OBTENER MARCAS ÚNICAS =====
-  async getMarcas() {
-    const response = await apiClient.get('/inventario/marcas');
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener marcas');
-    }
-
-    return data.marcas || [];
-  }
-
-  // ===== OBTENER COLORES ÚNICOS =====
-  async getColores() {
-    const response = await apiClient.get('/inventario/colores');
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener colores');
-    }
-
-    return data.colores || [];
-  }
-
-  // ===== OBTENER CATEGORÍAS =====
-  async getCategorias() {
-    const response = await apiClient.get('/inventario/categorias');
-    const data = response.data;
-
-    if (!data.success) {
-      throw new Error(data.message || 'Error al obtener categorías');
-    }
-
-    return data.categorias || [];
-  }
-
-  // ============================================
-  // ADMIN - CRUD
-  // ============================================
-
-  // Helper para adjuntar imagen al FormData soportando web y React Native
-  _adjuntarImagen(formData, imagen) {
-    if (!imagen) return;
-
-    // --- WEB: File / Blob ---
-    if (typeof File !== 'undefined' && imagen instanceof File) {
-      formData.append('imagen', imagen);
-      console.log(' Service - Imagen adjuntada (File web):', imagen.name);
+  _adjuntarImagen(formData, imagen, campo = 'imagen') {
+    if (!imagen) {
+      console.log('⚠️ _adjuntarImagen: imagen vacía/null');
       return;
     }
 
+    // --- WEB: File ---
+    if (typeof File !== 'undefined' && imagen instanceof File) {
+      console.log('✅ Adjuntando File web:', imagen.name, imagen.size, imagen.type);
+      formData.append(campo, imagen, imagen.name);
+      return;
+    }
+
+    // --- WEB: Blob ---
     if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
       const ext = (imagen.type?.split('/')[1]) || 'jpg';
-      formData.append('imagen', imagen, `producto_${Date.now()}.${ext}`);
-      console.log(' Service - Imagen adjuntada (Blob web)');
+      const name = `formula_${Date.now()}.${ext}`;
+      console.log('✅ Adjuntando Blob web:', name);
+      formData.append(campo, imagen, name);
       return;
     }
 
-    // --- REACT NATIVE: { uri, name, type } o string uri ---
+    // --- RN: { uri, name, type } ---
     if (typeof imagen === 'object' && typeof imagen.uri === 'string') {
       const uri = imagen.uri;
       const uriParts = uri.split('.');
       const fileType = uriParts[uriParts.length - 1] || 'jpg';
-      const fileName = imagen.name || `producto_${Date.now()}.${fileType}`;
-
+      const fileName = imagen.name || `formula_${Date.now()}.${fileType}`;
       let mimeType = imagen.type || 'image/jpeg';
       if (!imagen.type) {
         const lower = fileType.toLowerCase();
@@ -196,73 +135,81 @@ export class ProductService {
         else if (lower === 'gif') mimeType = 'image/gif';
         else if (lower === 'webp') mimeType = 'image/webp';
       }
-
-      formData.append('imagen', {
-        uri,
-        name: fileName,
-        type: mimeType,
-      });
-
-      console.log(' Service - Imagen adjuntada (RN):', fileName);
+      console.log('✅ Adjuntando RN asset:', fileName);
+      formData.append(campo, { uri, name: fileName, type: mimeType });
       return;
     }
 
-    // --- String suelto (uri RN sin objeto) ---
+    // --- String (uri suelta) ---
     if (typeof imagen === 'string') {
       const uriParts = imagen.split('.');
       const fileType = uriParts[uriParts.length - 1] || 'jpg';
-      const fileName = `producto_${Date.now()}.${fileType}`;
-
+      const fileName = `formula_${Date.now()}.${fileType}`;
       let mimeType = 'image/jpeg';
       const lower = fileType.toLowerCase();
       if (lower === 'png') mimeType = 'image/png';
       else if (lower === 'gif') mimeType = 'image/gif';
       else if (lower === 'webp') mimeType = 'image/webp';
 
-      formData.append('imagen', {
-        uri: imagen,
-        name: fileName,
-        type: mimeType,
-      });
-
-      console.log(' Service - Imagen adjuntada (string uri):', fileName);
+      console.log('✅ Adjuntando string uri:', fileName);
+      formData.append(campo, { uri: imagen, name: fileName, type: mimeType });
+      return;
     }
+
+    console.log('❌ _adjuntarImagen: tipo no soportado:', typeof imagen);
   }
 
-  // ===== CREAR PRODUCTO (ADMIN) =====
-  async crearProducto(data) {
+  // ==========================================================
+  // CREAR FÓRMULA
+  // ==========================================================
+
+  async crearFormula(data) {
     try {
-      console.log(' Service - Creando producto con datos:', {
-        id_categoria: data.id_categoria,
-        nombre: data.nombre,
-        tieneImagen: !!data.imagen,
+      console.log(' Service - Creando fórmula con datos:', {
+        id_usuario: data.id_usuario,
+        condicion: data.condicion,
+        observaciones: data.observaciones,
+        tieneImagen: !!data.imagen_formula,
+        tipoImagen: data.imagen_formula instanceof File
+          ? 'File (web)'
+          : (data.imagen_formula && typeof data.imagen_formula === 'object' && data.imagen_formula.uri)
+            ? 'RN asset'
+            : typeof data.imagen_formula,
       });
 
+      // Validaciones
+      if (!data.id_usuario) {
+        return { success: false, message: 'El usuario es obligatorio.' };
+      }
+      if (!data.condicion) {
+        return { success: false, message: 'La condición es obligatoria.' };
+      }
+      if (!data.imagen_formula) {
+        return { success: false, message: 'La imagen de la fórmula es obligatoria.' };
+      }
+
+      // CREAR FormData
       const formData = new FormData();
 
-      formData.append('id_categoria', String(data.id_categoria));
-      formData.append('nombre', data.nombre);
-      formData.append('descripcion', data.descripcion || '');
-      formData.append('marca', data.marca || '');
-      formData.append('precio', String(data.precio));
-      formData.append('material', data.material || '');
-      formData.append('color', data.color || '');
+      formData.append('id_usuario', String(data.id_usuario));
+      formData.append('condicion', data.condicion);
+      formData.append('observaciones', data.observaciones || '');
+      if (data.fecha_creacion) {
+        formData.append('fecha_creacion', data.fecha_creacion);
+      }
 
-      this._adjuntarImagen(formData, data.imagen);
+      // Adjuntar imagen (web o RN)
+      this._adjuntarImagen(formData, data.imagen_formula, 'imagen');
 
-      console.log(' Service - Enviando FormData...');
-
-      console.log('🔎 imagen original:', data.imagen);
-      console.log('🔎 instanceof File:', data.imagen instanceof File);
-      console.log('🔎 tipo:', typeof data.imagen);
-
-      for (let pair of formData.entries()) {
-        const [key, val] = pair;
+      // Debug: ver qué entra al FormData
+      for (let [key, val] of formData.entries()) {
         console.log('FormData entry:', key, '→', val, '| tipo:', val?.constructor?.name);
       }
 
-      // NO setear Content-Type manualmente: axios lo hace con el boundary correcto
-      const response = await apiClient.post('/inventario/productos', formData);
+      console.log(' Service - Enviando FormData...');
+
+      // ⚠️ NO poner Content-Type manual: axios lo calcula con el boundary
+      const response = await apiClient.post('/formulas', formData);
 
       console.log(' Service - Respuesta del backend:', response.data);
 
@@ -271,23 +218,23 @@ export class ProductService {
       if (!result.success) {
         return {
           success: false,
-          message: result.message || 'Error al crear el producto',
+          message: result.message || 'Error al crear la fórmula',
         };
       }
 
       return {
         success: true,
-        message: result.message || 'Producto creado exitosamente',
-        id_producto: result.id_producto || result.data?.id_producto,
+        message: result.message || 'Fórmula creada exitosamente.',
+        id_formula: result.data?.id_formula || result.data?.id,
+        data: result.data,
       };
 
     } catch (error) {
-      console.error(' Error en ProductService.crearProducto:', error);
-      console.log('  RESPONSE DATA:', error.response?.data);      // 👈 agrega esto
-      console.log('  STATUS:', error.response?.status); 
+      console.error(' Error en FormulaService.crearFormula:', error);
+      console.log(' 🔎 RESPONSE DATA:', error.response?.data);
+      console.log(' 🔎 STATUS:', error.response?.status);
 
-
-      let errorMessage = 'No fue posible crear el producto.';
+      let errorMessage = 'No fue posible crear la fórmula.';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.status === 400) {
@@ -303,83 +250,210 @@ export class ProductService {
     }
   }
 
-  // ===== ACTUALIZAR PRODUCTO (ADMIN) =====
-  async actualizarProducto(id, data) {
+  // ==========================================================
+  // ELIMINAR FÓRMULA
+  // ==========================================================
+
+  async eliminarFormula(id_formula) {
+    console.log(' Service - Eliminando fórmula ID:', id_formula);
+    console.log(' Service - Tipo de ID:', typeof id_formula);
+
     try {
-      console.log(' Service - Actualizando producto ID:', id);
-      console.log(' Service - Datos:', {
-        tieneImagen: !!data.imagen,
-        tipo: data.imagen instanceof File
-          ? 'File (web)'
-          : (data.imagen && typeof data.imagen === 'object' && data.imagen.uri)
-            ? 'RN asset'
-            : typeof data.imagen,
-      });
-
-      const formData = new FormData();
-
-      if (data.id_categoria !== undefined) formData.append('id_categoria', String(data.id_categoria));
-      if (data.nombre !== undefined) formData.append('nombre', data.nombre);
-      if (data.descripcion !== undefined) formData.append('descripcion', data.descripcion || '');
-      if (data.marca !== undefined) formData.append('marca', data.marca || '');
-      if (data.precio !== undefined) formData.append('precio', String(data.precio));
-      if (data.material !== undefined) formData.append('material', data.material || '');
-      if (data.color !== undefined) formData.append('color', data.color || '');
-
-      // Solo adjuntar imagen si es un archivo nuevo (no una URL existente de Cloudinary)
-      const esUrlExistente =
-        typeof data.imagen === 'string' && data.imagen.startsWith('http');
-
-      if (data.imagen && !esUrlExistente) {
-        this._adjuntarImagen(formData, data.imagen);
-      } else {
-        console.log(' Service - Sin imagen nueva, manteniendo la actual');
+      // Validación estricta
+      if (!id_formula) {
+        return {
+          success: false,
+          message: 'El ID de la fórmula es requerido',
+        };
       }
 
-      const response = await apiClient.put(`/inventario/productos/${id}`, formData);
+      // Asegurar que sea un número
+      const idNumber = Number(id_formula);
+      if (isNaN(idNumber) || idNumber <= 0) {
+        return {
+          success: false,
+          message: 'ID de fórmula inválido',
+        };
+      }
+
+      // Enviar DELETE a la URL correcta
+      const response = await apiClient.delete(`/formulas/${idNumber}`);
+
+      console.log(' Service - Respuesta del backend:', response.data);
 
       const result = response.data;
 
-      if (!result.success) {
-        throw new Error(result.message || 'Error al actualizar el producto');
+      if (result.success === false) {
+        return {
+          success: false,
+          message: result.message || 'Error al eliminar la fórmula',
+        };
       }
 
       return {
         success: true,
-        message: result.message || 'Producto actualizado exitosamente',
-        data: result.producto || result.data,
+        message: result.message || 'Fórmula eliminada exitosamente',
       };
 
     } catch (error) {
-      console.error(' Error en ProductService.actualizarProducto:', error);
+      console.error(' Error en FormulaService.eliminarFormula:', error);
 
-      let errorMessage = 'No fue posible actualizar el producto.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 400) {
-        errorMessage = 'Datos inválidos. Verifica la imagen y los campos.';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Producto no encontrado.';
-      } else if (error.response?.status === 413) {
-        errorMessage = 'La imagen es demasiado grande.';
+      let errorMessage = 'No fue posible eliminar la fórmula.';
+
+      if (error.response) {
+        console.log('Error response:', error.response.status);
+        console.log('Error data:', error.response.data);
+
+        if (error.response.status === 404) {
+          errorMessage = 'La fórmula no existe o ya fue eliminada.';
+        } else if (error.response.status === 403) {
+          errorMessage = 'No tienes permiso para eliminar esta fórmula.';
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || 'Solo puedes eliminar fórmulas en estado Pendiente.';
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+      } else if (error.request) {
+        errorMessage = 'No se pudo conectar con el servidor.';
       }
 
-      throw new Error(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+      };
     }
   }
 
-  // ===== ELIMINAR PRODUCTO (ADMIN) =====
-  async eliminarProducto(id) {
-    const response = await apiClient.delete(`/inventario/productos/${id}`);
-    const result = response.data;
+  // ==========================================================
+  // ACTUALIZAR ESTADO DE FÓRMULA
+  // ==========================================================
 
-    if (!result.success) {
-      throw new Error(result.message || 'Error al eliminar el producto');
+  async actualizarEstadoFormula(id_formula, estado) {
+    try {
+      if (!id_formula) {
+        return {
+          success: false,
+          message: 'El id_formula es obligatorio.',
+        };
+      }
+
+      if (!estado) {
+        return {
+          success: false,
+          message: 'El estado es obligatorio.',
+        };
+      }
+
+      const estadosValidos = ['Pendiente', 'Aprobado', 'Rechazado'];
+
+      if (!estadosValidos.includes(estado)) {
+        return {
+          success: false,
+          message: 'El estado de la fórmula no es válido.',
+        };
+      }
+
+      const response = await apiClient.put(`/formulas/${id_formula}/estado`, {
+        estado: estado,
+      });
+
+      const result = response.data;
+
+      return {
+        success: result.success ?? true,
+        message: result.message ?? 'Estado actualizado exitosamente.',
+        data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
+      };
+
+    } catch (error) {
+      console.error('Error en FormulaService.actualizarEstadoFormula:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'No fue posible actualizar el estado.',
+      };
+    }
+  }
+
+  // ==========================================================
+  // ACTUALIZAR COSTO DE FÓRMULA
+  // ==========================================================
+
+  async actualizarCostoFormula(id_formula, costo) {
+    try {
+      if (!id_formula) {
+        return {
+          success: false,
+          message: 'El id_formula es obligatorio.',
+        };
+      }
+
+      if (costo < 0) {
+        return {
+          success: false,
+          message: 'El costo no puede ser negativo.',
+        };
+      }
+
+      const response = await apiClient.put(`/formulas/${id_formula}/precio`, {
+        costo: costo,
+      });
+
+      const result = response.data;
+
+      return {
+        success: result.success ?? true,
+        message: result.message ?? 'Costo actualizado exitosamente.',
+        data: result.data ? FormulaModel.fromJSON(result.data) : undefined,
+      };
+
+    } catch (error) {
+      console.error('Error en FormulaService.actualizarCostoFormula:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'No fue posible actualizar el costo.',
+      };
+    }
+  }
+
+  // ==========================================================
+  // OBTENER FÓRMULAS POR ESTADO
+  // ==========================================================
+
+  async getFormulasByEstado(estado) {
+    const response = await apiClient.get(`/formulas/estado/${estado}`);
+
+    const data = response.data;
+
+    if (!data.success) {
+      throw new Error(data.message || 'Error al obtener fórmulas por estado');
     }
 
-    return {
-      success: true,
-      message: result.message || 'Producto eliminado exitosamente',
-    };
+    return Array.isArray(data.data)
+      ? data.data.map((item) => FormulaModel.fromJSON(item))
+      : [];
+  }
+
+  // ==========================================================
+  // OBTENER FÓRMULAS PENDIENTES
+  // ==========================================================
+
+  async getFormulasPendientes() {
+    return this.getFormulasByEstado('Pendiente');
+  }
+
+  // ==========================================================
+  // ESTADÍSTICAS DE FÓRMULAS
+  // ==========================================================
+
+  async getEstadisticasFormulas() {
+    const response = await apiClient.get('/formulas/admin/estadisticas');
+
+    const data = response.data;
+
+    if (!data.success) {
+      throw new Error(data.message || 'Error al obtener estadísticas');
+    }
+
+    return data.data;
   }
 }
