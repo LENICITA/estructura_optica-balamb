@@ -144,11 +144,41 @@ export const checkPrecioProducto = (precio) => {
   return { valido: true };
 };
 
-export const checkImagenProducto = (uri) => {
-  if (!uri || !uri.trim()) {
-    return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
+// ✅ Acepta File (web), { uri } (React Native), string (URL) y Blob
+export const checkImagenProducto = (imagen) => {
+  // File (input type="file" en web)
+  if (typeof File !== 'undefined' && imagen instanceof File) {
+    if (imagen.size === 0) {
+      return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
+    }
+    return { valido: true };
   }
-  return { valido: true };
+
+  // Blob (por si acaso)
+  if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
+    if (imagen.size === 0) {
+      return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
+    }
+    return { valido: true };
+  }
+
+  // Objeto con .uri (React Native / expo-image-picker)
+  if (imagen && typeof imagen === 'object' && typeof imagen.uri === 'string') {
+    if (imagen.uri.trim() === '') {
+      return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
+    }
+    return { valido: true };
+  }
+
+  // String (URL ya subida — útil para editar)
+  if (typeof imagen === 'string') {
+    if (imagen.trim() === '') {
+      return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
+    }
+    return { valido: true };
+  }
+
+  return { valido: false, mensaje: MENSAJES_PRODUCTO.IMAGEN_REQUERIDA };
 };
 
 export const checkMaterialProducto = (material) => {
