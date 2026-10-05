@@ -16,6 +16,7 @@ export const ESTADOS_VALIDOS = [
 
 export const OBSERVACIONES_MAX_LENGTH = 200;
 export const IMAGEN_EXTENSIONES_VALIDAS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+export const IMAGEN_MIMES_VALIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 // MENSAJES DE ERROR
 export const MENSAJES_FORMULA = {
@@ -57,11 +58,43 @@ export const validarEstado = (estado) => {
   return ESTADOS_VALIDOS.includes(estado);
 };
 
-export const validarExtensionImagen = (uri) => {
-  if (!uri) return false;
-  const partes = uri.split('.');
-  const extension = partes[partes.length - 1]?.toLowerCase();
-  return IMAGEN_EXTENSIONES_VALIDAS.includes(extension);
+// ✅ Acepta File, Blob, { uri } (RN) y string
+export const validarExtensionImagen = (imagen) => {
+  if (!imagen) return false;
+
+  // File (web)
+  if (typeof File !== 'undefined' && imagen instanceof File) {
+    if (imagen.type) {
+      return IMAGEN_MIMES_VALIDOS.includes(imagen.type.toLowerCase());
+    }
+    const ext = imagen.name?.split('.').pop()?.toLowerCase();
+    return IMAGEN_EXTENSIONES_VALIDAS.includes(ext);
+  }
+
+  // Blob
+  if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
+    if (imagen.type) {
+      return IMAGEN_MIMES_VALIDOS.includes(imagen.type.toLowerCase());
+    }
+    return false;
+  }
+
+  // Objeto { uri, type, name } (React Native)
+  if (typeof imagen === 'object' && typeof imagen.uri === 'string') {
+    if (imagen.type) {
+      return IMAGEN_MIMES_VALIDOS.includes(String(imagen.type).toLowerCase());
+    }
+    const ext = imagen.uri.split('.').pop()?.toLowerCase().split('?')[0];
+    return IMAGEN_EXTENSIONES_VALIDAS.includes(ext);
+  }
+
+  // String (URL o uri suelta)
+  if (typeof imagen === 'string') {
+    const ext = imagen.split('.').pop()?.toLowerCase().split('?')[0];
+    return IMAGEN_EXTENSIONES_VALIDAS.includes(ext);
+  }
+
+  return false;
 };
 
 export const validarId = (id) => {
@@ -89,14 +122,53 @@ export const checkObservaciones = (observaciones) => {
   return { valido: true };
 };
 
-export const checkImagen = (uri) => {
-  if (!uri || !uri.trim()) {
-    return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
+// ✅ Acepta File (web), { uri } (RN), Blob y string
+export const checkImagen = (imagen) => {
+  // File web
+  if (typeof File !== 'undefined' && imagen instanceof File) {
+    if (imagen.size === 0) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
+    }
+    if (!validarExtensionImagen(imagen)) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_EXTENSION_INVALIDA };
+    }
+    return { valido: true };
   }
-  if (!validarExtensionImagen(uri)) {
-    return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_EXTENSION_INVALIDA };
+
+  // Blob
+  if (typeof Blob !== 'undefined' && imagen instanceof Blob) {
+    if (imagen.size === 0) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
+    }
+    if (!validarExtensionImagen(imagen)) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_EXTENSION_INVALIDA };
+    }
+    return { valido: true };
   }
-  return { valido: true };
+
+  // Objeto { uri } (React Native)
+  if (imagen && typeof imagen === 'object' && typeof imagen.uri === 'string') {
+    if (!imagen.uri.trim()) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
+    }
+    if (!validarExtensionImagen(imagen)) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_EXTENSION_INVALIDA };
+    }
+    return { valido: true };
+  }
+
+  // String (URL)
+  if (typeof imagen === 'string') {
+    if (!imagen.trim()) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
+    }
+    if (!validarExtensionImagen(imagen)) {
+      return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_EXTENSION_INVALIDA };
+    }
+    return { valido: true };
+  }
+
+  return { valido: false, mensaje: MENSAJES_FORMULA.IMAGEN_REQUERIDA };
 };
 
 export const checkCosto = (costo) => {
