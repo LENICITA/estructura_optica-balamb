@@ -48,11 +48,59 @@ const manejarErrorValidacion = (error, res) => {
 // VALIDADORES REUTILIZABLES
 const REGEX_TELEFONO = /^3\d{9}$/;
 const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const validarTelefono = (telefono) => REGEX_TELEFONO.test(telefono);
 const validarCiudad = (ciudad) => REGEX_CIUDAD.test(ciudad);
-const validarEmail = (email) => REGEX_EMAIL.test(email);
+
+const validarEmail = (email) => {
+  if (typeof email !== 'string') return false;
+  const limpio = email.trim();
+  if (limpio !== email) return false;
+  if (/\s/.test(limpio)) return false;
+  if (/\.\./.test(limpio)) return false;
+  if (/^\./.test(limpio)) return false;
+  if (/\.$/.test(limpio)) return false;
+  if (/\.@/.test(limpio)) return false;
+  if (/@\./.test(limpio)) return false;
+  return REGEX_EMAIL.test(limpio);
+};
+
+// ============================
+// VALIDADOR DE DOCUMENTO (BIGINT)
+// ============================
+const validarDocumento = (documento) => {
+  const doc = String(documento).trim();
+
+  if (!/^\d+$/.test(doc)) {
+    return { valido: false, msg: "El documento debe contener solo números" };
+  }
+  if (doc.length < 6 || doc.length > 10) {
+    return { valido: false, msg: "El documento debe tener entre 6 y 10 dígitos" };
+  }
+  if (/^0/.test(doc)) {
+    return { valido: false, msg: "El documento no puede empezar por cero" };
+  }
+  if (/^(\d)\1+$/.test(doc)) {
+    return { valido: false, msg: "El documento no puede tener todos los dígitos repetidos" };
+  }
+  if (esSecuencia(doc)) {
+    return { valido: false, msg: "El documento no puede ser una secuencia numérica" };
+  }
+  return { valido: true };
+};
+
+function esSecuencia(valor) {
+  if (valor.length < 6) return false;
+  let ascendente = true;
+  let descendente = true;
+  for (let i = 1; i < valor.length; i++) {
+    const diff = valor.charCodeAt(i) - valor.charCodeAt(i - 1);
+    if (diff !== 1) ascendente = false;
+    if (diff !== -1) descendente = false;
+  }
+  return ascendente || descendente;
+}
 
 // Registrar cliente
 export const registrarCliente = async (req, res) => {
@@ -102,6 +150,12 @@ export const registrarCliente = async (req, res) => {
             });
         }
 
+        const docValidacion = validarDocumento(documento);
+if (!docValidacion.valido) {
+  await transaction.rollback();
+  return res.status(400).json({ success: false, message: docValidacion.msg });
+}
+
         if (contrasena.length < 8) {
             await transaction.rollback();
             return res.status(400).json({
@@ -111,10 +165,12 @@ export const registrarCliente = async (req, res) => {
         }
 
         // Verificar si el email ya existe
-        const emailExistente = await Usuario.findOne({
-            where: { email: email.toLowerCase() },
-            transaction
-        });
+        const emailLimpio = email.trim().toLowerCase();
+
+const emailExistente = await Usuario.findOne({
+    where: { email: emailLimpio },
+    transaction
+});
         if (emailExistente) {
             await transaction.rollback();
             return res.status(400).json({
@@ -145,7 +201,7 @@ export const registrarCliente = async (req, res) => {
             documento,
             ciudad,
             direccion,
-            email: email.toLowerCase(),
+            email: emailLimpio,
             contrasena,
             estado: 'ACTIVO'
         }, { transaction });
@@ -246,6 +302,12 @@ export const registrarRepartidor = async (req, res) => {
             });
         }
 
+        const docValidacion = validarDocumento(documento);
+if (!docValidacion.valido) {
+  await transaction.rollback();
+  return res.status(400).json({ success: false, message: docValidacion.msg });
+}
+
         if (contrasena.length < 8) {
             await transaction.rollback();
             return res.status(400).json({
@@ -263,11 +325,12 @@ export const registrarRepartidor = async (req, res) => {
         }
 
         // Verificar si el email ya existe
-        const emailExistente = await Usuario.findOne({
-            where: { email: email.toLowerCase() },
-            transaction
-        });
+        const emailLimpio = email.trim().toLowerCase();
 
+const emailExistente = await Usuario.findOne({
+    where: { email: emailLimpio },
+    transaction
+});
         if (emailExistente) {
             await transaction.rollback();
             return res.status(400).json({
@@ -310,7 +373,7 @@ export const registrarRepartidor = async (req, res) => {
             documento,
             ciudad,
             direccion,
-            email: email.toLowerCase(),
+            email: emailLimpio,
             contrasena,
             estado: 'ACTIVO'
         }, { transaction });
@@ -520,32 +583,40 @@ export const actualizarRepartidor = async (req, res) => {
 
 
  // Verificar documento duplicado
-        if (documento && documento !== usuario.documento) {
-            const documentoExistente = await Usuario.findOne({
-                where: {
-                    documento,
-                    id_usuario: { [Op.ne]: id }
-                },
-                transaction
-            });
-            if (documentoExistente) {
-                await transaction.rollback();
-                return res.status(400).json({
-                    success: false,
-                    message: 'El documento ya está registrado por otro usuario'
-                });
-            }
-        }
+        if (documento) {
+  // 1. Validar formato primero
+  const docValidacion = validarDocumento(documento);
+  if (!docValidacion.valido) {
+    await transaction.rollback();
+    return res.status(400).json({ success: false, message: docValidacion.msg });
+  }
+  // 2. Luego verificar duplicado
+  if (documento !== usuario.documento) {
+    const documentoExistente = await Usuario.findOne({
+      where: { documento, id_usuario: { [Op.ne]: id } },
+      transaction
+    });
+    if (documentoExistente) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'El documento ya está registrado por otro usuario'
+      });
+    }
+  }
+}
 
          // Verificar email duplicado
-        if (email && email !== usuario.email) {
-            const emailExistente = await Usuario.findOne({
-                where: {
-                    email: email.toLowerCase(),
-                    id_usuario: { [Op.ne]: id }
-                },
-                transaction
-            });
+        const emailLimpio = email ? email.trim().toLowerCase() : email;
+
+if (emailLimpio && emailLimpio !== usuario.email) {
+    const emailExistente = await Usuario.findOne({
+        where: {
+            email: emailLimpio,
+            id_usuario: { [Op.ne]: id }
+        },
+        transaction
+    });
             if (emailExistente) {
                 await transaction.rollback();
                 return res.status(400).json({
@@ -563,7 +634,7 @@ export const actualizarRepartidor = async (req, res) => {
             documento: documento || usuario.documento,
             ciudad: ciudad || usuario.ciudad,
             direccion: direccion || usuario.direccion,
-            email: email || usuario.email,
+            email: emailLimpio || usuario.email,
             estado: estado || usuario.estado
         }, { transaction });
 
@@ -900,13 +971,15 @@ export const actualizarPerfil = async (req, res) => {
         }
 
         // Verificar si el email ya existe en otro usuario
-        if (email && email !== usuario.email) {
-            const emailExistente = await Usuario.findOne({
-                where: {
-                    email: email.toLowerCase(),
-                    id_usuario: { [Op.ne]: usuarioId }
-                }
-            });
+        const emailLimpio = email ? email.trim().toLowerCase() : email;
+
+if (emailLimpio && emailLimpio !== usuario.email) {
+    const emailExistente = await Usuario.findOne({
+        where: {
+            email: emailLimpio,
+            id_usuario: { [Op.ne]: usuarioId }
+        }
+    });
             if (emailExistente) {
                 return res.status(400).json({
                     success: false,
@@ -915,20 +988,25 @@ export const actualizarPerfil = async (req, res) => {
             }
         }
         // Verificar si el documento ya existe en otro usuario
-        if (documento && documento !== usuario.documento) {
-            const documentoExistente = await Usuario.findOne({
-                where: {
-                    documento,
-                    id_usuario: { [Op.ne]: usuarioId }
-                }
-            });
-            if (documentoExistente) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El documento ya está registrado por otro usuario'
-                });
-            }
-        }
+if (documento) {
+  // 1. Validar formato primero
+  const docValidacion = validarDocumento(documento);
+  if (!docValidacion.valido) {
+    return res.status(400).json({ success: false, message: docValidacion.msg });
+  }
+  // 2. Luego verificar duplicado
+  if (documento !== usuario.documento) {
+    const documentoExistente = await Usuario.findOne({
+      where: { documento, id_usuario: { [Op.ne]: usuarioId } }
+    });
+    if (documentoExistente) {
+      return res.status(400).json({
+        success: false,
+        message: 'El documento ya está registrado por otro usuario'
+      });
+    }
+  }
+}
 
         // Actualizar solo los campos permitidos
         await usuario.update({
@@ -936,7 +1014,7 @@ export const actualizarPerfil = async (req, res) => {
             telefono: telefono || usuario.telefono,
             direccion: direccion !== undefined ? direccion : usuario.direccion,
             ciudad: ciudad || usuario.ciudad,
-            email: email || usuario.email,
+            email: emailLimpio || usuario.email,
             fecha_nacimiento: fecha_nacimiento || usuario.fecha_nacimiento,
             documento: documento || usuario.documento
         });
