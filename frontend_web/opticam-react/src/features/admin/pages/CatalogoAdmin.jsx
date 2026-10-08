@@ -1,5 +1,5 @@
 // src/features/admin/pages/CatalogoAdmin.jsx
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
 
@@ -25,6 +25,9 @@ export const CatalogoAdmin = () => {
   const [ordenSeleccionado, setOrdenSeleccionado] = useState('Nuevo');
   const [precioMin, setPrecioMin] = useState('');
   const [precioMax, setPrecioMax] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+const productosPorPagina = 9;
+const gridRef = useRef(null);
 
   const cargarProductos = async () => {
     try {
@@ -105,6 +108,18 @@ export const CatalogoAdmin = () => {
 
     return () => clearTimeout(timeout);
   }, [busqueda, productos, categoriaSeleccionada]);
+
+  useEffect(() => {
+  setPaginaActual(1);
+}, [busqueda, categoriaSeleccionada, marcaSeleccionada, ordenSeleccionado, precioMin, precioMax]);
+
+useEffect(() => {
+  if (paginaActual === 1) return;
+  if (gridRef.current) {
+    const y = gridRef.current.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}, [paginaActual]);
 
   const limpiarBusqueda = () => setBusqueda('');
 
@@ -187,6 +202,41 @@ export const CatalogoAdmin = () => {
       setLoading(false);
     }
   };
+
+  const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina);
+const indiceUltimo = paginaActual * productosPorPagina;
+const indicePrimero = indiceUltimo - productosPorPagina;
+const productosPaginados = productosFiltrados.slice(indicePrimero, indiceUltimo);
+
+const generarPaginas = () => {
+  const paginas = [];
+  const delta = 1;
+
+  if (totalPaginas <= 7) {
+    for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+    return paginas;
+  }
+
+  paginas.push(1);
+
+  if (paginaActual > delta + 2) {
+    paginas.push('...');
+  }
+
+  const inicio = Math.max(2, paginaActual - delta);
+  const fin = Math.min(totalPaginas - 1, paginaActual + delta);
+
+  for (let i = inicio; i <= fin; i++) {
+    paginas.push(i);
+  }
+
+  if (paginaActual < totalPaginas - delta - 1) {
+    paginas.push('...');
+  }
+
+  paginas.push(totalPaginas);
+  return paginas;
+};
 
   if (loading) {
     return (
@@ -412,9 +462,12 @@ export const CatalogoAdmin = () => {
             </div>
 
             {/* GRID */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-8">
+            <div
+  ref={gridRef}
+  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-8"
+>
 
-              {productosFiltrados.map((item) => {
+              {productosPaginados.map((item) => {
 
                 const imagenProducto =
                   item.imagen_url ||
@@ -525,6 +578,68 @@ export const CatalogoAdmin = () => {
                 );
               })}
             </div>
+            {/* PAGINACIÓN */}
+            {totalPaginas > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Página <span className="font-bold text-gray-900">{paginaActual}</span> de{' '}
+                  <span className="font-bold text-gray-900">{totalPaginas}</span>
+                </p>
+
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  <button
+                    onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                    disabled={paginaActual === 1}
+                    className={`h-10 px-4 rounded-xl border text-sm font-bold flex items-center gap-2 transition ${
+                      paginaActual === 1
+                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <i className="fa-solid fa-chevron-left text-xs"></i>
+                    <span className="hidden sm:inline">Anterior</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {generarPaginas().map((num, idx) =>
+                      num === '...' ? (
+                        <span
+                          key={`dots-${idx}`}
+                          className="w-10 h-10 flex items-center justify-center text-gray-400 text-sm font-bold select-none"
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={num}
+                          onClick={() => setPaginaActual(num)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition ${
+                            paginaActual === num
+                              ? 'bg-[#B90F0F] text-white'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                    disabled={paginaActual === totalPaginas}
+                    className={`h-10 px-4 rounded-xl border text-sm font-bold flex items-center gap-2 transition ${
+                      paginaActual === totalPaginas
+                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">Siguiente</span>
+                    <i className="fa-solid fa-chevron-right text-xs"></i>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
