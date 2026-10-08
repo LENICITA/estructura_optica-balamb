@@ -3,9 +3,9 @@
 // REGEX Y CONSTANTES
 export const REGEX_TELEFONO = /^3\d{9}$/;
 export const REGEX_CIUDAD = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-export const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 export const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-export const REGEX_DOCUMENTO = /^\d+$/;
+export const REGEX_DOCUMENTO = /^\d{6,10}$/;
 
 // MENSAJES DE ERROR (centralizados para QA)
 export const MENSAJES = {
@@ -14,13 +14,13 @@ export const MENSAJES = {
   CIUDAD_REQUERIDA: 'La ciudad es requerida',
   CIUDAD_INVALIDA: 'La ciudad solo puede contener letras y espacios',
   EMAIL_REQUERIDO: 'El email es requerido',
-  EMAIL_INVALIDO: 'El email no tiene un formato válido',
+  EMAIL_INVALIDO: 'El email no tiene un formato válido (sin espacios ni puntos dobles)',
   PASSWORD_REQUERIDA: 'La contraseña es requerida',
   PASSWORD_CORTA: 'La contraseña debe tener al menos 8 caracteres',
   PASSWORD_DEBIL: 'La contraseña debe tener: mayúscula, minúscula y número',
   PASSWORD_NO_COINCIDE: 'Las contraseñas no coinciden',
   DOCUMENTO_REQUERIDO: 'El documento es requerido',
-  DOCUMENTO_INVALIDO: 'El documento debe contener solo números',
+  DOCUMENTO_INVALIDO: 'El documento debe tener entre 6 y 10 dígitos, sin ceros iniciales ni secuencias',
   NOMBRE_REQUERIDO: 'El nombre completo es requerido',
   NOMBRE_CORTO: 'El nombre debe tener al menos 3 caracteres',
   DIRECCION_REQUERIDA: 'La dirección es requerida',
@@ -48,8 +48,16 @@ export const validarCiudad = (ciudad?: string | null): boolean => {
 };
 
 export const validarEmail = (email?: string | null): boolean => {
-  if (!email) return false;
-  return REGEX_EMAIL.test(email.trim());
+  if (typeof email !== 'string') return false;
+  const limpio = email.trim();
+  if (limpio !== email) return false;
+  if (/\s/.test(limpio)) return false;
+  if (/\.\./.test(limpio)) return false;
+  if (/^\./.test(limpio)) return false;
+  if (/\.$/.test(limpio)) return false;
+  if (/\.@/.test(limpio)) return false;
+  if (/@\./.test(limpio)) return false;
+  return REGEX_EMAIL.test(limpio);
 };
 
 export const validarPassword = (password?: string | null): boolean => {
@@ -59,8 +67,25 @@ export const validarPassword = (password?: string | null): boolean => {
 
 export const validarDocumento = (documento?: string | null): boolean => {
   if (!documento) return false;
-  return REGEX_DOCUMENTO.test(documento.trim());
+  const doc = String(documento).trim();
+  if (!/^\d{6,10}$/.test(doc)) return false;
+  if (/^0/.test(doc)) return false;
+  if (/^(\d)\1+$/.test(doc)) return false;
+  if (esSecuencia(doc)) return false;
+  return true;
 };
+
+function esSecuencia(valor: string): boolean {
+  if (valor.length < 6) return false;
+  let ascendente = true;
+  let descendente = true;
+  for (let i = 1; i < valor.length; i++) {
+    const diff = valor.charCodeAt(i) - valor.charCodeAt(i - 1);
+    if (diff !== 1) ascendente = false;
+    if (diff !== -1) descendente = false;
+  }
+  return ascendente || descendente;
+}
 
 // VALIDADORES CON MENSAJE (devuelven { valido, mensaje })
 
@@ -113,11 +138,25 @@ export const checkPassword = (password?: string | null): ResultadoValidacion => 
 };
 
 export const checkDocumento = (documento?: string | null): ResultadoValidacion => {
-  if (!documento || !documento.trim()) {
+  if (!documento || !String(documento).trim()) {
     return { valido: false, mensaje: MENSAJES.DOCUMENTO_REQUERIDO };
   }
-  if (!validarDocumento(documento)) {
-    return { valido: false, mensaje: MENSAJES.DOCUMENTO_INVALIDO };
+  const doc = String(documento).trim();
+
+  if (!/^\d+$/.test(doc)) {
+    return { valido: false, mensaje: 'El documento debe contener solo números' };
+  }
+  if (doc.length < 6 || doc.length > 10) {
+    return { valido: false, mensaje: 'El documento debe tener entre 6 y 10 dígitos' };
+  }
+  if (/^0/.test(doc)) {
+    return { valido: false, mensaje: 'El documento no puede empezar por cero' };
+  }
+  if (/^(\d)\1+$/.test(doc)) {
+    return { valido: false, mensaje: 'El documento no puede tener todos los dígitos repetidos' };
+  }
+  if (esSecuencia(doc)) {
+    return { valido: false, mensaje: 'El documento no puede ser una secuencia numérica' };
   }
   return { valido: true };
 };
