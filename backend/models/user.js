@@ -2,6 +2,47 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
+// VALIDADOR DE DOCUMENTO (BIGINT, máx 10 dígitos)
+function validarDocumento(valor) {
+  if (valor === null || valor === undefined) return;
+
+  const doc = String(valor).trim();
+
+  // Solo dígitos
+  if (!/^\d+$/.test(doc)) {
+    throw new Error("El documento debe contener solo números");
+  }
+  // Entre 6 y 10 dígitos
+  if (doc.length < 6 || doc.length > 10) {
+    throw new Error("El documento debe tener entre 6 y 10 dígitos");
+  }
+  // No puede empezar por 0  (con BIGINT el cero inicial se pierde igual)
+  // Si quisieras permitir UN solo cero inicial, cambia por: /^0{2,}/
+  if (/^0/.test(doc)) {
+    throw new Error("El documento no puede empezar por cero");
+  }
+  // Todos los dígitos iguales: 1111111111, 9999999999...
+  if (/^(\d)\1+$/.test(doc)) {
+    throw new Error("El documento no puede tener todos los dígitos repetidos");
+  }
+  // Secuencias: 1234567890, 9876543210
+  if (esSecuencia(doc)) {
+    throw new Error("El documento no puede ser una secuencia numérica");
+  }
+}
+
+function esSecuencia(valor) {
+  if (valor.length < 6) return false;
+  let ascendente = true;
+  let descendente = true;
+  for (let i = 1; i < valor.length; i++) {
+    const diff = valor.charCodeAt(i) - valor.charCodeAt(i - 1);
+    if (diff !== 1) ascendente = false;
+    if (diff !== -1) descendente = false;
+  }
+  return ascendente || descendente;
+}
+
 // tabla de USUARIOS en BD
 const Usuario = sequelize.define('Usuario', {
   id_usuario: {
@@ -46,7 +87,10 @@ const Usuario = sequelize.define('Usuario', {
     validate: {
       notEmpty: { msg: "EL documento es requerido" },
       notNull:  { msg: "El documento es requerido" },
-      isInt:    { msg: "El documento debe contener solo números" }
+      isInt:    { msg: "El documento debe contener solo números" },
+      esDocumentoValido(value) {
+      validarDocumento(value); 
+    }
     }
   },
   ciudad: {
@@ -80,7 +124,22 @@ const Usuario = sequelize.define('Usuario', {
     validate: {
       notEmpty: { msg: "El email es requerido" },
       notNull:  { msg: "El email es requerido" },
-      isEmail: { msg: "El email no tiene un formato válido"}
+      isEmail: { msg: "El email no tiene un formato válido"},
+      esEmailEstricto(value) {
+        if (!value) return;
+        if (/\s/.test(value)) {
+          throw new Error("El email no puede contener espacios");
+        }
+        if (/\.\./.test(value)) {
+          throw new Error("El email no puede tener puntos dobles");
+        }
+        if (/^\./.test(value) || /\.$/.test(value)) {
+          throw new Error("El email no puede empezar ni terminar con punto");
+        }
+        if (/\.@|@\./.test(value)) {
+          throw new Error("El email tiene un punto mal ubicado");
+        }
+      }
     }
   },
   contrasena: {
