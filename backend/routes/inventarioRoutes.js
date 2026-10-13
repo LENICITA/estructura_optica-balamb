@@ -489,4 +489,65 @@ router.post("/productos", authMiddleware, adminMiddleware,upload.single("imagen"
  */
 router.delete("/productos/:id", authMiddleware, adminMiddleware, inventarioController.deleteProducto);
 
+/**
+ * @swagger
+ * /api/inventario/productos/{id}:
+ *   put:
+ *     summary: Actualizar un producto (Admin)
+ *     tags: [Inventario]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del producto
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_categoria:
+ *                 type: integer
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               marca:
+ *                 type: string
+ *               precio:
+ *                 type: number
+ *               imagen:
+ *                 type: string
+ *               material:
+ *                 type: string
+ *               color:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 producto:
+ *                   $ref: '#/components/schemas/Producto'
+ *       404:
+ *         description: Producto no encontrado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado (requiere admin)
+ */
+router.put("/productos/:id", authMiddleware, adminMiddleware, upload.single("imagen"), inventarioController.updateProducto);
+
 export default router;

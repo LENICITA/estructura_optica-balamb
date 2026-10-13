@@ -20,7 +20,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000
-const HOST = process.env.HOST || '192.168.0.4';
+const HOST = process.env.HOST || '192.168.10.8';
 
 // Middlewares
 app.use(cors());
