@@ -1,475 +1,562 @@
-// src/features/admin/pages/DistribucionesExternas.jsx
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/features/admin/pages/GestionarDistribucionesAdmin.jsx
+import React, { useCallback, useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
-import { alertError } from '../../../shared/utils/alert';
-
-const ESTADO_CONFIG = {
-  PENDIENTE: { label: 'Pendiente', color: '#B45309', bg: '#FEF3C7', icon: 'fa-clock' },
-  EN_ENTREGA: { label: 'En entrega', color: '#1D4ED8', bg: '#DBEAFE', icon: 'fa-motorcycle' },
-  ENTREGADO: { label: 'Entregado', color: '#15803D', bg: '#DCFCE7', icon: 'fa-circle-check' },
-  CANCELADO: { label: 'Cancelado', color: '#B91C1C', bg: '#FEE2E2', icon: 'fa-circle-xmark' },
-};
-
-const getEstadoConfig = (estado) =>
-  ESTADO_CONFIG[estado] ?? { label: estado, color: '#6B7280', bg: '#F3F4F6', icon: 'fa-circle-question' };
 
 const ESTADOS_FILTRO = [
-  { key: 'TODOS', label: 'Todos' },
-  { key: 'PENDIENTE', label: 'Pendiente' },
-  { key: 'EN_ENTREGA', label: 'En entrega' },
-  { key: 'ENTREGADO', label: 'Entregado' },
+  { label: 'Todos', value: 'TODOS' },
+  { label: 'Pendiente', value: 'PENDIENTE' },
+  { label: 'En entrega', value: 'EN_ENTREGA' },
+  { label: 'Entregado', value: 'ENTREGADO' },
 ];
 
-const DistribucionesExternas = () => {
+export const GestionarDistribucionesAdmin = () => {
   const navigate = useNavigate();
+  const distribucionController = new DistribucionController();
+
   const [distribuciones, setDistribuciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [buscar, setBuscar] = useState('');
-  const [ciudadFiltro, setCiudadFiltro] = useState('todas');
-  const [estadoFiltro, setEstadoFiltro] = useState('TODOS');
+  const [error, setError] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('TODOS');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [distribucionSeleccionada, setDistribucionSeleccionada] = useState(null);
 
-  const distribucionController = useMemo(() => new DistribucionController(), []);
-
-  const cargarDistribuciones = useCallback(
-    async (isRefresh = false) => {
-      try {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-
-        const data = await distribucionController.getDistribucionesExternas();
-        const BOGOTA = ['bogotá', 'bogota', 'bogotá d.c.', 'bogota d.c.'];
-        const externas = data.filter((d) => {
-          const ciudad = (d.pedido?.ciudad_envio || d.pedido?.cliente?.ciudad || '').toLowerCase().trim();
-          return ciudad !== '' && !BOGOTA.includes(ciudad);
-        });
-
-        setDistribuciones(externas);
-      } catch (error) {
-        console.error('Error al cargar distribuciones externas:', error);
-        alertError(error?.message || 'No se pudieron cargar las distribuciones externas.');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [distribucionController]
-  );
+  const cargarDistribuciones = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await distribucionController.getTodasDistribuciones();
+      setDistribuciones(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error cargando distribuciones:', err);
+      setError(err?.message || 'No fue posible cargar las distribuciones');
+      setDistribuciones([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
+    setLoading(true);
     cargarDistribuciones();
   }, [cargarDistribuciones]);
 
-  const distribucionesActivas = useMemo(
-    () => distribuciones.filter((d) => d.estado !== 'CANCELADO'),
-    [distribuciones]
-  );
+  const onRefresh = () => {
+    setRefreshing(true);
+    cargarDistribuciones();
+  };
 
-  const ciudades = useMemo(() => {
-    const set = new Set();
-    distribucionesActivas.forEach((d) => {
-      const c = d.pedido?.ciudad_envio?.trim();
-      if (c) set.add(c);
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [distribucionesActivas]);
+  const distribucionesFiltradas = distribuciones.filter((item) => {
+    if (item.estado === 'CANCELADO') return false;
 
-  const conteoEstados = useMemo(() => {
-    const base = { TODOS: distribucionesActivas.length, PENDIENTE: 0, EN_ENTREGA: 0, ENTREGADO: 0 };
-    distribucionesActivas.forEach((d) => {
-      if (base[d.estado] !== undefined) base[d.estado] += 1;
-    });
-    return base;
-  }, [distribucionesActivas]);
+    if (busqueda.trim()) {
+      const texto = busqueda.toLowerCase().trim();
+      const cliente = item.pedido?.cliente?.nombre?.toLowerCase() || '';
+      const ciudad = item.pedido?.ciudad_envio?.toLowerCase() || '';
+      const repartidor = item.repartidor?.nombre?.toLowerCase() || '';
+      if (!cliente.includes(texto) && !ciudad.includes(texto) && !repartidor.includes(texto)) return false;
+    }
 
-  const filtradas = useMemo(() => {
-    return distribucionesActivas.filter((d) => {
-      const ciudad = d.pedido?.ciudad_envio ?? '';
-      const cliente = d.pedido?.cliente?.nombre ?? '';
-      const direccion = d.pedido?.direccion_entrega ?? '';
+    if (filtroEstado !== 'TODOS') return item.estado === filtroEstado;
 
-      const cumpleCiudad = ciudadFiltro === 'todas' || ciudad === ciudadFiltro;
-      const cumpleEstado = estadoFiltro === 'TODOS' || d.estado === estadoFiltro;
+    return true;
+  });
 
-      const q = buscar.trim().toLowerCase();
-      const cumpleBusqueda =
-        q === '' ||
-        cliente.toLowerCase().includes(q) ||
-        ciudad.toLowerCase().includes(q) ||
-        direccion.toLowerCase().includes(q);
+  const getEstadoColor = (estado) => {
+    switch (estado) {
+      case 'PENDIENTE': return '#D97706';
+      case 'EN_ENTREGA': return '#2563EB';
+      case 'ENTREGADO': return '#22C55E';
+      case 'CANCELADO': return '#EF4444';
+      default: return '#6B7280';
+    }
+  };
 
-      return cumpleCiudad && cumpleEstado && cumpleBusqueda;
-    });
-  }, [distribucionesActivas, ciudadFiltro, estadoFiltro, buscar]);
+  const getEstadoBackground = (estado) => `${getEstadoColor(estado)}20`;
 
-  const totalExternas = distribucionesActivas.length;
-  const enEntrega = conteoEstados.EN_ENTREGA;
-  const entregadas = conteoEstados.ENTREGADO;
+  const getEstadoIcon = (estado) => {
+    switch (estado) {
+      case 'PENDIENTE': return 'fa-clock';
+      case 'EN_ENTREGA': return 'fa-motorcycle';
+      case 'ENTREGADO': return 'fa-circle-check';
+      case 'CANCELADO': return 'fa-circle-xmark';
+      default: return 'fa-circle-question';
+    }
+  };
 
-  return (
-  <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-    <div className="max-w-7xl mx-auto">
+  const getEstadoTexto = (estado) => {
+    switch (estado) {
+      case 'PENDIENTE': return 'Pendiente';
+      case 'EN_ENTREGA': return 'En entrega';
+      case 'ENTREGADO': return 'Entregado';
+      case 'CANCELADO': return 'Cancelado';
+      default: return estado;
+    }
+  };
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'Sin fecha';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const abrirMenu = (distribucion) => {
+    setDistribucionSeleccionada(distribucion);
+    setMenuVisible(true);
+  };
+
+  const cerrarMenu = () => {
+    setMenuVisible(false);
+    setDistribucionSeleccionada(null);
+  };
+
+  const handleCancelar = async () => {
+    if (!distribucionSeleccionada) return;
+
+    const id = distribucionSeleccionada.id_distribucion;
+    cerrarMenu();
+
+    if (!window.confirm(`¿Estás seguro de cancelar la distribución #${id}? El pedido volverá a estado "Pagado".`)) return;
+
+    try {
+      const result = await distribucionController.cancelarEntrega(id);
+
+      if (result.success) {
+        alert(result.message || 'Distribución cancelada exitosamente');
+        cargarDistribuciones();
+      } else {
+        alert(result.message || 'No se pudo cancelar la distribución');
+      }
+    } catch (error) {
+      console.error('Error al cancelar:', error);
+      alert(error.message || 'Error al cancelar la distribución');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] bg-gray-50">
+        <div className="w-12 h-12 border-4 border-[#B90F0F] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-3 text-gray-500 text-sm">Cargando distribuciones...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] px-8 bg-gray-50">
+        <i className="fa-solid fa-circle-exclamation text-5xl text-red-500"></i>
+        <p className="mt-3 text-xl font-bold text-gray-700">Ocurrió un error</p>
+        <p className="mt-2 text-center text-gray-500 text-[13px]">{error}</p>
+        <button
+          onClick={cargarDistribuciones}
+          className="mt-5 bg-[#B90F0F] flex items-center gap-2 px-4.5 py-2.5 rounded-lg text-white font-semibold"
+        >
+          <i className="fa-solid fa-rotate-right"></i>
+          Intentar nuevamente
+        </button>
+      </div>
+    );
+  }
+
+    return (
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* HEADER */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+              <i className="fa-solid fa-truck text-[#B90F0F] text-xl"></i>
+            </div>
+
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-gray-800">
+                Gestionar distribuciones
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Consulta y administra las distribuciones de los pedidos.
+              </p>
+            </div>
+
             <button
-              onClick={() => navigate(-1)}
-              className="w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition"
+              onClick={onRefresh}
+              disabled={refreshing}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition disabled:opacity-60"
             >
-              <i className="fa-solid fa-arrow-left text-gray-700"></i>
+              <i
+                className={`fa-solid fa-rotate-right ${
+                  refreshing ? 'animate-spin' : ''
+                }`}
+              ></i>
+              Actualizar
             </button>
+          </div>
+        </div>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-                  <i className="fa-solid fa-plane text-[#B90F0F]"></i>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  Envíos externos
-                </h1>
+        {/* ESTADÍSTICAS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total</p>
+                <p className="text-2xl font-extrabold text-gray-800 mt-1">
+                  {distribuciones.filter((item) => item.estado !== 'CANCELADO').length}
+                </p>
               </div>
 
-              <p className="text-sm text-gray-500 mt-1 ml-12">
-                Gestiona las distribuciones fuera de Bogotá
-              </p>
+              <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
+                <i className="fa-solid fa-cube text-[#B90F0F] text-lg"></i>
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate('/repartidor/historial')}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-sm transition"
-          >
-            <i className="fa-solid fa-clock-rotate-left"></i>
-            Historial
-          </button>
-        </div>
-      </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Pendientes</p>
+                <p className="text-2xl font-extrabold text-gray-800 mt-1">
+                  {
+                    distribuciones.filter(
+                      (item) => item.estado === 'PENDIENTE'
+                    ).length
+                  }
+                </p>
+              </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total externos</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {totalExternas}
-              </p>
+              <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                <i className="fa-solid fa-clock text-amber-600 text-lg"></i>
+              </div>
             </div>
+          </div>
 
-            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
-              <i className="fa-solid fa-plane text-[#B90F0F] text-lg"></i>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">En entrega</p>
+                <p className="text-2xl font-extrabold text-gray-800 mt-1">
+                  {
+                    distribuciones.filter(
+                      (item) => item.estado === 'EN_ENTREGA'
+                    ).length
+                  }
+                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                <i className="fa-solid fa-motorcycle text-blue-600 text-lg"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Entregadas</p>
+                <p className="text-2xl font-extrabold text-gray-800 mt-1">
+                  {
+                    distribuciones.filter(
+                      (item) => item.estado === 'ENTREGADO'
+                    ).length
+                  }
+                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center">
+                <i className="fa-solid fa-circle-check text-green-600 text-lg"></i>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">En entrega</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {enEntrega}
-              </p>
-            </div>
-
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <i className="fa-solid fa-motorcycle text-blue-600 text-lg"></i>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Entregadas</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {entregadas}
-              </p>
-            </div>
-
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-              <i className="fa-solid fa-circle-check text-green-600 text-lg"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Buscar distribución
-            </label>
-
-            <div className="relative">
-              <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        {/* BUSCADOR Y FILTROS */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 mb-5">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
 
               <input
                 type="text"
-                placeholder="Cliente, ciudad o dirección..."
-                value={buscar}
-                onChange={(e) => setBuscar(e.target.value)}
-                className="w-full h-11 pl-11 pr-10 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#B90F0F] text-sm transition"
+                placeholder="Buscar por cliente, ciudad o repartidor..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full h-11 pl-10 pr-10 rounded-lg border border-gray-200 bg-gray-50 outline-none text-sm text-gray-800 focus:border-[#B90F0F] focus:ring-1 focus:ring-[#B90F0F]"
               />
 
-              {buscar && (
+              {busqueda && (
                 <button
-                  onClick={() => setBuscar('')}
+                  onClick={() => setBusqueda('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <i className="fa-solid fa-circle-xmark"></i>
                 </button>
               )}
             </div>
+
+            <Link
+              to="/admin/distribuciones/externas"
+              className="h-11 px-4 rounded-lg bg-[#B90F0F] text-white flex items-center justify-center gap-2 font-semibold hover:bg-[#9f0d0d] transition"
+            >
+              <i className="fa-solid fa-briefcase"></i>
+              <span className="text-sm">Ver distribuciones externas</span>
+            </Link>
           </div>
 
-          <div className="w-full lg:w-56">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Ciudad
-            </label>
-
-            <select
-              value={ciudadFiltro}
-              onChange={(e) => setCiudadFiltro(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#B90F0F] text-sm"
-            >
-              <option value="todas">Todas las ciudades</option>
-              {ciudades.map((ciudad) => (
-                <option key={ciudad} value={ciudad}>
-                  {ciudad}
-                </option>
-              ))}
-            </select>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ESTADOS_FILTRO.map((estado) => (
+              <button
+                key={estado.value}
+                onClick={() => setFiltroEstado(estado.value)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                  filtroEstado === estado.value
+                    ? 'bg-[#B90F0F] text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {estado.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="mt-5 pt-4 border-t border-gray-100">
-          <p className="text-sm font-semibold text-gray-700 mb-3">
-            Estado
+        {/* CONTADOR */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-600">
+            <span className="font-bold text-gray-800">
+              {distribucionesFiltradas.length}
+            </span>{' '}
+            {distribucionesFiltradas.length === 1
+              ? 'distribución'
+              : 'distribuciones'}
           </p>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {ESTADOS_FILTRO.map((e) => {
-              const activo = estadoFiltro === e.key;
-              const count = conteoEstados[e.key] ?? 0;
+        {/* LISTA */}
+        {distribucionesFiltradas.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center py-16 px-8">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+              <i className="fa-solid fa-cube text-3xl text-gray-300"></i>
+            </div>
+
+            <p className="mt-4 text-lg font-bold text-gray-600">
+              No hay distribuciones
+            </p>
+
+            <p className="mt-1 text-center text-sm text-gray-500">
+              No se encontraron distribuciones registradas.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {distribucionesFiltradas.map((item) => {
+              const estado = item.estado || 'PENDIENTE';
+              const estadoColor = getEstadoColor(estado);
+              const estadoBackground = getEstadoBackground(estado);
+              const estadoIcon = getEstadoIcon(estado);
+
+              const clienteNombre =
+                item.pedido?.cliente?.nombre || 'Sin cliente';
+              const ciudad = item.pedido?.ciudad_envio || 'Sin ciudad';
+              const repartidorNombre =
+                item.repartidor?.nombre || 'No asignado';
+              const vehiculo = item.repartidor?.vehiculo || 'N/A';
 
               return (
-                <button
-                  key={e.key}
-                  onClick={() => setEstadoFiltro(e.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition ${
-                    activo
-                      ? 'bg-[#B90F0F] border-[#B90F0F] text-white'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                <div
+                  key={item.id_distribucion}
+                  className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition"
                 >
-                  <span className="text-sm font-semibold">
-                    {e.label}
-                  </span>
-
-                  <span
-                    className={`min-w-[22px] h-5 px-1.5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                      activo
-                        ? 'bg-white/20 text-white'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {loading && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 border-4 border-[#B90F0F] border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-sm text-gray-500">
-            Cargando envíos externos...
-          </p>
-        </div>
-      )}
-
-      {!loading && filtradas.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 px-6 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-            <i className="fa-solid fa-plane text-3xl text-gray-300"></i>
-          </div>
-
-          <p className="mt-4 text-lg font-bold text-gray-800">
-            Sin distribuciones
-          </p>
-
-          <p className="mt-1 text-center text-sm text-gray-500 max-w-md">
-            {distribucionesActivas.length === 0
-              ? 'Aún no hay envíos fuera de Bogotá'
-              : 'No se encontraron envíos con esos filtros'}
-          </p>
-        </div>
-      )}
-
-      {!loading && filtradas.length > 0 && (
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              Distribuciones externas
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {filtradas.length}{' '}
-              {filtradas.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
-            </p>
-          </div>
-
-          {refreshing && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <i className="fa-solid fa-spinner fa-spin"></i>
-              Actualizando...
-            </div>
-          )}
-        </div>
-      )}
-
-      {!loading && filtradas.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {filtradas.map((d) => {
-            const est = getEstadoConfig(d.estado);
-            const cliente = d.pedido?.cliente?.nombre || 'Cliente';
-            const ciudad = d.pedido?.ciudad_envio || 'Sin ciudad';
-            const direccion = d.pedido?.direccion_entrega || 'Sin dirección';
-            const adminNombre = d.repartidor?.nombre || 'Sin asignar';
-            const vehiculo = d.vehiculoRepartidor;
-            const fecha = d.fechaAsignacionFormateada;
-
-            return (
-              <div
-                key={d.id_distribucion}
-                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden"
-              >
-                <div className="p-5 border-b border-gray-100">
-                  <div className="flex items-start justify-between gap-4">
+                  {/* HEADER CARD */}
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#B90F0F] text-lg font-bold">
-                          {cliente.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                        <i className="fa-solid fa-cube text-[#B90F0F] text-xl"></i>
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-base font-bold text-gray-900 truncate">
-                          {cliente}
+                        <p className="text-xs text-gray-500">
+                          Distribución
                         </p>
+                        <p className="text-base font-extrabold text-gray-800">
+                          #{item.id_distribucion}
+                        </p>
+                      </div>
+                    </div>
 
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <i className="fa-solid fa-location-dot text-[#B90F0F] text-xs"></i>
-                          <span className="text-sm text-[#B90F0F] font-semibold truncate">
-                            {ciudad}
-                          </span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
+                        style={{
+                          backgroundColor: estadoBackground,
+                          color: estadoColor,
+                        }}
+                      >
+                        <i className={`fa-solid ${estadoIcon}`}></i>
+                        {getEstadoTexto(estado)}
+                      </span>
+
+                      {estado === 'PENDIENTE' && (
+                        <button
+                          onClick={() => abrirMenu(item)}
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"
+                        >
+                          <i className="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gray-100 my-4"></div>
+
+                  {/* INFORMACIÓN */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                          <i className="fa-solid fa-user text-gray-500"></i>
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                            Cliente
+                          </p>
+                          <p className="text-sm text-gray-800 font-semibold mt-0.5 break-words">
+                            {clienteNombre}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    <span
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wide flex-shrink-0"
-                      style={{
-                        backgroundColor: est.bg,
-                        color: est.color,
-                      }}
-                    >
-                      <i className={`fa-solid ${est.icon}`}></i>
-                      {est.label}
-                    </span>
-                  </div>
-                </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                          <i className="fa-solid fa-location-dot text-gray-500"></i>
+                        </div>
 
-                <div className="p-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <i className="fa-solid fa-location-arrow text-gray-500 text-sm"></i>
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wide">
-                          Dirección
-                        </p>
-                        <p className="text-sm text-gray-800 font-medium mt-1 break-words">
-                          {direccion}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                            Ciudad de envío
+                          </p>
+                          <p className="text-sm text-gray-800 font-semibold mt-0.5 break-words">
+                            {ciudad}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <i className="fa-solid fa-user text-gray-500 text-sm"></i>
-                      </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                          <i className="fa-solid fa-motorcycle text-gray-500"></i>
+                        </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wide">
-                          Asignado a
-                        </p>
-                        <p className="text-sm text-gray-800 font-medium mt-1">
-                          {adminNombre}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <i className="fa-solid fa-car text-gray-500 text-sm"></i>
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wide">
-                          Vehículo
-                        </p>
-                        <p
-                          className={`text-sm font-medium mt-1 ${
-                            vehiculo === 'N/A'
-                              ? 'text-gray-400 italic'
-                              : 'text-gray-800'
-                          }`}
-                        >
-                          {vehiculo}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                            Repartidor
+                          </p>
+                          <p className="text-sm text-gray-800 font-semibold mt-0.5 break-words">
+                            {repartidorNombre}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <i className="fa-solid fa-calendar text-gray-500 text-sm"></i>
-                      </div>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                          <i className="fa-solid fa-car text-gray-500"></i>
+                        </div>
 
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wide">
-                          Fecha de asignación
-                        </p>
-                        <p className="text-sm text-gray-800 font-medium mt-1">
-                          {fecha}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                            Vehículo
+                          </p>
+                          <p className="text-sm text-gray-800 font-semibold mt-0.5 break-words">
+                            {vehiculo}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() =>
-                      navigate(`/repartidor/entrega/${d.id_distribucion}`)
-                    }
-                    className="w-full mt-5 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-[#B90F0F] transition font-bold text-sm"
-                  >
-                    Ver detalles
-                    <i className="fa-solid fa-arrow-right text-xs"></i>
-                  </button>
+                  {/* FECHA */}
+                  <div className="mt-3 flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                      <i className="fa-solid fa-calendar text-gray-500"></i>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                        Fecha asignación
+                      </p>
+                      <p className="text-sm text-gray-800 font-semibold mt-0.5">
+                        {formatearFecha(item.fecha_asignacion)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* OBSERVACIONES */}
+                  {item.observaciones && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">
+                        Observaciones
+                      </p>
+                      <p className="text-sm text-gray-600 leading-5">
+                        {item.observaciones}
+                      </p>
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* MODAL MENÚ */}
+        {menuVisible && (
+          <div
+            className="fixed inset-0 bg-black/40 z-[1000] flex items-end sm:items-center justify-center px-4"
+            onClick={cerrarMenu}
+          >
+            <div
+              className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-500">Distribución</p>
+                  <p className="text-lg font-extrabold text-gray-800">
+                    #{distribucionSeleccionada?.id_distribucion}
+                  </p>
+                </div>
+
+                <button
+                  onClick={cerrarMenu}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                >
+                  <i className="fa-solid fa-xmark text-xl text-gray-700"></i>
+                </button>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              <button
+                onClick={handleCancelar}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                  <i className="fa-solid fa-circle-xmark text-red-500 text-xl"></i>
+                </div>
+
+                <span className="text-sm font-semibold text-red-500">
+                  Cancelar distribución
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
-export default DistribucionesExternas;
+export default GestionarDistribucionesAdmin;
