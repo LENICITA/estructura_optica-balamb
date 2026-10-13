@@ -10,6 +10,7 @@ import {
   checkDocumento,
   checkCiudad,
 } from '../../../shared/validators/userValidators';
+import { alertError, alertSuccess, alertWarning } from '../../../shared/utils/alert';
 
 export const PerfilAdmin = () => {
   const { updateUser } = useAuth();
@@ -54,11 +55,11 @@ export const PerfilAdmin = () => {
           roles: user.getRoles().join(', ') || '',
         });
       } else {
-        alert('No fue posible cargar el perfil.');
+        alertError('No fue posible cargar el perfil.');
       }
     } catch (error) {
       console.error('Error al cargar perfil:', error);
-      alert('No fue posible cargar tu perfil.');
+      alertError('No fue posible cargar tu perfil.');
     } finally {
       setLoading(false);
     }
@@ -77,23 +78,41 @@ export const PerfilAdmin = () => {
 
   const guardarCambios = async () => {
     const nombreCheck = checkNombre(formData.nombre_completo);
-    if (!nombreCheck.valido) return alert(nombreCheck.mensaje);
+    if (!nombreCheck.valido) {
+      alertWarning(nombreCheck.mensaje);
+      return;
+    }
 
     const emailCheck = checkEmail(formData.email);
-    if (!emailCheck.valido) return alert(emailCheck.mensaje);
+    if (!emailCheck.valido) {
+      alertWarning(emailCheck.mensaje);
+      return;
+    }
 
     const telCheck = checkTelefono(formData.telefono);
-    if (!telCheck.valido) return alert(telCheck.mensaje);
+    if (!telCheck.valido) {
+      alertWarning(telCheck.mensaje);
+      return;
+    }
 
     const docCheck = checkDocumento(formData.documento);
-    if (!docCheck.valido) return alert(docCheck.mensaje);
+    if (!docCheck.valido) {
+      alertWarning(docCheck.mensaje);
+      return;
+    }
 
     const ciudadCheck = checkCiudad(formData.ciudad);
-    if (!ciudadCheck.valido) return alert(ciudadCheck.mensaje);
+    if (!ciudadCheck.valido) {
+      alertWarning(ciudadCheck.mensaje);
+      return;
+    }
 
     if (formData.fecha_nacimiento) {
       const fecha = new Date(formData.fecha_nacimiento);
-      if (isNaN(fecha.getTime())) return alert('La fecha de nacimiento no es válida.');
+      if (isNaN(fecha.getTime())) {
+        alertWarning('La fecha de nacimiento no es válida.');
+        return;
+      }
     }
 
     try {
@@ -112,14 +131,14 @@ export const PerfilAdmin = () => {
       if (result.success) {
         await updateUser();
         setEditando(false);
-        alert(result.message);
+        alertSuccess(result.message);
         await cargarPerfil();
       } else {
-        alert(result.message);
+        alertError(result.message);
       }
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
-      alert('No fue posible actualizar el perfil.');
+      alertError('No fue posible actualizar el perfil.');
     } finally {
       setGuardando(false);
     }
@@ -156,7 +175,6 @@ export const PerfilAdmin = () => {
   return (
   <div className="p-5 md:p-8 lg:p-10 bg-gray-100 min-h-screen">
 
-    {/* HEADER */}
     <div className="max-w-6xl mx-auto flex items-center mb-6">
       <button
         onClick={() => navigate(-1)}
@@ -176,10 +194,8 @@ export const PerfilAdmin = () => {
       </div>
     </div>
 
-    {/* CARD */}
     <div className="max-w-6xl mx-auto bg-white rounded-2xl p-6 md:p-8 shadow-md">
 
-      {/* INFORMACIÓN PERSONAL */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
 
         <InfoField
@@ -256,7 +272,6 @@ export const PerfilAdmin = () => {
           editable={false}
         />
 
-        {/* CONTRASEÑA */}
         <div className="mb-3">
           <label className="block text-xs font-semibold text-black mb-1.5">
             Contraseña
@@ -279,7 +294,6 @@ export const PerfilAdmin = () => {
 
       </div>
 
-      {/* BOTONES */}
       {!editando ? (
         <div className="flex flex-col sm:flex-row gap-3 mt-5">
 

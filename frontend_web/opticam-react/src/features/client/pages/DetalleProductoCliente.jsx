@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { alertError, toastSuccess } from '../../../shared/utils/alert';
 
 const DetalleProductoCliente = () => {
   const { id } = useParams();
@@ -55,10 +56,10 @@ const DetalleProductoCliente = () => {
       }
 
       localStorage.setItem('@carrito', JSON.stringify(carrito));
-      alert(`✅ ${producto.nombre} agregado al carrito`);
+      toastSuccess(`${producto.nombre} agregado al carrito`);
     } catch (error) {
       console.error('Error al agregar al carrito:', error);
-      alert('No se pudo agregar el producto al carrito');
+      alertError('No se pudo agregar el producto al carrito');
     }
   };
 
@@ -93,11 +94,10 @@ const DetalleProductoCliente = () => {
     { icon: 'fa-palette', label: 'Color', value: producto.color },
   ];
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <button
@@ -122,11 +122,9 @@ const DetalleProductoCliente = () => {
           </div>
         </div>
 
-        {/* PRODUCTO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
 
-            {/* IMAGEN */}
             <div className="bg-gray-50 min-h-[320px] sm:min-h-[450px] lg:min-h-[520px] flex items-center justify-center p-6 sm:p-10">
               {imagenProducto ? (
                 <img
@@ -151,7 +149,6 @@ const DetalleProductoCliente = () => {
               )}
             </div>
 
-            {/* INFORMACIÓN */}
             <div className="p-5 sm:p-7 lg:p-8 flex flex-col">
 
               <div>
@@ -168,7 +165,6 @@ const DetalleProductoCliente = () => {
                 </p>
               </div>
 
-              {/* ESPECIFICACIONES */}
               <div className="mt-7">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -213,7 +209,6 @@ const DetalleProductoCliente = () => {
                 </div>
               </div>
 
-              {/* DESCRIPCIÓN */}
               <div className="mt-7">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -242,7 +237,6 @@ const DetalleProductoCliente = () => {
           </div>
         </div>
 
-        {/* COMPRA */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
 
@@ -288,7 +282,6 @@ const DetalleProductoCliente = () => {
           </div>
         </div>
 
-        {/* VOLVER */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <button
             onClick={() => navigate('/catalogo')}

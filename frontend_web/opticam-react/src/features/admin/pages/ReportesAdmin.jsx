@@ -1,6 +1,7 @@
 // src/features/admin/pages/ReportesAdmin.jsx
 import React, { useState } from 'react';
 import { ReporteController } from '../../../core/controllers/ReporteController';
+import { alertSuccess } from '../../../shared/utils/alert';
 
 export const ReportesAdmin = () => {
   const [tipo, setTipo] = useState('ventas');
@@ -80,7 +81,7 @@ export const ReportesAdmin = () => {
       if (result && result.success && result.blob) {
         const nombrePDF = `Reporte_${tipo}_${new Date().toISOString().slice(0, 10)}.pdf`;
         descargarPDF(result.blob, nombrePDF);
-        alert('Reporte generado correctamente. Se descargará automáticamente.');
+        alertSuccess('Reporte generado correctamente. Se descargará automáticamente.');
       } else {
         setError(result?.message || 'Error al generar el reporte');
       }
@@ -96,7 +97,6 @@ export const ReportesAdmin = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-6xl mx-auto">
 
-      {/* HEADER */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -114,7 +114,6 @@ export const ReportesAdmin = () => {
         </div>
       </div>
 
-      {/* ERROR */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
           <div className="flex items-start gap-3">
@@ -132,7 +131,6 @@ export const ReportesAdmin = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* FORMULARIO */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 pb-5 border-b border-gray-100">
             <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
@@ -151,7 +149,6 @@ export const ReportesAdmin = () => {
 
           <div className="mt-6 space-y-5">
 
-            {/* TIPO */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Tipo de Reporte
@@ -175,7 +172,6 @@ export const ReportesAdmin = () => {
               </div>
             </div>
 
-            {/* PERIODO */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Periodo
@@ -204,7 +200,6 @@ export const ReportesAdmin = () => {
               </div>
             </div>
 
-            {/* FECHAS */}
             {mostrarFechas && (
               <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -254,7 +249,6 @@ export const ReportesAdmin = () => {
               </div>
             )}
 
-            {/* BOTÓN */}
             <button
               onClick={generarReporte}
               disabled={loading}
@@ -275,7 +269,6 @@ export const ReportesAdmin = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN */}
         <div className="space-y-6">
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -318,7 +311,6 @@ export const ReportesAdmin = () => {
             </div>
           </div>
 
-          {/* TIPO SELECCIONADO */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
               Reporte seleccionado
@@ -340,7 +332,6 @@ export const ReportesAdmin = () => {
             </div>
           </div>
 
-          {/* NOTA */}
           <div className="bg-gray-100 rounded-2xl border border-gray-200 p-4">
             <div className="flex items-start gap-3">
               <i className="fa-solid fa-circle-info text-gray-500 mt-0.5"></i>

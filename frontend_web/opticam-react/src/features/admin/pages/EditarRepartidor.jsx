@@ -10,6 +10,7 @@ import {
   checkCiudad,
   checkVehiculo,
 } from '../../../shared/validators/userValidators';
+import { alertError, alertWarning, alertConfirm } from '../../../shared/utils/alert';
 
 const EditarRepartidor = () => {
   const { id } = useParams();
@@ -41,13 +42,19 @@ const EditarRepartidor = () => {
 
   useEffect(() => {
     const cargarRepartidor = async () => {
-      if (!id) return alert('No se encontró el ID del repartidor.');
+      if (!id) {
+        alertError('No se encontró el ID del repartidor.');
+        return;
+      }
 
       try {
         setLoading(true);
         const response = await userController.getRepartidorById(Number(id));
 
-        if (!response) return alert('No se encontró el repartidor.');
+        if (!response) {
+          alertError('No se encontró el repartidor.');
+          return;
+        }
 
         const r = response;
         setFormData({
@@ -71,7 +78,7 @@ const EditarRepartidor = () => {
         setFormModificado(false);
       } catch (error) {
         console.error('Error al cargar repartidor:', error);
-        alert('No se pudieron cargar los datos del repartidor.');
+        alertError('No se pudieron cargar los datos del repartidor.');
       } finally {
         setLoading(false);
       }
@@ -122,7 +129,10 @@ const EditarRepartidor = () => {
   };
 
   const actualizarRepartidor = async () => {
-    if (!id) return alert('No se encontró el ID del repartidor.');
+    if (!id) {
+      alertError('No se encontró el ID del repartidor.');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -147,32 +157,47 @@ const EditarRepartidor = () => {
       const response = await userController.actualizarRepartidor(Number(id), datos);
 
       if (!response || !response.success) {
-        return alert(response?.message || 'No se pudo actualizar el repartidor.');
+        alertError(response?.message || 'No se pudo actualizar el repartidor.');
+        return;
       }
 
       setFormModificado(false);
       navigate('/admin/repartidores');
     } catch (error) {
       console.error('ERROR ACTUALIZANDO REPARTIDOR:', error);
-      alert(error?.message || 'No se pudo actualizar el repartidor.');
+      alertError(error?.message || 'No se pudo actualizar el repartidor.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validarFormulario()) return alert('Por favor, completa todos los campos obligatorios');
+    if (!validarFormulario()) {
+      alertWarning('Por favor, completa todos los campos obligatorios');
+      return;
+    }
 
-    if (!window.confirm(`¿Estás seguro de actualizar los datos de "${formData.datosPersonales.nombre_completo}"?`)) return;
+    const confirmado = await alertConfirm({
+      title: '¿Actualizar repartidor?',
+      text: `¿Estás seguro de actualizar los datos de "${formData.datosPersonales.nombre_completo}"?`,
+      confirmButtonText: 'Sí, actualizar',
+    });
+    if (!confirmado) return;
 
     actualizarRepartidor();
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (formModificado) {
-      if (window.confirm('¿Seguro que quieres descartar los cambios?')) navigate(-1);
+      const confirmado = await alertConfirm({
+        title: '¿Descartar cambios?',
+        text: '¿Seguro que quieres descartar los cambios?',
+        confirmButtonText: 'Sí, descartar',
+        cancelButtonText: 'Seguir editando',
+      });
+      if (confirmado) navigate(-1);
     } else {
       navigate(-1);
     }
@@ -222,7 +247,6 @@ const EditarRepartidor = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-5xl mx-auto">
 
-      {/* ENCABEZADO */}
       <div className="flex items-center justify-between mb-5">
         <button
           type="button"
@@ -234,7 +258,6 @@ const EditarRepartidor = () => {
         </button>
       </div>
 
-      {/* ENCABEZADO DE EDICIÓN */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-5">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -257,10 +280,8 @@ const EditarRepartidor = () => {
 
       <form onSubmit={handleSubmit}>
 
-        {/* CONTENIDO */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* DATOS PERSONALES */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
@@ -367,7 +388,6 @@ const EditarRepartidor = () => {
               type="date"
             />
 
-            {/* ESTADO */}
             <div className="mb-3.5">
               <label className="text-sm font-semibold text-gray-700 mb-1.5 block">
                 Estado
@@ -398,7 +418,6 @@ const EditarRepartidor = () => {
 
           </div>
 
-          {/* DATOS DEL VEHÍCULO */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
@@ -420,7 +439,6 @@ const EditarRepartidor = () => {
               </span>
             </div>
 
-            {/* TIPO */}
             <div className="mb-3.5">
               <div className="flex items-center gap-1 mb-1.5">
                 <label className="text-sm font-semibold text-gray-700">
@@ -519,7 +537,6 @@ const EditarRepartidor = () => {
 
         </div>
 
-        {/* CAMBIOS SIN GUARDAR */}
         {formModificado && (
           <div className="flex items-center justify-center gap-2 mt-5 py-3 px-4 bg-orange-50 border border-orange-100 rounded-xl">
             <i className="fa-solid fa-pen text-orange-600"></i>
@@ -529,7 +546,6 @@ const EditarRepartidor = () => {
           </div>
         )}
 
-        {/* BOTONES */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-5">
 
           <button
@@ -559,7 +575,6 @@ const EditarRepartidor = () => {
 
         </div>
 
-        {/* NOTA */}
         <div className="flex items-center justify-center gap-2 mt-4 mb-2 text-xs text-gray-400">
           <i className="fa-solid fa-circle-info"></i>
           <span>Los campos marcados con * son obligatorios</span>

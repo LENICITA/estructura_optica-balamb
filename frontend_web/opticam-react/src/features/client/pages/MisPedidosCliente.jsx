@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PedidoController } from '../../../core/controllers/PedidoController';
+import { alertError, alertSuccess, alertConfirm } from '../../../shared/utils/alert';
 
 export const MisPedidosCliente = () => {
   const navigate = useNavigate();
@@ -39,7 +40,10 @@ export const MisPedidosCliente = () => {
   };
 
   const irADetalle = (pedido) => {
-    if (!pedido?.id_pedido) return alert('No se pudo identificar el pedido.');
+    if (!pedido?.id_pedido) {
+      alertError('No se pudo identificar el pedido.');
+      return;
+    }
     navigate(`/cliente/mis-pedidos/${pedido.id_pedido}`);
   };
 
@@ -56,21 +60,26 @@ export const MisPedidosCliente = () => {
   const cancelarPedido = async () => {
     if (!selectedPedido) return;
 
-    if (!window.confirm(`¿Estás seguro de cancelar el pedido #${selectedPedido.id_pedido}?`)) return;
+    const confirmado = await alertConfirm({
+      title: '¿Cancelar pedido?',
+      text: `¿Estás seguro de cancelar el pedido #${selectedPedido.id_pedido}?`,
+      confirmButtonText: 'Sí, cancelar',
+    });
+    if (!confirmado) return;
 
     try {
       const result = await pedidoController.cancelarPedido(selectedPedido.id_pedido);
 
       if (result.success) {
-        alert('Tu pedido ha sido cancelado exitosamente.');
+        alertSuccess('Tu pedido ha sido cancelado exitosamente.');
         setPedidos((prev) => prev.filter((p) => p.id_pedido !== selectedPedido.id_pedido));
         cerrarMenu();
       } else {
-        alert(result.message || 'No se pudo cancelar el pedido');
+        alertError(result.message || 'No se pudo cancelar el pedido');
       }
     } catch (error) {
       console.error('Error cancelando pedido:', error);
-      alert(error.message || 'Error al cancelar el pedido');
+      alertError(error.message || 'Error al cancelar el pedido');
     }
   };
 
@@ -140,11 +149,10 @@ export const MisPedidosCliente = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -186,7 +194,6 @@ export const MisPedidosCliente = () => {
           </div>
         </div>
 
-        {/* ERROR */}
         {error && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -215,7 +222,6 @@ export const MisPedidosCliente = () => {
           </div>
         )}
 
-        {/* SIN PEDIDOS */}
         {!error && pedidos.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-12">
             <div className="flex flex-col items-center justify-center text-center">
@@ -243,7 +249,6 @@ export const MisPedidosCliente = () => {
           </div>
         )}
 
-        {/* LISTA DE PEDIDOS */}
         {pedidos.length > 0 && (
           <div className="space-y-5">
 
@@ -271,7 +276,6 @@ export const MisPedidosCliente = () => {
                     onClick={() => irADetalle(item)}
                     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md hover:border-gray-300 transition cursor-pointer relative"
                   >
-                    {/* MENÚ */}
                     {puedeCancelar && (
                       <button
                         onClick={(e) => {
@@ -285,7 +289,6 @@ export const MisPedidosCliente = () => {
                       </button>
                     )}
 
-                    {/* CABECERA */}
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-8">
                       <div>
                         <div className="flex items-center gap-2">
@@ -317,7 +320,6 @@ export const MisPedidosCliente = () => {
                       </span>
                     </div>
 
-                    {/* PRODUCTOS */}
                     <div className="mt-5 border border-gray-200 rounded-xl p-4">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
@@ -336,7 +338,6 @@ export const MisPedidosCliente = () => {
                       </div>
                     </div>
 
-                    {/* INFORMACIÓN */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
 
                       <div className="bg-gray-50 rounded-xl p-4">
@@ -390,7 +391,6 @@ export const MisPedidosCliente = () => {
 
                     </div>
 
-                    {/* ACCIONES */}
                     <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
 
                       <button
@@ -438,7 +438,6 @@ export const MisPedidosCliente = () => {
           </div>
         )}
 
-        {/* MODAL MENÚ */}
         {menuVisible && (
           <div
             className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"

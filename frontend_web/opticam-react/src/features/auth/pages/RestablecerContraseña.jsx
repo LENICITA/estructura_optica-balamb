@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthController } from '../../../core/controllers/AuthController';
+import { alertError, alertSuccess, alertWarning } from '../../../shared/utils/alert';
 
 export const RestablecerContraseña = () => {
   const [searchParams] = useSearchParams();
@@ -16,7 +17,6 @@ export const RestablecerContraseña = () => {
   const navigate = useNavigate();
   const authController = new AuthController();
 
-  // Si hay token en la URL, ya lo tenemos en el estado inicial
   useEffect(() => {
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
@@ -40,17 +40,17 @@ export const RestablecerContraseña = () => {
     e.preventDefault();
 
     if (!token || token.trim() === '') {
-      alert('Debes ingresar el enlace de recuperación que recibiste en el correo');
+      alertWarning('Debes ingresar el enlace de recuperación que recibiste en el correo');
       return;
     }
 
     if (newPassword.length < 8) {
-      alert('La contraseña debe tener al menos 8 caracteres');
+      alertWarning('La contraseña debe tener al menos 8 caracteres');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert('Las contraseñas no coinciden');
+      alertWarning('Las contraseñas no coinciden');
       return;
     }
 
@@ -59,13 +59,13 @@ export const RestablecerContraseña = () => {
       const result = await authController.resetearPassword(token, newPassword);
 
       if (result.success) {
-        alert('Contraseña actualizada exitosamente');
+        alertSuccess('Contraseña actualizada exitosamente');
         navigate('/login');
       } else {
-        alert(result.message || 'Error al actualizar la contraseña');
+        alertError(result.message || 'Error al actualizar la contraseña');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Error al procesar la solicitud');
+      alertError(error.response?.data?.message || 'Error al procesar la solicitud');
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,6 @@ export const RestablecerContraseña = () => {
   <div className="min-h-[calc(100vh-94px)] bg-gray-50 flex items-center justify-center px-6 py-12">
     <div className="w-full max-w-[500px]">
 
-      {/* HEADER */}
       <div className="bg-[#B90F0F] py-7 px-10 rounded-2xl flex flex-col items-center mb-6">
         <i className="fa-solid fa-key text-white text-5xl"></i>
 
@@ -84,11 +83,9 @@ export const RestablecerContraseña = () => {
         </h2>
       </div>
 
-      {/* CARD */}
       <div className="bg-white w-full p-8 rounded-2xl shadow-lg">
         <form onSubmit={handleSubmit}>
 
-          {/* ENLACE DE RECUPERACIÓN */}
           <div>
             <label className="block text-sm text-black mb-2 font-medium">
               Enlace de recuperación
@@ -108,7 +105,6 @@ export const RestablecerContraseña = () => {
             </p>
           </div>
 
-          {/* NUEVA CONTRASEÑA */}
           <div>
             <label className="block text-sm text-black mb-2 font-medium">
               Nueva contraseña
@@ -138,7 +134,6 @@ export const RestablecerContraseña = () => {
             </div>
           </div>
 
-          {/* CONFIRMAR CONTRASEÑA */}
           <div className="mt-5">
             <label className="block text-sm text-black mb-2 font-medium">
               Confirmar contraseña
@@ -153,7 +148,6 @@ export const RestablecerContraseña = () => {
             />
           </div>
 
-          {/* BOTÓN */}
           <button
             type="submit"
             disabled={loading}
@@ -166,7 +160,6 @@ export const RestablecerContraseña = () => {
             )}
           </button>
 
-          {/* VOLVER */}
           <Link
             to="/login"
             className="block text-center text-[#B90F0F] text-sm mt-5 underline hover:text-red-800"

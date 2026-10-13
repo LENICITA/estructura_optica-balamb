@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthController } from '../../../core/controllers/AuthController';
+import { alertError, alertSuccess, alertWarning } from '../../../shared/utils/alert';
 
 export const RecuperarContraseña = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ export const RecuperarContraseña = () => {
     e.preventDefault();
 
     if (!email.trim()) {
-      alert('Ingresa tu correo electrónico');
+      alertWarning('Ingresa tu correo electrónico');
       return;
     }
 
@@ -23,11 +24,11 @@ export const RecuperarContraseña = () => {
       const result = await authController.solicitarRecuperacion(email);
 
       if (result.success) {
-        alert(`Se ha enviado un enlace de recuperación a ${email}. Revisa tu correo.`);
+        alertSuccess(`Se ha enviado un enlace de recuperación a ${email}. Revisa tu correo.`);
         setEmail('');
         navigate('/restablecer-contrasena');
       } else {
-        alert(result.message || 'Error al enviar el correo');
+        alertError(result.message || 'Error al enviar el correo');
       }
     } catch (error) {
       let msg = 'Error al procesar la solicitud';
@@ -36,7 +37,7 @@ export const RecuperarContraseña = () => {
       } else if (error.response?.status === 400) {
         msg = error.response?.data?.message || 'Datos inválidos';
       }
-      alert(msg);
+      alertError(msg);
     } finally {
       setLoading(false);
     }
@@ -46,7 +47,6 @@ export const RecuperarContraseña = () => {
   <div className="min-h-[calc(100vh-94px)] bg-gray-50 flex items-center justify-center px-6 py-12">
     <div className="w-full max-w-[480px]">
 
-      {/* HEADER */}
       <div className="bg-[#B90F0F] py-7 px-10 rounded-2xl flex flex-col items-center mb-6">
         <i className="fa-solid fa-lock text-white text-5xl"></i>
 
@@ -55,9 +55,8 @@ export const RecuperarContraseña = () => {
         </h2>
       </div>
 
-      {/* CARD */}
       <div className="bg-white w-full p-8 rounded-2xl shadow-lg">
-        
+
         <p className="text-sm text-gray-600 text-center mb-6 leading-relaxed">
           Ingresa tu correo electrónico y te enviaremos las instrucciones
           para restablecer tu contraseña.
@@ -65,7 +64,6 @@ export const RecuperarContraseña = () => {
 
         <form onSubmit={handleSubmit}>
 
-          {/* EMAIL */}
           <label className="block text-sm text-black mb-2 font-medium">
             Correo electrónico
           </label>
@@ -79,7 +77,6 @@ export const RecuperarContraseña = () => {
             className="w-full px-4 py-3 border border-gray-300 rounded-xl text-base outline-none focus:border-[#B90F0F] transition mb-5"
           />
 
-          {/* BOTÓN */}
           <button
             type="submit"
             disabled={loading}
@@ -92,7 +89,6 @@ export const RecuperarContraseña = () => {
             )}
           </button>
 
-          {/* VOLVER */}
           <Link
             to="/login"
             className="block text-center text-[#B90F0F] text-sm mt-5 underline hover:text-red-800"

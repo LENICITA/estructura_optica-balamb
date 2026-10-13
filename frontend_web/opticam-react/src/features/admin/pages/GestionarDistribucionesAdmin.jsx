@@ -2,6 +2,7 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
+import { alertError } from '../../../shared/utils/alert';
 
 const ESTADO_CONFIG = {
   PENDIENTE: { label: 'Pendiente', color: '#B45309', bg: '#FEF3C7', icon: 'fa-clock' },
@@ -47,7 +48,7 @@ const DistribucionesExternas = () => {
         setDistribuciones(externas);
       } catch (error) {
         console.error('Error al cargar distribuciones externas:', error);
-        alert(error?.message || 'No se pudieron cargar las distribuciones externas.');
+        alertError(error?.message || 'No se pudieron cargar las distribuciones externas.');
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -110,7 +111,6 @@ const DistribucionesExternas = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-7xl mx-auto">
 
-      {/* HEADER */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -147,7 +147,6 @@ const DistribucionesExternas = () => {
         </div>
       </div>
 
-      {/* ESTADÍSTICAS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between">
@@ -195,10 +194,8 @@ const DistribucionesExternas = () => {
         </div>
       </div>
 
-      {/* FILTROS */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* BUSCADOR */}
           <div className="flex-1">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Buscar distribución
@@ -226,7 +223,6 @@ const DistribucionesExternas = () => {
             </div>
           </div>
 
-          {/* CIUDAD */}
           <div className="w-full lg:w-56">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Ciudad
@@ -247,7 +243,6 @@ const DistribucionesExternas = () => {
           </div>
         </div>
 
-        {/* ESTADOS */}
         <div className="mt-5 pt-4 border-t border-gray-100">
           <p className="text-sm font-semibold text-gray-700 mb-3">
             Estado
@@ -288,7 +283,6 @@ const DistribucionesExternas = () => {
         </div>
       </div>
 
-      {/* LOADING */}
       {loading && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 flex flex-col items-center justify-center">
           <div className="w-12 h-12 border-4 border-[#B90F0F] border-t-transparent rounded-full animate-spin"></div>
@@ -298,7 +292,6 @@ const DistribucionesExternas = () => {
         </div>
       )}
 
-      {/* EMPTY */}
       {!loading && filtradas.length === 0 && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 px-6 flex flex-col items-center justify-center">
           <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
@@ -317,7 +310,6 @@ const DistribucionesExternas = () => {
         </div>
       )}
 
-      {/* CONTADOR */}
       {!loading && filtradas.length > 0 && (
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -339,7 +331,6 @@ const DistribucionesExternas = () => {
         </div>
       )}
 
-      {/* LISTA */}
       {!loading && filtradas.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {filtradas.map((d) => {
@@ -356,7 +347,6 @@ const DistribucionesExternas = () => {
                 key={d.id_distribucion}
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden"
               >
-                {/* CARD HEADER */}
                 <div className="p-5 border-b border-gray-100">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
@@ -393,10 +383,8 @@ const DistribucionesExternas = () => {
                   </div>
                 </div>
 
-                {/* CARD BODY */}
                 <div className="p-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* DIRECCIÓN */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                         <i className="fa-solid fa-location-arrow text-gray-500 text-sm"></i>
@@ -412,7 +400,6 @@ const DistribucionesExternas = () => {
                       </div>
                     </div>
 
-                    {/* ASIGNADO */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                         <i className="fa-solid fa-user text-gray-500 text-sm"></i>
@@ -428,7 +415,6 @@ const DistribucionesExternas = () => {
                       </div>
                     </div>
 
-                    {/* VEHÍCULO */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                         <i className="fa-solid fa-car text-gray-500 text-sm"></i>
@@ -450,7 +436,6 @@ const DistribucionesExternas = () => {
                       </div>
                     </div>
 
-                    {/* FECHA */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                         <i className="fa-solid fa-calendar text-gray-500 text-sm"></i>
@@ -467,11 +452,10 @@ const DistribucionesExternas = () => {
                     </div>
                   </div>
 
-                  {/* DETALLES */}
                   <button
                     onClick={() =>
-  navigate(`/repartidor/entrega/${d.id_distribucion}`)
-}
+                      navigate(`/repartidor/entrega/${d.id_distribucion}`)
+                    }
                     className="w-full mt-5 flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-[#B90F0F] transition font-bold text-sm"
                   >
                     Ver detalles

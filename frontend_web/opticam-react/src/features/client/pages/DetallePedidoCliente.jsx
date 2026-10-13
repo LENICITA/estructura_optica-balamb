@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { PagoController } from '../../../core/controllers/PagoController';
+import { alertError } from '../../../shared/utils/alert';
 
 const pedidoController = new PedidoController();
 
@@ -19,7 +20,7 @@ const DetallePedidoCliente = () => {
 
   const cargarPedido = useCallback(async () => {
     if (!id) {
-      alert('No se recibió el identificador del pedido.');
+      alertError('No se recibió el identificador del pedido.');
       navigate(-1);
       return;
     }
@@ -31,7 +32,7 @@ const DetallePedidoCliente = () => {
       const pedidoCliente = misPedidos.find((p) => Number(p.id_pedido) === Number(id));
 
       if (!pedidoCliente) {
-        alert('No puedes consultar este pedido porque no pertenece a tu cuenta.');
+        alertError('No puedes consultar este pedido porque no pertenece a tu cuenta.');
         navigate(-1);
         return;
       }
@@ -39,13 +40,13 @@ const DetallePedidoCliente = () => {
       const detalle = await pedidoController.getPedidoById(Number(id));
 
       if (!detalle) {
-        alert('No fue posible encontrar la información del pedido.');
+        alertError('No fue posible encontrar la información del pedido.');
         navigate(-1);
         return;
       }
 
       if (!ESTADOS_ACTIVOS.includes(detalle.estado)) {
-        alert('Este pedido ya no se encuentra disponible.');
+        alertError('Este pedido ya no se encuentra disponible.');
         navigate(-1);
         return;
       }
@@ -62,7 +63,7 @@ const DetallePedidoCliente = () => {
       setPedido(detalle);
     } catch (error) {
       console.error('Error cargando detalle del pedido:', error);
-      alert('No fue posible cargar la información del pedido.');
+      alertError('No fue posible cargar la información del pedido.');
     } finally {
       setLoading(false);
     }
@@ -144,11 +145,10 @@ const DetallePedidoCliente = () => {
   const abonoPedido = saldo?.total_pagado || 0;
   const saldoRestante = saldo?.saldo_pendiente || totalPedido;
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* MODAL IMAGEN */}
         {imagenAmpliada && (
           <div
             className="fixed inset-0 bg-black/90 z-[1000] flex items-center justify-center p-4"
@@ -170,7 +170,6 @@ const DetallePedidoCliente = () => {
           </div>
         )}
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -213,7 +212,6 @@ const DetallePedidoCliente = () => {
           </div>
         </div>
 
-        {/* ESTADO Y RESUMEN */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -278,7 +276,6 @@ const DetallePedidoCliente = () => {
 
         </div>
 
-        {/* INFORMACIÓN DEL PEDIDO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -327,7 +324,6 @@ const DetallePedidoCliente = () => {
           </div>
         </div>
 
-        {/* PRODUCTOS */}
         {pedido.productos && pedido.productos.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center justify-between mb-5">
@@ -416,7 +412,6 @@ const DetallePedidoCliente = () => {
           </div>
         )}
 
-        {/* DATOS DEL CLIENTE */}
         {pedido.cliente && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -493,7 +488,6 @@ const DetallePedidoCliente = () => {
           </div>
         )}
 
-        {/* ENTREGA */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -549,7 +543,6 @@ const DetallePedidoCliente = () => {
           </div>
         </div>
 
-        {/* FÓRMULA */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -652,7 +645,6 @@ const DetallePedidoCliente = () => {
           )}
         </div>
 
-        {/* RESUMEN DE PAGO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -708,7 +700,6 @@ const DetallePedidoCliente = () => {
           </div>
         </div>
 
-        {/* BOTÓN PAGAR */}
         {(pedido.estado === 'Pendiente' || pedido.estado === 'Listo') && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <button
@@ -734,7 +725,6 @@ const DetallePedidoCliente = () => {
           </div>
         )}
 
-        {/* MENSAJES DE ESTADO */}
         {pedido.estado === 'Abonado' && (
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5">
             <div className="flex items-start gap-3">
@@ -776,7 +766,6 @@ const DetallePedidoCliente = () => {
           </div>
         )}
 
-        {/* VOLVER */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <button
             onClick={() => navigate(-1)}

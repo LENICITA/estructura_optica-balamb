@@ -68,7 +68,6 @@ export const DetalleRepartidor = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-5xl mx-auto">
 
-      {/* ENCABEZADO / VOLVER */}
       <div className="flex items-center justify-between mb-5">
         <button
           onClick={() => navigate(-1)}
@@ -79,7 +78,6 @@ export const DetalleRepartidor = () => {
         </button>
       </div>
 
-      {/* PERFIL PRINCIPAL */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
@@ -136,10 +134,8 @@ export const DetalleRepartidor = () => {
         </div>
       </div>
 
-      {/* CONTENIDO */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        {/* INFORMACIÓN PERSONAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
           <div className="flex items-center gap-3 pb-4 mb-2 border-b border-gray-100">
@@ -179,7 +175,6 @@ export const DetalleRepartidor = () => {
           </div>
         </div>
 
-        {/* VEHÍCULO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
           <div className="flex items-center gap-3 pb-4 mb-2 border-b border-gray-100">
@@ -235,7 +230,6 @@ export const DetalleRepartidor = () => {
 
       </div>
 
-      {/* BOTÓN EDITAR */}
       <div className="mt-5 flex justify-end">
         <Link
           to={`/admin/repartidores/${id}/editar`}

@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { checkId } from '../../../shared/validators/formulaValidators';
+import { alertError, alertWarning, alertConfirm } from '../../../shared/utils/alert';
 
 const formulaController = new FormulaController();
 
@@ -102,7 +103,10 @@ const GestionarFormulas = () => {
 
   const rechazarFormula = async (item) => {
     const checkIdResult = checkId(item.id_formula);
-    if (!checkIdResult.valido) return alert(checkIdResult.mensaje || 'ID inválido');
+    if (!checkIdResult.valido) {
+      alertError(checkIdResult.mensaje || 'ID inválido');
+      return;
+    }
 
     try {
       const resultado = await formulaController.actualizarEstadoFormula(item.id_formula, 'Rechazado');
@@ -110,22 +114,29 @@ const GestionarFormulas = () => {
       if (resultado.success) {
         cargarFormulas();
       } else {
-        alert(resultado.message || 'No se pudo rechazar la fórmula');
+        alertError(resultado.message || 'No se pudo rechazar la fórmula');
       }
     } catch (error) {
       console.error('Error al rechazar fórmula:', error);
-      alert('Ocurrió un error al rechazar la fórmula');
+      alertError('Ocurrió un error al rechazar la fórmula');
     }
   };
 
-  const mostrarMenuOpciones = (item) => {
+  const mostrarMenuOpciones = async (item) => {
     const estado = item.estado || 'Pendiente';
 
     if (estado === 'Rechazado' || estado === 'Aprobado') {
-      return alert('Esta fórmula ya ha sido procesada');
+      alertWarning('Esta fórmula ya ha sido procesada');
+      return;
     }
 
-    if (window.confirm(`¿Rechazar la fórmula #${item.id_formula}?`)) {
+    const confirmado = await alertConfirm({
+      title: '¿Rechazar fórmula?',
+      text: `¿Rechazar la fórmula #${item.id_formula}?`,
+      confirmButtonText: 'Sí, rechazar',
+    });
+
+    if (confirmado) {
       rechazarFormula(item);
     }
   };
@@ -160,7 +171,6 @@ const GestionarFormulas = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-7xl mx-auto">
 
-      {/* ENCABEZADO */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -193,10 +203,8 @@ const GestionarFormulas = () => {
         </button>
       </div>
 
-      {/* ESTADÍSTICAS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
 
-        {/* TOTAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -215,7 +223,6 @@ const GestionarFormulas = () => {
           </div>
         </div>
 
-        {/* PENDIENTES */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -234,7 +241,6 @@ const GestionarFormulas = () => {
           </div>
         </div>
 
-        {/* APROBADAS */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -253,7 +259,6 @@ const GestionarFormulas = () => {
           </div>
         </div>
 
-        {/* RECHAZADAS */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -274,12 +279,10 @@ const GestionarFormulas = () => {
 
       </div>
 
-      {/* BUSCADOR Y FILTROS */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 mb-5">
 
         <div className="flex flex-col lg:flex-row gap-4">
 
-          {/* BUSCADOR */}
           <div className="flex-1">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Buscar fórmula
@@ -308,7 +311,6 @@ const GestionarFormulas = () => {
             </div>
           </div>
 
-          {/* FILTRO */}
           <div className="lg:w-72">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Filtrar por estado
@@ -332,7 +334,6 @@ const GestionarFormulas = () => {
 
         </div>
 
-        {/* CONTADOR */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
           <p className="text-sm text-gray-500">
             <span className="font-semibold text-gray-700">
@@ -359,7 +360,6 @@ const GestionarFormulas = () => {
 
       </div>
 
-      {/* LISTA */}
       {formulasFiltradas.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center py-16 px-6">
 
@@ -405,7 +405,6 @@ const GestionarFormulas = () => {
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-gray-300 transition"
               >
 
-                {/* ENCABEZADO DE LA FÓRMULA */}
                 <div className="p-4 sm:p-5">
 
                   <div className="flex items-start gap-3">
@@ -460,7 +459,6 @@ const GestionarFormulas = () => {
 
                 <div className="h-px bg-gray-100"></div>
 
-                {/* CLIENTE */}
                 <div className="p-4 sm:p-5">
 
                   <div className="flex items-center gap-2 mb-3">
@@ -529,7 +527,6 @@ const GestionarFormulas = () => {
 
                 <div className="h-px bg-gray-100"></div>
 
-                {/* INFORMACIÓN INFERIOR */}
                 <div className="px-4 sm:px-5 py-3 flex flex-wrap items-center gap-4">
 
                   <div className="flex items-center gap-1.5">

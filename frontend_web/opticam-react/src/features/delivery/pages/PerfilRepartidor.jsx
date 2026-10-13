@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserController } from '../../../core/controllers/UserController';
+import { alertError } from '../../../shared/utils/alert';
 
 export const PerfilRepartidor = () => {
   const navigate = useNavigate();
@@ -57,16 +58,16 @@ export const PerfilRepartidor = () => {
           color: vehiculoData.color || '',
         });
       } else {
-        alert('No fue posible cargar el perfil.');
+        alertError('No fue posible cargar el perfil.');
       }
     } catch (error) {
       console.error('Error al cargar perfil del repartidor:', error);
 
       if (error.response?.status === 401) {
-        alert('Tu sesión ha expirado. Inicia sesión nuevamente.');
+        alertError('Tu sesión ha expirado. Inicia sesión nuevamente.');
         navigate('/login');
       } else {
-        alert(error.response?.data?.message || 'No fue posible cargar tu perfil.');
+        alertError(error.response?.data?.message || 'No fue posible cargar tu perfil.');
       }
     } finally {
       setLoading(false);
@@ -92,11 +93,10 @@ export const PerfilRepartidor = () => {
     </div>
   );
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center">
@@ -114,7 +114,6 @@ export const PerfilRepartidor = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN PERSONAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
@@ -176,7 +175,6 @@ export const PerfilRepartidor = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN DE CUENTA */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
@@ -226,7 +224,6 @@ export const PerfilRepartidor = () => {
           </div>
         </div>
 
-        {/* VEHÍCULO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
@@ -280,7 +277,6 @@ export const PerfilRepartidor = () => {
           </div>
         </div>
 
-        {/* MENSAJE INFORMATIVO */}
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-5">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center flex-shrink-0">

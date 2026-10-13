@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { validarFormularioCliente } from '../../../shared/validators/userValidators';
+import { alertSuccess } from '../../../shared/utils/alert';
 
 export const AutoRegistro = () => {
   const { register } = useAuth();
@@ -34,7 +35,6 @@ export const AutoRegistro = () => {
     e.preventDefault();
     setError('');
 
-    // 1. Validar formulario completo con el validador compartido
     const check = validarFormularioCliente({
       nombre_completo: formData.nombre_completo,
       telefono: formData.telefono,
@@ -51,7 +51,6 @@ export const AutoRegistro = () => {
       return;
     }
 
-    // 2. Validar que las contraseñas coincidan
     if (formData.contrasena !== formData.confirmar_contrasena) {
       setError('Las contraseñas no coinciden');
       return;
@@ -73,13 +72,10 @@ export const AutoRegistro = () => {
 
       const result = await register(userData);
 
-      console.log('Registro exitoso en AutoRegistro:', result);
-
       if (result.success) {
-        alert('¡Éxito! Cuenta creada correctamente. Por favor inicia sesión.');
+        alertSuccess('¡Éxito! Cuenta creada correctamente. Por favor inicia sesión.');
         navigate('/login');
       } else {
-        console.log('Error en registro:', result.message);
         setError(result.message || 'Error al registrar usuario.');
       }
     } catch (error) {
@@ -94,7 +90,6 @@ export const AutoRegistro = () => {
   <div className="min-h-[calc(100vh-94px)] bg-white flex items-center justify-center px-6 py-12">
     <div className="w-full max-w-[820px]">
 
-      {/* HEADER */}
       <div className="text-center mb-8">
         <h1 className="text-5xl font-bold text-black">
           Registro
@@ -105,7 +100,6 @@ export const AutoRegistro = () => {
         </h2>
       </div>
 
-      {/* ERROR */}
       {error && (
         <div className="w-full bg-red-50 border border-red-200 p-3 rounded-lg mb-5">
           <p className="text-red-700 text-sm text-center">
@@ -114,14 +108,11 @@ export const AutoRegistro = () => {
         </div>
       )}
 
-      {/* FORMULARIO */}
       <div className="bg-white p-8 rounded-2xl shadow-lg">
         <form onSubmit={handleRegister}>
 
-          {/* FILA 1 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
 
-            {/* NOMBRE */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Nombres y Apellidos <span className="text-red-600">*</span>
@@ -138,7 +129,6 @@ export const AutoRegistro = () => {
               />
             </div>
 
-            {/* EMAIL */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Email <span className="text-red-600">*</span>
@@ -156,7 +146,6 @@ export const AutoRegistro = () => {
               />
             </div>
 
-            {/* DOCUMENTO */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Documento
@@ -173,7 +162,6 @@ export const AutoRegistro = () => {
               />
             </div>
 
-            {/* FECHA DE NACIMIENTO */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Fecha de nacimiento
@@ -190,7 +178,6 @@ export const AutoRegistro = () => {
               />
             </div>
 
-            {/* CIUDAD */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Ciudad
@@ -207,7 +194,6 @@ export const AutoRegistro = () => {
               />
             </div>
 
-            {/* TELÉFONO */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Teléfono
@@ -226,7 +212,6 @@ export const AutoRegistro = () => {
 
           </div>
 
-          {/* DIRECCIÓN */}
           <div className="mt-5">
             <label className="block text-black text-sm font-medium mb-2">
               Dirección
@@ -243,10 +228,8 @@ export const AutoRegistro = () => {
             />
           </div>
 
-          {/* CONTRASEÑAS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-5">
 
-            {/* CONTRASEÑA */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Contraseña <span className="text-red-600">*</span>
@@ -286,7 +269,6 @@ export const AutoRegistro = () => {
               </p>
             </div>
 
-            {/* CONFIRMAR CONTRASEÑA */}
             <div>
               <label className="block text-black text-sm font-medium mb-2">
                 Confirmar Contraseña{' '}
@@ -328,7 +310,6 @@ export const AutoRegistro = () => {
 
           </div>
 
-          {/* BOTÓN */}
           <button
             type="submit"
             disabled={loading}
@@ -341,7 +322,6 @@ export const AutoRegistro = () => {
             )}
           </button>
 
-          {/* LOGIN */}
           <p className="text-center mt-5 text-sm text-gray-700">
             ¿Ya tienes cuenta?{' '}
             <Link

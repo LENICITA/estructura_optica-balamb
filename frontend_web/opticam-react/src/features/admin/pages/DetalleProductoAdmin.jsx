@@ -2,6 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
+import {
+  alertError,
+  alertSuccess,
+  alertConfirm,
+} from '../../../../src/shared/utils/alert';
 
 const DetalleProductoAdmin = () => {
   const { id } = useParams();
@@ -29,20 +34,25 @@ const DetalleProductoAdmin = () => {
   };
 
   const eliminarProducto = async () => {
-    if (!window.confirm(`¿Estás seguro de eliminar "${producto?.nombre}"?`)) return;
+    const confirmado = await alertConfirm({
+      title: '¿Eliminar producto?',
+      text: `¿Estás seguro de eliminar "${producto?.nombre}"? Esta acción no se puede deshacer.`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
 
     try {
       setLoading(true);
       const response = await productController.eliminarProducto(Number(id));
 
       if (response.success) {
-        alert('Producto eliminado correctamente');
+        alertSuccess('Producto eliminado correctamente');
         navigate('/admin/inventario');
       } else {
-        alert(response.message || 'Error al eliminar');
+        alertError(response.message || 'Error al eliminar');
       }
     } catch (error) {
-      alert('No se pudo eliminar el producto');
+      alertError('No se pudo eliminar el producto');
       console.error(error);
     } finally {
       setLoading(false);
@@ -80,7 +90,7 @@ const DetalleProductoAdmin = () => {
     { icon: 'fa-palette', label: 'Color', value: producto.color },
   ];
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
 

@@ -10,6 +10,7 @@ import {
   checkDocumento,
   checkCiudad,
 } from '../../../shared/validators/userValidators';
+import { alertError, alertSuccess, alertWarning } from '../../../shared/utils/alert';
 
 export const PerfilCliente = () => {
   const { updateUser } = useAuth();
@@ -54,11 +55,11 @@ export const PerfilCliente = () => {
           roles: user.getRoles().join(', ') || '',
         });
       } else {
-        alert('No fue posible cargar el perfil.');
+        alertError('No fue posible cargar el perfil.');
       }
     } catch (error) {
       console.error('Error al cargar perfil:', error);
-      alert('No fue posible cargar tu perfil.');
+      alertError('No fue posible cargar tu perfil.');
     } finally {
       setLoading(false);
     }
@@ -77,23 +78,41 @@ export const PerfilCliente = () => {
 
   const guardarCambios = async () => {
     const nombreCheck = checkNombre(formData.nombre_completo);
-    if (!nombreCheck.valido) return alert(nombreCheck.mensaje);
+    if (!nombreCheck.valido) {
+      alertWarning(nombreCheck.mensaje);
+      return;
+    }
 
     const emailCheck = checkEmail(formData.email);
-    if (!emailCheck.valido) return alert(emailCheck.mensaje);
+    if (!emailCheck.valido) {
+      alertWarning(emailCheck.mensaje);
+      return;
+    }
 
     const telCheck = checkTelefono(formData.telefono);
-    if (!telCheck.valido) return alert(telCheck.mensaje);
+    if (!telCheck.valido) {
+      alertWarning(telCheck.mensaje);
+      return;
+    }
 
     const docCheck = checkDocumento(formData.documento);
-    if (!docCheck.valido) return alert(docCheck.mensaje);
+    if (!docCheck.valido) {
+      alertWarning(docCheck.mensaje);
+      return;
+    }
 
     const ciudadCheck = checkCiudad(formData.ciudad);
-    if (!ciudadCheck.valido) return alert(ciudadCheck.mensaje);
+    if (!ciudadCheck.valido) {
+      alertWarning(ciudadCheck.mensaje);
+      return;
+    }
 
     if (formData.fecha_nacimiento) {
       const fecha = new Date(formData.fecha_nacimiento);
-      if (isNaN(fecha.getTime())) return alert('La fecha de nacimiento no es válida.');
+      if (isNaN(fecha.getTime())) {
+        alertWarning('La fecha de nacimiento no es válida.');
+        return;
+      }
     }
 
     try {
@@ -112,14 +131,14 @@ export const PerfilCliente = () => {
       if (result.success) {
         await updateUser();
         setEditando(false);
-        alert(result.message);
+        alertSuccess(result.message);
         await cargarPerfil();
       } else {
-        alert(result.message);
+        alertError(result.message);
       }
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
-      alert('No fue posible actualizar el perfil.');
+      alertError('No fue posible actualizar el perfil.');
     } finally {
       setGuardando(false);
     }
@@ -153,11 +172,10 @@ export const PerfilCliente = () => {
     </div>
   );
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <button
@@ -192,7 +210,6 @@ export const PerfilCliente = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN PERSONAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -271,7 +288,6 @@ export const PerfilCliente = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN DE CUENTA */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -326,7 +342,6 @@ export const PerfilCliente = () => {
           </div>
         </div>
 
-        {/* ACCIONES */}
         {!editando ? (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-3">

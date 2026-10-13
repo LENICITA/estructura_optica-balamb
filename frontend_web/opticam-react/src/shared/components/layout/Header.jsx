@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import { alertConfirm } from '../../../shared/utils/alert';
 
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -12,14 +13,12 @@ export const Header = () => {
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(94);
 
-  // ===== EFECTO: CALCULAR ALTURA DEL HEADER =====
   useEffect(() => {
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.offsetHeight);
     }
   }, []);
 
-  // ===== EFECTO: OBTENER NOMBRE DEL USUARIO =====
   useEffect(() => {
     if (user) {
       const nombre = user.nombre_completo || localStorage.getItem('nombre') || user.email || '';
@@ -30,7 +29,6 @@ export const Header = () => {
     }
   }, [user]);
 
-  // ===== OBTENER ROLES DEL USUARIO =====
   const getRoles = () => {
     if (!user) return [];
 
@@ -48,7 +46,6 @@ export const Header = () => {
     return rolesArray.filter(Boolean).map((role) => role.toUpperCase());
   };
 
-  // ===== OBTENER ROL PRINCIPAL =====
   const getMainRole = () => {
     const roles = getRoles();
     if (roles.includes('ADMIN') || roles.includes('ADMINISTRADOR')) return 'ADMIN';
@@ -57,7 +54,6 @@ export const Header = () => {
     return '';
   };
 
-  // ===== IR AL INICIO SEGÚN ROL =====
   const goToHome = () => {
     setSidebarOpen(false);
     const role = getMainRole();
@@ -85,20 +81,23 @@ export const Header = () => {
     navigate('/');
   };
 
-  // ===== CERRAR SESIÓN =====
-  const handleLogout = () => {
-    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-      logout();
-      navigate('/login');
-      setSidebarOpen(false);
-    }
+  const handleLogout = async () => {
+    const confirmado = await alertConfirm({
+      title: '¿Cerrar sesión?',
+      text: '¿Estás seguro de que quieres cerrar sesión?',
+      confirmButtonText: 'Sí, cerrar sesión',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!confirmado) return;
+
+    logout();
+    navigate('/login');
+    setSidebarOpen(false);
   };
 
-  // ===== MENÚ POR ROLES =====
   const getMenuItems = () => {
     const items = [];
 
-    // INICIO (siempre)
     items.push({
       id: 'home',
       path: '/',
@@ -106,7 +105,6 @@ export const Header = () => {
       icon: 'fa-solid fa-home',
     });
 
-    // CONTACTO (para no autenticados o clientes)
     if (!isAuthenticated || getMainRole() === 'CLIENTE') {
       items.push({
         id: 'contacto',
@@ -116,11 +114,9 @@ export const Header = () => {
       });
     }
 
-    // SI ESTÁ AUTENTICADO
     if (isAuthenticated && user) {
       const role = getMainRole();
 
-      // ===== ADMIN =====
       if (role === 'ADMIN') {
         items.push(
           { id: 'admin-inventario', path: '/admin/inventario', label: 'Inventario', icon: 'fa-solid fa-cube' },
@@ -130,17 +126,11 @@ export const Header = () => {
           { id: 'admin-repartidores', path: '/admin/repartidores', label: 'Repartidores', icon: 'fa-solid fa-users' },
           { id: 'admin-reportes', path: '/admin/reportes', label: 'Reportes', icon: 'fa-solid fa-chart-pie' }
         );
-      }
-
-      // ===== REPARTIDOR =====
-      else if (role === 'REPARTIDOR') {
+      } else if (role === 'REPARTIDOR') {
         items.push(
           { id: 'repartidor-historial', path: '/repartidor/historial', label: 'Historial', icon: 'fa-solid fa-clock-rotate-left' }
         );
-      }
-
-      // ===== CLIENTE =====
-      else if (role === 'CLIENTE') {
+      } else if (role === 'CLIENTE') {
         items.push(
           { id: 'catalogo', path: '/catalogo', label: 'Productos', icon: 'fa-solid fa-glasses' },
           { id: 'mis-formulas', path: '/cliente/mis-formulas', label: 'Mis Fórmulas', icon: 'fa-solid fa-file-medical' },
@@ -149,7 +139,6 @@ export const Header = () => {
         );
       }
 
-      // PERFIL (siempre si está autenticado)
       items.push({
         id: 'perfil',
         path:
@@ -166,7 +155,6 @@ export const Header = () => {
 
   const menuItems = getMenuItems();
 
-  // ===== NAVEGACIÓN DE MENÚ =====
   const handleMenuNavigation = (path) => {
     setSidebarOpen(false);
 
@@ -180,20 +168,16 @@ export const Header = () => {
 
   return (
     <>
-      {/* ===== HEADER ===== */}
       <header
         ref={headerRef}
         className="bg-black flex items-center justify-between px-[30px] py-2.5 relative flex-wrap gap-[15px] z-50"
       >
-        {/* IZQUIERDA */}
         <div className="flex items-center gap-[15px]">
-          {/* LOGO (redirige según rol) */}
           <button onClick={goToHome} aria-label="Ir al inicio">
             <img src="/img/logo2.jpeg" alt="OptiCam" className="h-[70px]" />
           </button>
 
           <div className="flex items-center gap-2">
-            {/* BOTÓN HAMBURGUESA */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="flex w-10 h-10 bg-[#B90F0F] border-none rounded-md cursor-pointer items-center justify-center hover:bg-red-700 transition"
@@ -202,7 +186,6 @@ export const Header = () => {
               <i className="fas fa-bars text-white text-xl"></i>
             </button>
 
-            {/* BUSCADOR */}
             <div
               className={`flex items-center rounded-[30px] shadow-md p-2.5 transition-all duration-500 overflow-hidden ${
                 searchActive ? 'w-[300px]' : 'w-10'
@@ -227,7 +210,6 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* CENTRO: NAV (solo desktop) */}
         <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-2 lg:gap-4 xl:gap-5">
           {menuItems.slice(0, 5).map((item, idx) => (
             <button
@@ -240,16 +222,13 @@ export const Header = () => {
           ))}
         </nav>
 
-        {/* DERECHA */}
         <div className="flex items-center gap-2.5">
-          {/* NOMBRE USUARIO */}
           {isAuthenticated && nombreUsuario && (
             <span className="text-white text-sm mr-2 hidden md:inline truncate max-w-[120px]">
               {nombreUsuario}
             </span>
           )}
 
-          {/* CARRITO (solo cliente) */}
           {isAuthenticated && getMainRole() === 'CLIENTE' && (
             <Link
               to="/carrito"
@@ -260,7 +239,6 @@ export const Header = () => {
             </Link>
           )}
 
-          {/* LOGIN / LOGOUT */}
           {isAuthenticated ? (
             <button
               onClick={handleLogout}
@@ -270,18 +248,35 @@ export const Header = () => {
               <i className="fa-solid fa-sign-out-alt"></i>
             </button>
           ) : (
-            <Link
-              to="/login"
-              className="text-white text-xl hover:opacity-70 transition"
-              aria-label="Iniciar sesión"
-            >
-              <i className="fa-solid fa-circle-user"></i>
-            </Link>
+            <>
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex items-center gap-2 px-4 py-2 border border-white/30 text-white text-sm font-semibold rounded-lg hover:bg-white/10 hover:border-white/60 transition"
+              >
+                <i className="fa-solid fa-right-to-bracket"></i>
+                Iniciar sesión
+              </Link>
+
+              <Link
+                to="/registro"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#B90F0F] text-white text-sm font-semibold rounded-lg hover:bg-[#9f0d0d] transition"
+              >
+                <i className="fa-solid fa-user-plus"></i>
+                Registrarse
+              </Link>
+
+              <Link
+                to="/login"
+                className="sm:hidden text-white text-xl hover:opacity-70 transition"
+                aria-label="Iniciar sesión"
+              >
+                <i className="fa-solid fa-circle-user"></i>
+              </Link>
+            </>
           )}
         </div>
       </header>
 
-      {/* ===== MENÚ LATERAL (SIDEBAR) ===== */}
       <div
         style={{
           position: 'fixed',
@@ -298,7 +293,6 @@ export const Header = () => {
           padding: '10px 0',
         }}
       >
-        {/* INFO USUARIO */}
         {isAuthenticated && user && (
           <div className="px-5 pt-3 pb-4 border-b border-gray-700">
             <p className="text-white text-base font-bold truncate">
@@ -314,7 +308,6 @@ export const Header = () => {
           </div>
         )}
 
-        {/* ITEMS DEL MENÚ */}
         {menuItems.map((item, idx) => (
           <button
             key={idx}
@@ -349,7 +342,6 @@ export const Header = () => {
           </button>
         ))}
 
-        {/* CERRAR SESIÓN */}
         {isAuthenticated && (
           <>
             <div
@@ -389,9 +381,77 @@ export const Header = () => {
             </button>
           </>
         )}
+
+        {!isAuthenticated && (
+          <>
+            <div
+              style={{
+                borderBottom: '1px solid #333',
+                margin: '5px 0',
+              }}
+            ></div>
+
+            <button
+              onClick={() => handleMenuNavigation('/login')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 20px',
+                color: 'white',
+                transition: 'all 0.3s',
+                width: '100%',
+                textAlign: 'left',
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                border: 'none',
+                fontSize: '15px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1a1a1a';
+                e.currentTarget.style.paddingLeft = '25px';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '20px';
+              }}
+            >
+              <i className="fa-solid fa-right-to-bracket w-5" style={{ color: '#B90F0F' }}></i>
+              Iniciar Sesión
+            </button>
+
+            <button
+              onClick={() => handleMenuNavigation('/registro')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 20px',
+                color: 'white',
+                transition: 'all 0.3s',
+                width: '100%',
+                textAlign: 'left',
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                border: 'none',
+                fontSize: '15px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1a1a1a';
+                e.currentTarget.style.paddingLeft = '25px';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '20px';
+              }}
+            >
+              <i className="fa-solid fa-user-plus w-5" style={{ color: '#B90F0F' }}></i>
+              Registrarse
+            </button>
+          </>
+        )}
       </div>
 
-      {/* ===== OVERLAY ===== */}
       {sidebarOpen && (
         <div
           style={{

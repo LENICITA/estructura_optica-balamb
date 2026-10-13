@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
 import { checkObservacion } from '../../../shared/validators/distribucionValidators';
+import { alertError, alertWarning, alertConfirm } from '../../../shared/utils/alert';
 
 const DetalleEntrega = () => {
   const { id_distribucion } = useParams();
@@ -20,14 +21,14 @@ const DetalleEntrega = () => {
       setLoading(true);
 
       if (!id_distribucion) {
-        alert('No se recibió el ID de la distribución.');
+        alertError('No se recibió el ID de la distribución.');
         return;
       }
 
       const resultado = await distribucionController.getDistribucionById(Number(id_distribucion));
 
       if (!resultado) {
-        alert('No se encontró la distribución o no tienes acceso a ella.');
+        alertError('No se encontró la distribución o no tienes acceso a ella.');
         setDistribucion(null);
         return;
       }
@@ -35,7 +36,7 @@ const DetalleEntrega = () => {
       setDistribucion(resultado);
     } catch (error) {
       console.error('Error al cargar detalle de entrega:', error);
-      alert('No se pudo cargar la información de la entrega.');
+      alertError('No se pudo cargar la información de la entrega.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,7 @@ const DetalleEntrega = () => {
       setActionLoading(true);
       const resultado = await distribucionController.iniciarEntrega(Number(id_distribucion));
       if (!resultado.success) {
-        alert(resultado.message || 'Intenta nuevamente.');
+        alertError(resultado.message || 'Intenta nuevamente.');
         return;
       }
       await cargarDistribucion();
@@ -61,7 +62,10 @@ const DetalleEntrega = () => {
 
   const marcarEntregado = async (textoObservacion) => {
     const check = checkObservacion(textoObservacion);
-    if (!check.valido) return alert(check.mensaje || 'Observación inválida');
+    if (!check.valido) {
+      alertWarning(check.mensaje || 'Observación inválida');
+      return;
+    }
 
     try {
       setActionLoading(true);
@@ -70,7 +74,7 @@ const DetalleEntrega = () => {
         textoObservacion?.trim() || undefined
       );
       if (!resultado.success) {
-        alert(resultado.message || 'Intenta nuevamente.');
+        alertError(resultado.message || 'Intenta nuevamente.');
         return;
       }
       setObservacion('');
@@ -81,8 +85,13 @@ const DetalleEntrega = () => {
     }
   };
 
-  const confirmarEntrega = () => {
-    if (!window.confirm('¿El pedido ya fue entregado al cliente?')) return;
+  const confirmarEntrega = async () => {
+    const confirmado = await alertConfirm({
+      title: '¿Confirmar entrega?',
+      text: '¿El pedido ya fue entregado al cliente?',
+      confirmButtonText: 'Sí, confirmar',
+    });
+    if (!confirmado) return;
     setObservacionModalVisible(true);
   };
 
@@ -129,11 +138,10 @@ const DetalleEntrega = () => {
     distribucion.estado === 'EN_ENTREGA' ? '#EEF4FF' :
     distribucion.estado === 'ENTREGADO' ? '#E8F5E9' : '#FDECEC';
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -185,7 +193,6 @@ const DetalleEntrega = () => {
           </div>
         </div>
 
-        {/* RESUMEN DEL PEDIDO */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3">
@@ -233,10 +240,8 @@ const DetalleEntrega = () => {
           </div>
         </div>
 
-        {/* DATOS DEL PEDIDO Y CLIENTE */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* DATOS DEL PEDIDO */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -312,7 +317,6 @@ const DetalleEntrega = () => {
             </div>
           </div>
 
-          {/* CLIENTE */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -374,7 +378,6 @@ const DetalleEntrega = () => {
           </div>
         </div>
 
-        {/* REPARTIDOR */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -441,7 +444,6 @@ const DetalleEntrega = () => {
           </div>
         </div>
 
-        {/* OBSERVACIONES */}
         {(distribucion.estado === 'EN_ENTREGA' ||
           distribucion.estado === 'ENTREGADO') && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
@@ -468,7 +470,6 @@ const DetalleEntrega = () => {
           </div>
         )}
 
-        {/* INFORMACIÓN DE LA DISTRIBUCIÓN */}
         {distribucion.estado === 'ENTREGADO' && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -530,7 +531,6 @@ const DetalleEntrega = () => {
           </div>
         )}
 
-        {/* ESTADO ACTUAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <div
@@ -566,7 +566,6 @@ const DetalleEntrega = () => {
           </div>
         </div>
 
-        {/* ACCIONES */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -594,15 +593,7 @@ const DetalleEntrega = () => {
 
             {distribucion.estado === 'PENDIENTE' && (
               <button
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      '¿Deseas iniciar la entrega de este pedido?'
-                    )
-                  ) {
-                    iniciarEntrega();
-                  }
-                }}
+                onClick={() => iniciarEntrega()}
                 disabled={actionLoading}
                 className="w-full flex items-center justify-center gap-2 border border-[#B90F0F] text-[#B90F0F] py-3 rounded-xl font-bold hover:bg-red-50 transition disabled:opacity-60"
               >
@@ -626,7 +617,6 @@ const DetalleEntrega = () => {
 
       </div>
 
-      {/* MODAL OBSERVACIÓN */}
       {observacionModalVisible && (
         <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4 sm:p-6">
           <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-6 w-full max-w-md">

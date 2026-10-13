@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
 import { validarFormularioEditarProducto } from '../../../shared/validators/productoValidators';
+import { alertError, alertSuccess } from '../../../shared/utils/alert';
 
 const EditarProducto = () => {
   const { id } = useParams();
@@ -35,7 +36,7 @@ const EditarProducto = () => {
   useEffect(() => {
     const cargarProducto = async () => {
       if (!id) {
-        alert('No se encontró el ID del producto.');
+        alertError('No se encontró el ID del producto.');
         navigate(-1);
         return;
       }
@@ -45,7 +46,7 @@ const EditarProducto = () => {
         const producto = await productController.getProductoById(Number(id));
 
         if (!producto) {
-          alert('No se encontró el producto.');
+          alertError('No se encontró el producto.');
           navigate(-1);
           return;
         }
@@ -70,7 +71,7 @@ const EditarProducto = () => {
         }
       } catch (error) {
         console.error('Error cargando producto:', error);
-        alert('No fue posible cargar los datos del producto.');
+        alertError('No fue posible cargar los datos del producto.');
       } finally {
         setCargandoProducto(false);
       }
@@ -88,6 +89,8 @@ const EditarProducto = () => {
   };
 
   const editarProducto = async () => {
+    console.log('ID actualizar:', id, 'Tipo:', typeof id);
+    console.log('ID parseado:', Number(id));
     const imagenFinal = imagen || imagenOriginal;
 
     const check = validarFormularioEditarProducto({
@@ -102,7 +105,7 @@ const EditarProducto = () => {
     });
 
     if (!check.valido) {
-      alert(check.mensaje || 'Datos inválidos');
+      alertError(check.mensaje || 'Datos inválidos');
       return;
     }
 
@@ -121,15 +124,15 @@ const EditarProducto = () => {
       });
 
       if (!resultado.success) {
-        alert(resultado.message);
+        alertError(resultado.message);
         return;
       }
 
-      alert('El producto fue actualizado correctamente.');
+      alertSuccess('El producto fue actualizado correctamente.');
       navigate('/admin/inventario');
     } catch (error) {
       console.error('Error editando producto:', error);
-      alert(error?.message || 'No fue posible editar el producto.');
+      alertError(error?.message || 'No fue posible editar el producto.');
     } finally {
       setSubiendo(false);
     }
@@ -148,7 +151,6 @@ const EditarProducto = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-5xl mx-auto">
 
-      {/* ENCABEZADO */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate(-1)}
@@ -179,7 +181,6 @@ const EditarProducto = () => {
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
-        {/* CATEGORÍA */}
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Categoría:
@@ -228,7 +229,6 @@ const EditarProducto = () => {
           </div>
         </div>
 
-        {/* CAMPOS DEL PRODUCTO */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {['nombre', 'marca', 'precio', 'material', 'color'].map((field) => (
@@ -250,7 +250,6 @@ const EditarProducto = () => {
             </div>
           ))}
 
-          {/* DESCRIPCIÓN */}
           <div className="lg:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Descripción:
@@ -267,7 +266,6 @@ const EditarProducto = () => {
           </div>
         </div>
 
-        {/* IMAGEN */}
         <div className="mt-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Imagen:
@@ -313,7 +311,6 @@ const EditarProducto = () => {
           )}
         </div>
 
-        {/* BOTÓN */}
         <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
 
           <button

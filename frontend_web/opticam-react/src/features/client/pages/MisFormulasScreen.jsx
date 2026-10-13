@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { useAuth } from '../../auth/context/AuthContext';
+import { alertError, alertSuccess, alertConfirm } from '../../../shared/utils/alert';
 
 export const MisFormulasScreen = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export const MisFormulasScreen = () => {
       setFormulas(resultado);
     } catch (error) {
       console.error('Error cargando fórmulas:', error);
-      alert('No fue posible cargar tus fórmulas.');
+      alertError('No fue posible cargar tus fórmulas.');
     } finally {
       setLoading(false);
     }
@@ -83,28 +84,32 @@ export const MisFormulasScreen = () => {
   const eliminarFormula = async (formula) => {
     const estadoTexto = obtenerEstadoTexto(formula.estado);
     const mensajeAdvertencia = estadoTexto === 'Aprobado'
-      ? '\n\nEsta fórmula está APROBADA. ¿Estás seguro de eliminarla?'
+      ? ' Esta fórmula está APROBADA. ¿Estás seguro de eliminarla?'
       : '';
 
-    if (!window.confirm(
-      `¿Estás seguro de eliminar esta fórmula?\n\nEstado: ${estadoTexto}${mensajeAdvertencia}\nEsta acción no se puede deshacer.`
-    )) return;
+    const confirmado = await alertConfirm({
+      title: '¿Eliminar fórmula?',
+      text: `Estado: ${estadoTexto}.${mensajeAdvertencia} Esta acción no se puede deshacer.`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
 
     try {
       const response = await formulaController.eliminarFormula(formula.id_formula);
 
       if (!response.success) {
-        return alert(response.message || 'No se pudo eliminar la fórmula.');
+        alertError(response.message || 'No se pudo eliminar la fórmula.');
+        return;
       }
 
       setFormulas((prev) => prev.filter((f) => f.id_formula !== formula.id_formula));
-      alert('La fórmula fue eliminada correctamente.');
+      alertSuccess('La fórmula fue eliminada correctamente.');
     } catch (error) {
       console.error('Error al eliminar fórmula:', error);
       let mensajeError = 'No se pudo eliminar la fórmula. Intenta nuevamente.';
       if (error?.response?.data?.message) mensajeError = error.response.data.message;
       else if (error?.message) mensajeError = error.message;
-      alert(mensajeError);
+      alertError(mensajeError);
     }
   };
 
@@ -127,11 +132,10 @@ export const MisFormulasScreen = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
             <div className="flex items-center gap-4">
@@ -171,7 +175,6 @@ export const MisFormulasScreen = () => {
           </div>
         </div>
 
-        {/* RESUMEN */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center justify-between">
@@ -232,7 +235,6 @@ export const MisFormulasScreen = () => {
           </div>
         </div>
 
-        {/* CONTENIDO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
             <div>
@@ -288,7 +290,6 @@ export const MisFormulasScreen = () => {
                   }
                   className="bg-white border border-gray-200 rounded-2xl p-5 cursor-pointer hover:shadow-md hover:border-gray-300 transition relative"
                 >
-                  {/* MENÚ */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -299,7 +300,6 @@ export const MisFormulasScreen = () => {
                     <i className="fa-solid fa-ellipsis-vertical text-gray-500"></i>
                   </button>
 
-                  {/* ESTADO */}
                   <div className="pr-10">
                     <span
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold"
@@ -315,7 +315,6 @@ export const MisFormulasScreen = () => {
                     </span>
                   </div>
 
-                  {/* INFORMACIÓN */}
                   <div className="mt-5">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
@@ -334,7 +333,6 @@ export const MisFormulasScreen = () => {
                     </div>
                   </div>
 
-                  {/* DETALLE */}
                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
                     <span className="text-xs text-gray-400">
                       Consulta los detalles de tu fórmula
@@ -350,7 +348,6 @@ export const MisFormulasScreen = () => {
           )}
         </div>
 
-        {/* CREAR FÓRMULA */}
         {formulas.length > 0 && (
           <div className="bg-[#B90F0F] rounded-2xl shadow-sm p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -380,7 +377,6 @@ export const MisFormulasScreen = () => {
 
       </div>
 
-      {/* MODAL MENÚ */}
       {menuVisible && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"

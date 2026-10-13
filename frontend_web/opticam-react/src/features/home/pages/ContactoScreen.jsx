@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ContactoController } from '../../../core/controllers/ContactoController';
 import { validarFormularioContacto } from '../../../shared/validators/contactoValidators';
+import { alertSuccess } from '../../../shared/utils/alert';
 
 export const ContactoScreen = () => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,7 @@ export const ContactoScreen = () => {
       if (result.success) {
         setEnviado(true);
         setFormData({ nombre: '', email: '', telefono: '', mensaje: '' });
-        alert('¡Mensaje enviado! Te contactaremos pronto.');
+        alertSuccess('¡Mensaje enviado! Te contactaremos pronto.');
         setTimeout(() => setEnviado(false), 5000);
       } else {
         setError(result.message || 'Error al enviar el mensaje');
@@ -61,11 +62,10 @@ export const ContactoScreen = () => {
     }
   };
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
 
@@ -86,7 +86,6 @@ export const ContactoScreen = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN DE CONTACTO */}
         <div className="bg-[#B90F0F] rounded-2xl shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
@@ -163,7 +162,6 @@ export const ContactoScreen = () => {
           </div>
         </div>
 
-        {/* FORMULARIO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
           <div className="flex items-center gap-3 mb-6">
@@ -182,7 +180,6 @@ export const ContactoScreen = () => {
             </div>
           </div>
 
-          {/* MENSAJE DE ERROR */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
               <div className="flex items-start gap-3">
@@ -203,7 +200,6 @@ export const ContactoScreen = () => {
             </div>
           )}
 
-          {/* MENSAJE DE ÉXITO */}
           {enviado && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-5">
               <div className="flex items-start gap-3">
@@ -226,10 +222,8 @@ export const ContactoScreen = () => {
 
           <form onSubmit={handleSubmit}>
 
-            {/* DATOS DE CONTACTO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {/* NOMBRE */}
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">
                   Nombre completo *
@@ -249,7 +243,6 @@ export const ContactoScreen = () => {
                 </div>
               </div>
 
-              {/* EMAIL */}
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-2">
                   Correo electrónico *
@@ -270,7 +263,6 @@ export const ContactoScreen = () => {
                 </div>
               </div>
 
-              {/* TELÉFONO */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-800 mb-2">
                   Teléfono
@@ -290,7 +282,6 @@ export const ContactoScreen = () => {
                 </div>
               </div>
 
-              {/* MENSAJE */}
               <div className="md:col-span-2">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-bold text-gray-800">
@@ -318,7 +309,6 @@ export const ContactoScreen = () => {
 
             </div>
 
-            {/* BOTÓN */}
             <div className="mt-6 pt-5 border-t border-gray-100">
               <button
                 type="submit"
@@ -342,7 +332,6 @@ export const ContactoScreen = () => {
           </form>
         </div>
 
-        {/* INFORMACIÓN FINAL */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">

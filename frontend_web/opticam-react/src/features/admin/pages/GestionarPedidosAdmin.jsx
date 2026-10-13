@@ -5,6 +5,7 @@ import { DistribucionController } from '../../../core/controllers/DistribucionCo
 import { PedidoController } from '../../../core/controllers/PedidoController';
 import { UserController } from '../../../core/controllers/UserController';
 import { AuthController } from '../../../core/controllers/AuthController';
+import { alertError, alertSuccess, alertConfirm } from '../../../shared/utils/alert';
 
 const ESTADOS_VALIDOS = ['TODOS', 'Abonado', 'Listo', 'Pagado', 'En Proceso', 'Enviado', 'Entregado'];
 
@@ -146,10 +147,13 @@ const GestionarPedidosAdmin = () => {
   };
 
   const handleAsignar = async (usuario) => {
-    if (!pedidoSeleccionado) return alert('No hay pedido seleccionado');
+    if (!pedidoSeleccionado) {
+      alertError('No hay pedido seleccionado');
+      return;
+    }
 
     if (pedidoSeleccionado.estado !== 'Pagado') {
-      alert(`El pedido debe estar en estado "Pagado". Estado actual: ${pedidoSeleccionado.estado}`);
+      alertError(`El pedido debe estar en estado "Pagado". Estado actual: ${pedidoSeleccionado.estado}`);
       setMostrarRepartidores(false);
       return;
     }
@@ -158,7 +162,12 @@ const GestionarPedidosAdmin = () => {
     const esAdmin = usuario.esAdmin || false;
     const tipo = esAdmin ? 'administrador (distribuidora externa)' : 'repartidor';
 
-    if (!window.confirm(`¿Asignar pedido #${pedidoSeleccionado.id_pedido} a ${nombreUsuario} (${tipo})?`)) return;
+    const confirmado = await alertConfirm({
+      title: '¿Asignar pedido?',
+      text: `¿Asignar pedido #${pedidoSeleccionado.id_pedido} a ${nombreUsuario} (${tipo})?`,
+      confirmButtonText: 'Sí, asignar',
+    });
+    if (!confirmado) return;
 
     try {
       const result = await distribucionController.asignarPedido({
@@ -169,19 +178,19 @@ const GestionarPedidosAdmin = () => {
 
       if (result.success) {
         let mensaje = `Pedido #${pedidoSeleccionado.id_pedido} asignado a ${nombreUsuario}`;
-        if (result.data?.tipo_asignacion === 'DISTRIBUIDORA_EXTERNA') mensaje += '\n\nEnvío externo (fuera de Bogotá)';
-        else mensaje += '\n\nEnvío en Bogotá';
+        if (result.data?.tipo_asignacion === 'DISTRIBUIDORA_EXTERNA') mensaje += ' — Envío externo (fuera de Bogotá)';
+        else mensaje += ' — Envío en Bogotá';
 
-        alert(mensaje);
+        alertSuccess(mensaje);
         setMostrarRepartidores(false);
         setPedidoSeleccionado(null);
         cargarPedidos();
       } else {
-        alert(result.message || 'No se pudo asignar el pedido');
+        alertError(result.message || 'No se pudo asignar el pedido');
       }
     } catch (error) {
       console.error('Error asignando pedido:', error);
-      alert(error.message || 'Error al asignar el pedido');
+      alertError(error.message || 'Error al asignar el pedido');
       setMostrarRepartidores(false);
     }
   };
@@ -216,7 +225,6 @@ const GestionarPedidosAdmin = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-7xl mx-auto">
 
-      {/* ENCABEZADO */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -247,7 +255,6 @@ const GestionarPedidosAdmin = () => {
         </div>
       </div>
 
-      {/* ESTADÍSTICAS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-3">
@@ -306,7 +313,6 @@ const GestionarPedidosAdmin = () => {
         </div>
       </div>
 
-      {/* BUSCADOR Y FILTROS */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
 
@@ -363,7 +369,6 @@ const GestionarPedidosAdmin = () => {
         </div>
       </div>
 
-      {/* CONTADOR */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-500">
           <span className="font-semibold text-gray-800">
@@ -375,7 +380,6 @@ const GestionarPedidosAdmin = () => {
         </p>
       </div>
 
-      {/* LISTA */}
       {pedidosFiltrados.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center justify-center py-16 px-6">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -408,7 +412,6 @@ const GestionarPedidosAdmin = () => {
                 key={item.id_pedido}
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition"
               >
-                {/* CABECERA */}
                 <div
                   onClick={() =>
                     navigate(`/admin/pedidos/${item.id_pedido}`, {
@@ -450,7 +453,6 @@ const GestionarPedidosAdmin = () => {
 
                   <div className="h-px bg-gray-100"></div>
 
-                  {/* CLIENTE */}
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <i className="fa-solid fa-circle-user text-[#B90F0F]"></i>
@@ -485,7 +487,6 @@ const GestionarPedidosAdmin = () => {
 
                   <div className="h-px bg-gray-100"></div>
 
-                  {/* REPARTIDOR */}
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <i className="fa-solid fa-motorcycle text-[#B90F0F]"></i>
@@ -504,7 +505,6 @@ const GestionarPedidosAdmin = () => {
 
                   <div className="h-px bg-gray-100"></div>
 
-                  {/* INFORMACIÓN INFERIOR */}
                   <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex items-center gap-2">
                       <i className="fa-solid fa-calendar text-gray-400 text-sm"></i>
@@ -529,7 +529,6 @@ const GestionarPedidosAdmin = () => {
                   </div>
                 </div>
 
-                {/* ASIGNAR */}
                 {puedeAsignar && (
                   <div className="px-5 pb-5">
                     <button
@@ -554,7 +553,6 @@ const GestionarPedidosAdmin = () => {
         </div>
       )}
 
-      {/* MODAL REPARTIDORES */}
       {mostrarRepartidores && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4"

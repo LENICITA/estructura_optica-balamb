@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { alertError, alertConfirm, toastSuccess } from '../../../../src/shared/utils/alert';
 
 export const CatalogoAdmin = () => {
   const navigate = useNavigate();
@@ -170,7 +171,7 @@ useEffect(() => {
       setMostrarFiltros(false);
     } catch (error) {
       console.error('Error aplicando filtros:', error);
-      alert('Error al aplicar filtros');
+      alertError('Error al aplicar filtros');
     } finally {
       setLoading(false);
     }
@@ -184,19 +185,24 @@ useEffect(() => {
   };
 
   const eliminarProducto = async (producto) => {
-    if (!window.confirm(`¿Estás seguro de eliminar "${producto.nombre}"?`)) return;
+    const confirmado = await alertConfirm({
+      title: '¿Eliminar producto?',
+      text: `¿Estás seguro de eliminar el producto "${producto.nombre}"? Esta acción no se puede deshacer.`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
 
     try {
       setLoading(true);
       const response = await productController.eliminarProducto(producto.id_producto);
       if (response.success) {
-        alert('Producto eliminado correctamente');
+        toastSuccess('Producto eliminado correctamente');
         cargarProductos();
       } else {
-        alert(response.message || 'Error al eliminar');
+        alertError(response.message || 'Error al eliminar');
       }
     } catch (error) {
-      alert('No se pudo eliminar el producto');
+      alertError('No se pudo eliminar el producto');
       console.error(error);
     } finally {
       setLoading(false);

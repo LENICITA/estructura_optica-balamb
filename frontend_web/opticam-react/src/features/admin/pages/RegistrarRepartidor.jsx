@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserController } from '../../../core/controllers/UserController';
 import { validarFormularioRepartidor } from '../../../shared/validators/userValidators';
+import { alertSuccess } from '../../../shared/utils/alert';
 
 export const RegistrarRepartidor = () => {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export const RegistrarRepartidor = () => {
 
       if (result.success) {
         setSuccess('Repartidor registrado exitosamente.');
-        alert('El repartidor ha sido registrado correctamente.');
+        alertSuccess('El repartidor ha sido registrado correctamente.');
         navigate('/admin/repartidores');
       } else {
         setError(result.message || 'No se pudo registrar el repartidor.');
@@ -90,7 +91,6 @@ export const RegistrarRepartidor = () => {
   <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
     <div className="max-w-5xl mx-auto">
 
-      {/* VOLVER */}
       <div className="mb-5">
         <button
           type="button"
@@ -102,7 +102,6 @@ export const RegistrarRepartidor = () => {
         </button>
       </div>
 
-      {/* ENCABEZADO */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mb-5">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -121,7 +120,6 @@ export const RegistrarRepartidor = () => {
         </div>
       </div>
 
-      {/* MENSAJES */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 mb-5 flex items-center gap-3">
           <i className="fa-solid fa-circle-exclamation text-[#B90F0F]"></i>
@@ -144,10 +142,8 @@ export const RegistrarRepartidor = () => {
 
       <form onSubmit={handleSubmit}>
 
-        {/* FORMULARIOS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* DATOS PERSONALES */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
@@ -166,7 +162,6 @@ export const RegistrarRepartidor = () => {
               </div>
             </div>
 
-            {/* NOMBRES */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Nombres y Apellidos <span className="text-[#B90F0F]">*</span>
             </label>
@@ -183,7 +178,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* EMAIL */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Email <span className="text-[#B90F0F]">*</span>
             </label>
@@ -200,7 +194,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* DOCUMENTO */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Documento
             </label>
@@ -217,7 +210,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* FECHA */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Fecha de nacimiento
             </label>
@@ -234,7 +226,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* CIUDAD */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Ciudad
             </label>
@@ -251,7 +242,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* DIRECCIÓN */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Dirección
             </label>
@@ -268,7 +258,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* TELÉFONO */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Teléfono
             </label>
@@ -285,7 +274,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* CONTRASEÑA */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Contraseña <span className="text-[#B90F0F]">*</span>
             </label>
@@ -316,7 +304,6 @@ export const RegistrarRepartidor = () => {
 
           </div>
 
-          {/* DATOS DEL VEHÍCULO */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100">
@@ -335,7 +322,6 @@ export const RegistrarRepartidor = () => {
               </div>
             </div>
 
-            {/* TIPO DE VEHÍCULO */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Tipo de vehículo
             </label>
@@ -363,7 +349,6 @@ export const RegistrarRepartidor = () => {
               ))}
             </div>
 
-            {/* MODELO */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Modelo del vehículo
             </label>
@@ -380,7 +365,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* PLACA */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Placa
             </label>
@@ -402,7 +386,6 @@ export const RegistrarRepartidor = () => {
               <span>La placa debe ser única en el sistema</span>
             </div>
 
-            {/* COLOR */}
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Color del vehículo
             </label>
@@ -419,7 +402,6 @@ export const RegistrarRepartidor = () => {
               />
             </div>
 
-            {/* INFORMACIÓN */}
             <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <i className="fa-solid fa-circle-info text-[#B90F0F] mt-0.5"></i>
@@ -441,7 +423,6 @@ export const RegistrarRepartidor = () => {
 
         </div>
 
-        {/* BOTONES */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-5">
 
           <button
@@ -471,7 +452,6 @@ export const RegistrarRepartidor = () => {
 
         </div>
 
-        {/* NOTA */}
         <div className="flex items-center justify-center gap-2 mt-4 mb-2 text-xs text-gray-400">
           <i className="fa-solid fa-circle-info"></i>
           <span>Los campos marcados con * son obligatorios</span>

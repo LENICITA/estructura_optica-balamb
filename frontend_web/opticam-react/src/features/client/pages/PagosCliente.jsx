@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PagoController } from '../../../core/controllers/PagoController';
 import { PedidoController } from '../../../core/controllers/PedidoController';
+import { alertError } from '../../../shared/utils/alert';
 
 export const PagosCliente = () => {
   const { id } = useParams();
@@ -22,7 +23,7 @@ export const PagosCliente = () => {
 
   useEffect(() => {
     if (!id) {
-      alert('No se encontró el ID del pedido');
+      alertError('No se encontró el ID del pedido');
       navigate(-1);
       return;
     }
@@ -46,7 +47,7 @@ export const PagosCliente = () => {
       setPagos(pagosData);
     } catch (error) {
       console.error('Error cargando datos:', error);
-      alert('Error al cargar los datos del pago');
+      alertError('Error al cargar los datos del pago');
     } finally {
       setLoading(false);
     }
@@ -54,25 +55,35 @@ export const PagosCliente = () => {
 
   const handlePagar = async (eleccion) => {
     try {
-      if (!id) return alert('No se encontró el ID del pedido');
+      if (!id) {
+        alertError('No se encontró el ID del pedido');
+        return;
+      }
 
       const total = totalPedido;
       const saldoPendiente = saldo?.saldo_pendiente || total;
 
-      if (total <= 0) return alert('El total del pedido no es válido');
+      if (total <= 0) {
+        alertError('El total del pedido no es válido');
+        return;
+      }
 
       let monto = 0;
 
       if (eleccion === '50%') {
         if (saldo?.tiene_abono_50) {
-          return alert('Ya tienes un abono del 50%. Puedes pagar el saldo restante con "Pagar 100%"');
+          alertError('Ya tienes un abono del 50%. Puedes pagar el saldo restante con "Pagar 100%"');
+          return;
         }
         monto = Math.round(total / 2);
       } else {
         monto = saldoPendiente;
       }
 
-      if (monto <= 0) return alert(`El monto a pagar debe ser mayor a 0. Total: $${total}`);
+      if (monto <= 0) {
+        alertError(`El monto a pagar debe ser mayor a 0. Total: $${total}`);
+        return;
+      }
 
       setProcesando(true);
 
@@ -86,11 +97,11 @@ export const PagosCliente = () => {
         setLinkPago(result.data.bold_link);
         setMostrarModal(true);
       } else {
-        alert(result.message || 'Error al crear el pago');
+        alertError(result.message || 'Error al crear el pago');
       }
     } catch (error) {
       console.error('Error al pagar:', error);
-      alert(error.message || 'Error al procesar el pago');
+      alertError(error.message || 'Error al procesar el pago');
     } finally {
       setProcesando(false);
     }
@@ -117,11 +128,10 @@ export const PagosCliente = () => {
   const estaPagado = saldo?.estado_pago === 'PAGADO_COMPLETO';
   const tieneAbono = saldo?.tiene_abono_50;
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -174,7 +184,6 @@ export const PagosCliente = () => {
           </div>
         </div>
 
-        {/* RESUMEN DEL PEDIDO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -192,7 +201,6 @@ export const PagosCliente = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* TOTAL */}
             <div className="border border-gray-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
@@ -210,7 +218,6 @@ export const PagosCliente = () => {
               </div>
             </div>
 
-            {/* PAGADO */}
             <div className="border border-gray-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
@@ -228,7 +235,6 @@ export const PagosCliente = () => {
               </div>
             </div>
 
-            {/* SALDO */}
             <div className="border border-red-100 bg-red-50 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
@@ -247,7 +253,6 @@ export const PagosCliente = () => {
             </div>
           </div>
 
-          {/* ESTADO */}
           <div className="mt-5 p-4 rounded-xl border border-gray-200 bg-gray-50">
             <div className="flex items-center gap-3">
               <div
@@ -287,7 +292,6 @@ export const PagosCliente = () => {
           </div>
         </div>
 
-        {/* OPCIONES DE PAGO */}
         {!estaPagado && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -323,7 +327,6 @@ export const PagosCliente = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* PAGO 50% */}
               <button
                 onClick={() => handlePagar('50%')}
                 disabled={tieneAbono || procesando}
@@ -370,7 +373,6 @@ export const PagosCliente = () => {
                 </div>
               </button>
 
-              {/* PAGO 100% */}
               <button
                 onClick={() => handlePagar('100%')}
                 disabled={procesando}
@@ -428,7 +430,6 @@ export const PagosCliente = () => {
           </div>
         )}
 
-        {/* PEDIDO PAGADO */}
         {estaPagado && (
           <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
             <div className="flex items-center gap-4">
@@ -448,7 +449,6 @@ export const PagosCliente = () => {
           </div>
         )}
 
-        {/* HISTORIAL DE PAGOS */}
         {pagos.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -524,7 +524,6 @@ export const PagosCliente = () => {
           </div>
         )}
 
-        {/* SEGURIDAD */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-start gap-4">
             <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -544,7 +543,6 @@ export const PagosCliente = () => {
           </div>
         </div>
 
-        {/* MODAL */}
         {mostrarModal && (
           <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl p-6 w-full max-w-md">

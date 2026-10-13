@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { useAuth } from '../../auth/context/AuthContext';
+import { alertError, alertSuccess } from '../../../shared/utils/alert';
 
 const condiciones = ['ASTIGMATISMO', 'MIOPIA', 'DALTONISMO', 'BAJA VISION'];
 
@@ -39,21 +40,21 @@ export const CrearFormulaScreen = () => {
       const resultado = await formulaController.crearFormula({
         id_usuario: Number(idUsuario),
         condicion: condicion,
-        imagen_formula: imagen,                      // 👈 File real
+        imagen_formula: imagen,
         observaciones: descripcion.trim(),
         fecha_creacion: fecha,
       });
 
       if (!resultado.success) {
-        alert(resultado.message);
+        alertError(resultado.message);
         return;
       }
 
-      alert('La fórmula fue registrada correctamente y está en revisión.');
+      alertSuccess('La fórmula fue registrada correctamente y está en revisión.');
       navigate('/cliente/mis-formulas');
     } catch (error) {
       console.error('Error subiendo fórmula:', error);
-      alert(error?.message || 'No fue posible subir la fórmula.');
+      alertError(error?.message || 'No fue posible subir la fórmula.');
     } finally {
       setSubiendo(false);
     }
@@ -63,7 +64,6 @@ export const CrearFormulaScreen = () => {
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <button
@@ -88,10 +88,8 @@ export const CrearFormulaScreen = () => {
           </div>
         </div>
 
-        {/* FORMULARIO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
 
-          {/* INFORMACIÓN */}
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-900">
               Información de la fórmula
@@ -103,7 +101,6 @@ export const CrearFormulaScreen = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
 
-            {/* FECHA */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Fecha de creación
@@ -117,7 +114,6 @@ export const CrearFormulaScreen = () => {
               </div>
             </div>
 
-            {/* CONDICIÓN */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 ¿Cuál es tu condición?
@@ -171,7 +167,6 @@ export const CrearFormulaScreen = () => {
               </div>
             </div>
 
-            {/* DESCRIPCIÓN */}
             <div className="md:col-span-2 mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Descripción
@@ -197,7 +192,6 @@ export const CrearFormulaScreen = () => {
             </div>
           </div>
 
-          {/* IMAGEN */}
           <div className="mt-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Imagen de la fórmula
@@ -246,7 +240,6 @@ export const CrearFormulaScreen = () => {
             )}
           </div>
 
-          {/* AVISO */}
           <div className="mt-6 flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl p-4">
             <i className="fa-solid fa-circle-info text-[#B90F0F] mt-0.5"></i>
 
@@ -256,7 +249,6 @@ export const CrearFormulaScreen = () => {
             </p>
           </div>
 
-          {/* BOTÓN */}
           <div className="mt-6">
             {subiendo ? (
               <div className="h-12 rounded-xl bg-[#B90F0F] flex items-center justify-center gap-2.5 opacity-70">
@@ -279,7 +271,6 @@ export const CrearFormulaScreen = () => {
         </div>
       </div>
 
-      {/* MODAL DESCRIPCIÓN */}
       {mostrarDescripcion && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"

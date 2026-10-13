@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { alertError, alertSuccess } from '../../../shared/utils/alert';
 
 const CrearProducto = () => {
   const navigate = useNavigate();
@@ -52,15 +53,15 @@ const CrearProducto = () => {
       });
 
       if (!resultado.success) {
-        alert(resultado.message);
+        alertError(resultado.message);
         return;
       }
 
-      alert('El producto fue registrado correctamente.');
+      alertSuccess('El producto fue registrado correctamente.');
       navigate('/admin/inventario');
     } catch (error) {
       console.error('Error creando producto:', error);
-      alert(error?.message || 'No fue posible crear el producto.');
+      alertError(error?.message || 'No fue posible crear el producto.');
     } finally {
       setSubiendo(false);
     }

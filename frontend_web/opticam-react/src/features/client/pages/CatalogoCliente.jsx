@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductController } from '../../../core/controllers/ProductController';
+import { alertError, toastSuccess } from '../../../shared/utils/alert';
 
 export const CatalogoCliente = () => {
   const navigate = useNavigate();
@@ -26,8 +27,8 @@ export const CatalogoCliente = () => {
   const [precioMin, setPrecioMin] = useState('');
   const [precioMax, setPrecioMax] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
-const productosPorPagina = 9;
-const gridRef = useRef(null);
+  const productosPorPagina = 9;
+  const gridRef = useRef(null);
 
   useEffect(() => {
     cargarProductos();
@@ -101,16 +102,16 @@ const gridRef = useRef(null);
   }, [busqueda, productos, categoriaSeleccionada, ordenSeleccionado]);
 
   useEffect(() => {
-  setPaginaActual(1);
-}, [busqueda, categoriaSeleccionada, marcaSeleccionada, ordenSeleccionado]);
+    setPaginaActual(1);
+  }, [busqueda, categoriaSeleccionada, marcaSeleccionada, ordenSeleccionado]);
 
-useEffect(() => {
-  if (paginaActual === 1) return;
-  if (gridRef.current) {
-    const y = gridRef.current.getBoundingClientRect().top + window.scrollY - 90;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  }
-}, [paginaActual]);
+  useEffect(() => {
+    if (paginaActual === 1) return;
+    if (gridRef.current) {
+      const y = gridRef.current.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }, [paginaActual]);
 
   const ordenar = (lista, orden) => {
     const copy = [...lista];
@@ -158,7 +159,7 @@ useEffect(() => {
       setMostrarFiltros(false);
     } catch (error) {
       console.error('Error aplicando filtros:', error);
-      alert('Error al aplicar filtros');
+      alertError('Error al aplicar filtros');
     } finally {
       setLoading(false);
     }
@@ -195,47 +196,47 @@ useEffect(() => {
       }
 
       localStorage.setItem('@carrito', JSON.stringify(carrito));
-      alert(`✅ ${producto.nombre} agregado al carrito`);
+      toastSuccess(`${producto.nombre} agregado al carrito`);
     } catch (error) {
       console.error('Error al agregar al carrito:', error);
-      alert('No se pudo agregar el producto');
+      alertError('No se pudo agregar el producto');
     }
   };
 
   const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina);
-const indiceUltimo = paginaActual * productosPorPagina;
-const indicePrimero = indiceUltimo - productosPorPagina;
-const productosPaginados = productosFiltrados.slice(indicePrimero, indiceUltimo);
+  const indiceUltimo = paginaActual * productosPorPagina;
+  const indicePrimero = indiceUltimo - productosPorPagina;
+  const productosPaginados = productosFiltrados.slice(indicePrimero, indiceUltimo);
 
-const generarPaginas = () => {
-  const paginas = [];
-  const delta = 1;
+  const generarPaginas = () => {
+    const paginas = [];
+    const delta = 1;
 
-  if (totalPaginas <= 7) {
-    for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+    if (totalPaginas <= 7) {
+      for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+      return paginas;
+    }
+
+    paginas.push(1);
+
+    if (paginaActual > delta + 2) {
+      paginas.push('...');
+    }
+
+    const inicio = Math.max(2, paginaActual - delta);
+    const fin = Math.min(totalPaginas - 1, paginaActual + delta);
+
+    for (let i = inicio; i <= fin; i++) {
+      paginas.push(i);
+    }
+
+    if (paginaActual < totalPaginas - delta - 1) {
+      paginas.push('...');
+    }
+
+    paginas.push(totalPaginas);
     return paginas;
-  }
-
-  paginas.push(1);
-
-  if (paginaActual > delta + 2) {
-    paginas.push('...');
-  }
-
-  const inicio = Math.max(2, paginaActual - delta);
-  const fin = Math.min(totalPaginas - 1, paginaActual + delta);
-
-  for (let i = inicio; i <= fin; i++) {
-    paginas.push(i);
-  }
-
-  if (paginaActual < totalPaginas - delta - 1) {
-    paginas.push('...');
-  }
-
-  paginas.push(totalPaginas);
-  return paginas;
-};
+  };
 
   if (loading) {
     return (
@@ -246,11 +247,10 @@ const generarPaginas = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
             <div className="flex items-center gap-4">
@@ -278,11 +278,9 @@ const generarPaginas = () => {
           </div>
         </div>
 
-        {/* BUSCADOR Y FILTROS */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex flex-col lg:flex-row gap-4">
 
-            {/* BUSCADOR */}
             <div className="flex-1">
               <label className="block text-xs font-semibold text-gray-500 mb-2">
                 Buscar producto
@@ -315,7 +313,6 @@ const generarPaginas = () => {
               </div>
             </div>
 
-            {/* CATEGORÍAS */}
             <div className="lg:w-48">
               <label className="block text-xs font-semibold text-gray-500 mb-2">
                 Categoría
@@ -336,7 +333,6 @@ const generarPaginas = () => {
               </button>
             </div>
 
-            {/* MARCAS */}
             <div className="lg:w-48">
               <label className="block text-xs font-semibold text-gray-500 mb-2">
                 Marca
@@ -357,7 +353,6 @@ const generarPaginas = () => {
               </button>
             </div>
 
-            {/* FILTROS */}
             <div className="lg:w-auto">
               <label className="block text-xs font-semibold text-gray-500 mb-2">
                 Más filtros
@@ -375,7 +370,6 @@ const generarPaginas = () => {
             </div>
           </div>
 
-          {/* ORDEN */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-5 pt-5 border-t border-gray-100">
             <p className="text-sm text-gray-500">
               {buscando ? (
@@ -408,7 +402,6 @@ const generarPaginas = () => {
           </div>
         </div>
 
-        {/* PRODUCTOS */}
         {productosFiltrados.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 sm:p-16 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto">
@@ -444,9 +437,9 @@ const generarPaginas = () => {
             </div>
 
             <div
-  ref={gridRef}
-  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
->
+              ref={gridRef}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+            >
               {productosPaginados.map((item) => {
                 const imagenProducto =
                   item.imagen_url ||
@@ -458,7 +451,6 @@ const generarPaginas = () => {
                     key={item.id_producto}
                     className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition group"
                   >
-                    {/* IMAGEN */}
                     <button
                       onClick={() =>
                         navigate(`/producto/${item.id_producto}`)
@@ -485,7 +477,6 @@ const generarPaginas = () => {
                       </span>
                     </button>
 
-                    {/* INFORMACIÓN */}
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="text-sm font-bold text-gray-900 line-clamp-2 min-h-[40px]">
@@ -513,7 +504,6 @@ const generarPaginas = () => {
                         {item.precioFormateado}
                       </p>
 
-                      {/* ACCIONES */}
                       <div className="flex gap-2 mt-4">
                         <button
                           onClick={() =>
@@ -540,7 +530,6 @@ const generarPaginas = () => {
                 );
               })}
             </div>
-            {/* PAGINACIÓN */}
             {totalPaginas > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-200">
 
@@ -551,7 +540,6 @@ const generarPaginas = () => {
 
                 <div className="flex items-center gap-2 flex-wrap justify-center">
 
-                  {/* ANTERIOR */}
                   <button
                     onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
                     disabled={paginaActual === 1}
@@ -565,7 +553,6 @@ const generarPaginas = () => {
                     <span className="hidden sm:inline">Anterior</span>
                   </button>
 
-                  {/* NÚMEROS DE PÁGINA */}
                   <div className="flex items-center gap-1">
                     {generarPaginas().map((num, idx) =>
                       num === '...' ? (
@@ -591,7 +578,6 @@ const generarPaginas = () => {
                     )}
                   </div>
 
-                  {/* SIGUIENTE */}
                   <button
                     onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
                     disabled={paginaActual === totalPaginas}
@@ -606,14 +592,13 @@ const generarPaginas = () => {
                   </button>
 
                 </div>
-                </div>
+              </div>
             )}
           </div>
         )}
 
       </div>
 
-      {/* MODAL CATEGORÍAS */}
       {mostrarCategorias && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"
@@ -679,7 +664,6 @@ const generarPaginas = () => {
         </div>
       )}
 
-      {/* MODAL MARCAS */}
       {mostrarMarcas && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"
@@ -747,7 +731,6 @@ const generarPaginas = () => {
         </div>
       )}
 
-      {/* MODAL FILTROS */}
       {mostrarFiltros && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"
@@ -828,7 +811,6 @@ const generarPaginas = () => {
         </div>
       )}
 
-      {/* MODAL ORDEN */}
       {mostrarOrden && (
         <div
           className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4"

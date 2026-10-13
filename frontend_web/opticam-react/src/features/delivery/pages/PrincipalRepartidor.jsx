@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DistribucionController } from '../../../core/controllers/DistribucionController';
+import { alertError } from '../../../shared/utils/alert';
 
 export const PrincipalRepartidor = () => {
   const navigate = useNavigate();
@@ -84,7 +85,7 @@ export const PrincipalRepartidor = () => {
     } catch (error) {
       console.error('Error al cargar datos del repartidor:', error);
       setPedidos([]);
-      alert('No se pudieron cargar las entregas asignadas.');
+      alertError('No se pudieron cargar las entregas asignadas.');
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,10 @@ export const PrincipalRepartidor = () => {
   }, [cargarPedidos]);
 
   const verDetalleDistribucion = (pedido) => {
-    if (!pedido.id_distribucion) return alert('No se encontró el ID de la distribución.');
+    if (!pedido.id_distribucion) {
+      alertError('No se encontró el ID de la distribución.');
+      return;
+    }
     navigate(`/repartidor/entrega/${pedido.id_distribucion}`);
   };
 
@@ -147,11 +151,10 @@ export const PrincipalRepartidor = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
             <div>
@@ -181,7 +184,6 @@ export const PrincipalRepartidor = () => {
           </div>
         </div>
 
-        {/* INFORMACIÓN DEL REPARTIDOR */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-4">
@@ -218,7 +220,6 @@ export const PrincipalRepartidor = () => {
           </div>
         </div>
 
-        {/* ESTADÍSTICAS */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center justify-between">
@@ -281,7 +282,6 @@ export const PrincipalRepartidor = () => {
           </div>
         </div>
 
-        {/* FILTROS */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -317,7 +317,6 @@ export const PrincipalRepartidor = () => {
           </div>
         </div>
 
-        {/* RESULTADO */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">
             Mostrando{' '}
@@ -328,7 +327,6 @@ export const PrincipalRepartidor = () => {
           </p>
         </div>
 
-        {/* LISTA */}
         {pedidosFiltrados.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm py-16 px-5 flex flex-col items-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -350,7 +348,6 @@ export const PrincipalRepartidor = () => {
                 key={pedido.id_distribucion}
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
               >
-                {/* MAPA */}
                 <button
                   onClick={() => abrirRutaEnMaps(pedido)}
                   className="w-full h-[220px] relative bg-gray-100 flex flex-col items-center justify-center hover:bg-gray-200 transition"
@@ -388,9 +385,7 @@ export const PrincipalRepartidor = () => {
                   </div>
                 </button>
 
-                {/* CONTENIDO */}
                 <div className="p-5">
-                  {/* CABECERA */}
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
                     <div>
                       <p className="text-lg font-bold text-gray-900">
@@ -427,7 +422,6 @@ export const PrincipalRepartidor = () => {
                     </div>
                   </div>
 
-                  {/* INFORMACIÓN */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="border border-gray-100 rounded-xl p-4 bg-gray-50">
                       <div className="flex items-start gap-3">
@@ -504,7 +498,6 @@ export const PrincipalRepartidor = () => {
                     </div>
                   </div>
 
-                  {/* ACCIONES */}
                   <button
                     onClick={() => verDetalleDistribucion(pedido)}
                     className="w-full flex items-center justify-center gap-2 border border-[#B90F0F] text-[#B90F0F] rounded-lg py-2.5 mt-5 font-semibold hover:bg-red-50 transition"

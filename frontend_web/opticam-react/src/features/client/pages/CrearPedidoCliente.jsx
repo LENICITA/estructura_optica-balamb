@@ -6,6 +6,7 @@ import { PedidoController } from '../../../core/controllers/PedidoController';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { UserController } from '../../../core/controllers/UserController';
 import { validarFormularioPedido } from '../../../shared/validators/pedidoValidators';
+import { alertError, alertSuccess, alertWarning } from '../../../shared/utils/alert';
 
 export const CrearPedidoCliente = () => {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export const CrearPedidoCliente = () => {
       const productosData = carritoGuardado ? JSON.parse(carritoGuardado) : [];
 
       if (productosData.length === 0) {
-        alert('No hay productos seleccionados');
+        alertWarning('No hay productos seleccionados');
         navigate('/carrito');
         return;
       }
@@ -66,7 +67,7 @@ export const CrearPedidoCliente = () => {
       setFechaEstimada(fecha.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }));
     } catch (error) {
       console.error('Error cargando datos:', error);
-      alert('Error al cargar los datos');
+      alertError('Error al cargar los datos');
     } finally {
       setLoading(false);
     }
@@ -133,7 +134,10 @@ export const CrearPedidoCliente = () => {
       productos: productos.map((item) => ({ id_producto: item.id_producto, cantidad: item.cantidad })),
     });
 
-    if (!check.valido) return alert(check.mensaje || 'Datos inválidos');
+    if (!check.valido) {
+      alertWarning(check.mensaje || 'Datos inválidos');
+      return;
+    }
 
     setEnviando(true);
 
@@ -151,15 +155,14 @@ export const CrearPedidoCliente = () => {
         localStorage.removeItem('@carrito');
         localStorage.removeItem('carrito_seleccionado');
 
-        const idPedidoCreado = result.data?.id_pedido;
-        alert('Tu pedido ha sido creado exitosamente.');
+        alertSuccess('Tu pedido ha sido creado exitosamente.');
         navigate(`/cliente/mis-pedidos`);
       } else {
-        alert(result.message || 'Error al crear el pedido');
+        alertError(result.message || 'Error al crear el pedido');
       }
     } catch (error) {
       console.error('Error creando pedido:', error);
-      alert(error.message || 'Error al crear el pedido');
+      alertError(error.message || 'Error al crear el pedido');
     } finally {
       setEnviando(false);
     }
@@ -174,11 +177,10 @@ export const CrearPedidoCliente = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex items-center gap-4">
             <button
@@ -203,13 +205,10 @@ export const CrearPedidoCliente = () => {
           </div>
         </div>
 
-        {/* CONTENIDO */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-          {/* FORMULARIO */}
           <div className="xl:col-span-2 space-y-6">
 
-            {/* DATOS DEL CLIENTE */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -263,7 +262,6 @@ export const CrearPedidoCliente = () => {
               </div>
             </div>
 
-            {/* DIRECCIÓN */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3">
@@ -345,7 +343,6 @@ export const CrearPedidoCliente = () => {
               </div>
             </div>
 
-            {/* FÓRMULA */}
             {formulas.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
                 <div className="flex items-center gap-3 mb-5">
@@ -488,7 +485,6 @@ export const CrearPedidoCliente = () => {
 
           </div>
 
-          {/* RESUMEN */}
           <div className="xl:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 xl:sticky xl:top-6">
 
@@ -507,7 +503,6 @@ export const CrearPedidoCliente = () => {
                 </div>
               </div>
 
-              {/* PRODUCTOS */}
               <div className="space-y-3">
                 {productos.map((item) => (
                   <div
@@ -532,7 +527,6 @@ export const CrearPedidoCliente = () => {
 
               <div className="h-px bg-gray-200 my-5"></div>
 
-              {/* VALORES */}
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">
@@ -571,7 +565,6 @@ export const CrearPedidoCliente = () => {
 
               <div className="h-px bg-gray-200 my-5"></div>
 
-              {/* TOTAL */}
               <div className="flex justify-between items-end gap-3">
                 <span className="text-base font-bold text-gray-900">
                   Total
@@ -582,7 +575,6 @@ export const CrearPedidoCliente = () => {
                 </span>
               </div>
 
-              {/* FECHA */}
               <div className="mt-5 bg-gray-50 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <i className="fa-solid fa-calendar text-[#B90F0F] mt-0.5"></i>
@@ -599,7 +591,6 @@ export const CrearPedidoCliente = () => {
                 </div>
               </div>
 
-              {/* CONFIRMAR */}
               <button
                 onClick={confirmarPedido}
                 disabled={enviando}
@@ -631,7 +622,6 @@ export const CrearPedidoCliente = () => {
 
         </div>
 
-        {/* INFORMACIÓN */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">

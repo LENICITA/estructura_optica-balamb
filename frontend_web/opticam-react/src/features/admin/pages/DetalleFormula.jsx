@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FormulaController } from '../../../core/controllers/FormulaController';
 import { validarAsignarPrecio } from '../../../shared/validators/formulaValidators';
+import {alertError, alertConfirm} from '../../../../src/shared/utils/alert';
 
 const DetalleFormula = () => {
   const { id_formula } = useParams();
@@ -52,7 +53,7 @@ const DetalleFormula = () => {
       });
 
       if (!check.valido) {
-        alert(check.mensaje || 'Datos inválidos');
+        alertError(check.mensaje || 'Datos inválidos');
         return;
       }
 
@@ -69,26 +70,31 @@ const DetalleFormula = () => {
             await cargarFormula();
             setEditandoCosto(false);
           } else {
-            alert(resultadoEstado.message || 'No se pudo aprobar la fórmula');
+            alertError(resultadoEstado.message || 'No se pudo aprobar la fórmula');
           }
         } else {
           await cargarFormula();
           setEditandoCosto(false);
         }
       } else {
-        alert(resultadoCosto.message || 'No se pudo actualizar el costo');
+        alertError(resultadoCosto.message || 'No se pudo actualizar el costo');
       }
     } catch (error) {
       console.error('Error al cargar valor de formula', error);
-      alert('Ocurrió un error inesperado');
+      alertError('Ocurrió un error inesperado');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEditarCosto = () => {
+  const handleEditarCosto = async () => {
     if (formula?.estado === 'Aprobado') {
-      if (window.confirm('¿Está seguro que desea modificar el precio de esta fórmula?')) {
+      const confirmado = await alertConfirm({
+        title: 'Confirmar edición',
+        text: '¿Está seguro de que desea modificar el costo de la fórmula aprobada?',
+        confirmButtonText: 'Sí, modificar',
+      });
+      if (confirmado) {
         setEditandoCosto(true);
       }
     } else {

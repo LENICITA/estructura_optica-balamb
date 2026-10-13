@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/context/AuthContext';
+import { alertWarning, alertConfirm } from '../../../shared/utils/alert';
 
 export const CarritoCliente = () => {
   const navigate = useNavigate();
@@ -93,26 +94,51 @@ export const CarritoCliente = () => {
     guardarCarrito(nuevoCarrito);
   };
 
-  const eliminarItem = (id) => {
+  const eliminarItem = async (id) => {
     const producto = carrito.find((item) => item.id === id);
-    if (!window.confirm(`¿Eliminar "${producto?.nombre}" del carrito?`)) return;
+
+    const confirmado = await alertConfirm({
+      title: '¿Eliminar producto?',
+      text: `¿Eliminar "${producto?.nombre}" del carrito?`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
 
     const nuevoCarrito = carrito.filter((item) => item.id !== id);
     guardarCarrito(nuevoCarrito);
   };
 
-  const eliminarSeleccionados = () => {
+  const eliminarSeleccionados = async () => {
     const seleccionados = carrito.filter((item) => item.seleccionado);
-    if (seleccionados.length === 0) return alert('No hay productos seleccionados');
-    if (!window.confirm(`¿Eliminar ${seleccionados.length} producto(s)?`)) return;
+    if (seleccionados.length === 0) {
+      alertWarning('No hay productos seleccionados');
+      return;
+    }
+
+    const confirmado = await alertConfirm({
+      title: '¿Eliminar seleccionados?',
+      text: `¿Eliminar ${seleccionados.length} producto(s)?`,
+      confirmButtonText: 'Sí, eliminar',
+    });
+    if (!confirmado) return;
 
     const nuevoCarrito = carrito.filter((item) => !item.seleccionado);
     guardarCarrito(nuevoCarrito);
   };
 
-  const vaciarCarrito = () => {
-    if (carrito.length === 0) return alert('El carrito ya está vacío');
-    if (!window.confirm('¿Eliminar todos los productos del carrito?')) return;
+  const vaciarCarrito = async () => {
+    if (carrito.length === 0) {
+      alertWarning('El carrito ya está vacío');
+      return;
+    }
+
+    const confirmado = await alertConfirm({
+      title: '¿Vaciar carrito?',
+      text: '¿Eliminar todos los productos del carrito?',
+      confirmButtonText: 'Sí, vaciar',
+    });
+    if (!confirmado) return;
+
     guardarCarrito([]);
   };
 
@@ -120,7 +146,8 @@ export const CarritoCliente = () => {
     const productosSeleccionados = carrito.filter((item) => item.seleccionado);
 
     if (productosSeleccionados.length === 0) {
-      return alert('Selecciona al menos un producto para continuar');
+      alertWarning('Selecciona al menos un producto para continuar');
+      return;
     }
 
     localStorage.setItem('carrito_seleccionado', JSON.stringify(productosSeleccionados));
@@ -167,11 +194,10 @@ export const CarritoCliente = () => {
     );
   }
 
-    return (
+  return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 pb-32">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ENCABEZADO */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -198,7 +224,6 @@ export const CarritoCliente = () => {
           </div>
         </div>
 
-        {/* HERRAMIENTAS */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
@@ -243,10 +268,8 @@ export const CarritoCliente = () => {
           </div>
         </div>
 
-        {/* CONTENIDO */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-          {/* LISTA DE PRODUCTOS */}
           <div className="xl:col-span-2 space-y-4">
 
             <div className="flex items-center justify-between">
@@ -271,7 +294,6 @@ export const CarritoCliente = () => {
               >
                 <div className="flex flex-col sm:flex-row gap-4">
 
-                  {/* CHECK + IMAGEN */}
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toggleSeleccionItem(item.id)}
@@ -297,7 +319,6 @@ export const CarritoCliente = () => {
                     />
                   </div>
 
-                  {/* INFORMACIÓN */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
 
@@ -321,7 +342,6 @@ export const CarritoCliente = () => {
                         </p>
                       </div>
 
-                      {/* ELIMINAR */}
                       <button
                         onClick={() => eliminarItem(item.id)}
                         className="self-start w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
@@ -331,7 +351,6 @@ export const CarritoCliente = () => {
                       </button>
                     </div>
 
-                    {/* CANTIDAD + SUBTOTAL */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 pt-4 border-t border-gray-100">
 
                       <div>
@@ -382,7 +401,6 @@ export const CarritoCliente = () => {
             ))}
           </div>
 
-          {/* RESUMEN */}
           <div className="xl:col-span-1">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 xl:sticky xl:top-6">
 
