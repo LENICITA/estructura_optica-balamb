@@ -459,6 +459,86 @@ router.post("/productos", authMiddleware, adminMiddleware,upload.single("imagen"
 /**
  * @swagger
  * /api/inventario/productos/{id}:
+ *   put:
+ *     summary: Actualizar un producto (Admin)
+ *     description: Actualiza un producto existente. Si se envía nueva imagen, reemplaza la anterior en Cloudinary. Requiere rol ADMIN.
+ *     tags: [Inventario (Admin)]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del producto
+ *         example: 1
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_categoria:
+ *                 type: integer
+ *                 enum: [1, 2, 3]
+ *                 description: 1=MONTURAS, 2=ACCESORIOS, 3=GAFAS DE SOL
+ *               nombre:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
+ *               descripcion:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
+ *               marca:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
+ *               precio:
+ *                 type: number
+ *                 minimum: 0.01
+ *               material:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 45
+ *               color:
+ *                 type: string
+ *               imagen:
+ *                 type: string
+ *                 format: binary
+ *                 description: Nueva imagen del producto (opcional)
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Producto actualizado exitosamente
+ *                 producto:
+ *                   $ref: '#/components/schemas/Producto'
+ *       400:
+ *         description: Datos inválidos
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado (requiere admin)
+ *       404:
+ *         description: Producto no encontrado
+ */
+router.put("/productos/:id", authMiddleware, adminMiddleware, upload.single("imagen"), inventarioController.updateProducto);
+
+/**
+ * @swagger
+ * /api/inventario/productos/{id}:
  *   delete:
  *     summary: Eliminar un producto (Admin)
  *     description: Elimina un producto y su imagen de Cloudinary. Requiere rol ADMIN.
@@ -488,66 +568,5 @@ router.post("/productos", authMiddleware, adminMiddleware,upload.single("imagen"
  *         description: Producto no encontrado
  */
 router.delete("/productos/:id", authMiddleware, adminMiddleware, inventarioController.deleteProducto);
-
-/**
- * @swagger
- * /api/inventario/productos/{id}:
- *   put:
- *     summary: Actualizar un producto (Admin)
- *     tags: [Inventario]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID del producto
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id_categoria:
- *                 type: integer
- *               nombre:
- *                 type: string
- *               descripcion:
- *                 type: string
- *               marca:
- *                 type: string
- *               precio:
- *                 type: number
- *               imagen:
- *                 type: string
- *               material:
- *                 type: string
- *               color:
- *                 type: string
- *     responses:
- *       200:
- *         description: Producto actualizado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 producto:
- *                   $ref: '#/components/schemas/Producto'
- *       404:
- *         description: Producto no encontrado
- *       401:
- *         description: No autorizado
- *       403:
- *         description: Acceso denegado (requiere admin)
- */
-router.put("/productos/:id", authMiddleware, adminMiddleware, upload.single("imagen"), inventarioController.updateProducto);
 
 export default router;
