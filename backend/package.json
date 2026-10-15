@@ -19,6 +19,7 @@
     "setup": "npm run seed-all"
   },
   "dependencies": {
+    "@ngrok/ngrok": "^1.7.0",
     "axios": "^1.18.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
@@ -37,7 +38,7 @@
     "pdfkit": "^0.19.1",
     "quickchart-js": "^4.0.0",
     "sequelize": "^6.37.5",
-    "swagger-jsdoc": "^6.2.8",
+    "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {

@@ -1,25 +1,93 @@
+// src/controllers/pagosController.js
 import PagoModel from '../models/pagoModel.js';
 import sequelize from '../config/database.js';
-import boldClient from '../config/bold.js';
+import { boldClient } from '../config/bold.js';
+
+const esDesarrollo = process.env.NODE_ENV === 'development' || process.env.BOLD_MODO === 'TEST';
+
+const BACKEND_PUBLIC_URL = process.env.BACKEND_PUBLIC_URL || 'https://TU-SUBDOMINIO.ngrok-free.app';
+
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'El valor ya existe en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(400).json({
+      success: false,
+      message: 'Referencia inválida en la base de datos'
+    });
+  }
+
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+const validarId = (id) => {
+  if (id === undefined || id === null || id === '') return false;
+  const num = Number(id);
+  return !isNaN(num) && num > 0 && Number.isInteger(num);
+};
+
+const validarEleccionPago = (eleccion) => {
+  return ['50%', '100%'].includes(eleccion);
+};
+
+const validarMonto = (monto) => {
+  if (monto === undefined || monto === null || monto === '') return false;
+  const num = Number(monto);
+  return !isNaN(num) && num > 0;
+};
 
 // ========== OBTENER PAGOS POR PEDIDO ==========
 export const obtenerPagosPorPedido = async (req, res) => {
   try {
     const { pedidoId } = req.params;
+
+    if (!validarId(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
+
     const pagos = await PagoModel.obtenerPorPedido(pedidoId);
     const totalPagado = await PagoModel.obtenerTotalPagado(pedidoId);
     const tieneCompleto = await PagoModel.tienePagoCompletoPorSuma(pedidoId);
-    
-    res.json({ 
-      success: true, 
-      count: pagos.length, 
+
+    res.json({
+      success: true,
+      count: pagos.length,
       total_pagado: totalPagado,
       pagado_completo: tieneCompleto,
-      data: pagos 
+      data: pagos
     });
   } catch (error) {
-    console.error('Error al obtener pagos del pedido:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener los pagos del pedido', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -31,17 +99,30 @@ export const crearPago = async (req, res) => {
 
     // Validar campos requeridos
     if (!id_pedido || !eleccion_pago || !monto) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Faltan campos requeridos: id_pedido, eleccion_pago, monto' 
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan campos requeridos: id_pedido, eleccion_pago, monto'
       });
     }
 
-    // Validar elección de pago
-    if (!['50%', '100%'].includes(eleccion_pago)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'eleccion_pago debe ser 50% o 100%' 
+    if (!validarId(id_pedido)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El ID del pedido debe ser un número válido'
+      });
+    }
+
+    if (!validarEleccionPago(eleccion_pago)) {
+      return res.status(400).json({
+        success: false,
+        message: 'eleccion_pago debe ser 50% o 100%'
+      });
+    }
+
+    if (!validarMonto(monto)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El monto debe ser un número mayor a 0'
       });
     }
 
@@ -56,7 +137,6 @@ export const crearPago = async (req, res) => {
     }
 
     // VERIFICAR QUE EL PEDIDO PERTENEZCA AL USUARIO
-
     if (pedido.id_usuario !== usuario.id) {
       return res.status(403).json({
         success: false,
@@ -66,9 +146,9 @@ export const crearPago = async (req, res) => {
 
     // Verificar que el monto no exceda el total del pedido
     if (monto > pedido.total) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `El monto no puede exceder el total del pedido (${pedido.total})` 
+      return res.status(400).json({
+        success: false,
+        message: `El monto no puede exceder el total del pedido (${pedido.total})`
       });
     }
 
@@ -84,20 +164,17 @@ export const crearPago = async (req, res) => {
     if (eleccion_pago === '50%') {
       const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
       const saldoRestante = pedido.total - totalPagado;
-      
-      // Verificar si ya tiene un abono del 50%
+
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
-      
+
       if (tieneAbono) {
-        // Si ya tiene abono, este es el segundo pago del 50%
         if (pedido.estado !== 'Abonado') {
           return res.status(400).json({
             success: false,
             message: 'El pedido debe estar en estado ABONADO para pagar el saldo restante'
           });
         }
-        
-        // Verificar que el monto sea el saldo restante
+
         if (monto < saldoRestante) {
           return res.status(400).json({
             success: false,
@@ -105,7 +182,6 @@ export const crearPago = async (req, res) => {
           });
         }
       } else {
-        // Primer pago del 50% - verificar que no tenga pago completo
         const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
         if (tieneCompleto) {
           return res.status(400).json({
@@ -113,10 +189,9 @@ export const crearPago = async (req, res) => {
             message: 'Este pedido ya fue pagado completamente'
           });
         }
-        
-        // El monto debe ser aproximadamente el 50% del total
+
         const monto50Esperado = pedido.total / 2;
-        const margenError = 100; // Permitir margen de error de 100 unidades
+        const margenError = 100;
         if (Math.abs(monto - monto50Esperado) > margenError) {
           return res.status(400).json({
             success: false,
@@ -130,17 +205,15 @@ export const crearPago = async (req, res) => {
     if (eleccion_pago === '100%') {
       const totalPagado = await PagoModel.obtenerTotalPagado(id_pedido);
       const saldoRestante = pedido.total - totalPagado;
-      
-      // Verificar que no tenga pago completo previo
+
       const tieneCompleto = await PagoModel.tienePagoCompleto(id_pedido);
       if (tieneCompleto) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Este pedido ya fue pagado completamente' 
+        return res.status(400).json({
+          success: false,
+          message: 'Este pedido ya fue pagado completamente'
         });
       }
 
-      // Verificar si ya tiene abono del 50% (para pago de saldo completo)
       const tieneAbono = await PagoModel.tieneAbono50(id_pedido);
       if (tieneAbono) {
         if (monto < saldoRestante) {
@@ -150,7 +223,6 @@ export const crearPago = async (req, res) => {
           });
         }
       } else {
-        // Pago completo de una vez - debe ser el total del pedido
         if (Math.abs(monto - pedido.total) > 100) {
           return res.status(400).json({
             success: false,
@@ -161,14 +233,53 @@ export const crearPago = async (req, res) => {
     }
 
     // ==========================================
-    // CONEXIÓN CON BOLD
+    //  SIMULAR PAGO
+    // ==========================================
+    if (esDesarrollo) {
+
+      const bold_link = `https://bold.co/demo/pago-${id_pedido}-${Date.now()}`;
+      const payment_link = `LNK_DEMO_${Date.now()}`;
+
+      const nuevoId = await PagoModel.crear({
+        id_pedido,
+        eleccion_pago,
+        canal_pago,
+        monto,
+        bold_reference: payment_link,
+        bold_link: bold_link
+      });
+
+      setTimeout(async () => {
+        try {
+          await PagoModel.confirmarPago(nuevoId);
+          console.log(` Pago #${nuevoId} auto-confirmado (simulado)`);
+        } catch (err) {
+          console.error(' Error auto-confirmando pago:', err);
+        }
+      }, 2000);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Link de pago generado exitosamente (MODO SIMULADO)',
+        data: {
+          id_pago: nuevoId,
+          bold_link: bold_link,
+          bold_reference: payment_link,
+          simulado: true
+        }
+      });
+    }
+
+    // ==========================================
+    // CONEXIÓN REAL CON BOLD
     // ==========================================
 
     // Calcular IVA (19%)
     const valorIva = Math.round(monto * 0.19);
     const baseGravable = monto - valorIva;
 
-    // Crear link de pago en Bold
+    const callbackUrl = `${BACKEND_PUBLIC_URL}/api/pagos/callback`;
+
     const boldResponse = await boldClient.post('/online/link/v1', {
       amount_type: "CLOSE",
       amount: {
@@ -183,39 +294,84 @@ export const crearPago = async (req, res) => {
         ],
         tip_amount: 0
       },
-      reference: `${id_pedido}-${eleccion_pago}-${Date.now()}`,
+      reference: `PEDIDO${id_pedido}${eleccion_pago.replace('%', '')}${Date.now()}`,
       description: `Pago ${eleccion_pago} del pedido #${id_pedido}`,
-      payer_email: usuario.email || 'cliente@email.com'
+      payer_email: usuario.email || 'cliente@email.com',
+      callback_url: callbackUrl
     });
 
-    // Extraer datos de la respuesta de Bold
+
     const { payment_link, url: bold_link } = boldResponse.data.payload;
 
-
-    // Crear el pago
-    const nuevoId = await PagoModel.crear({ 
-      id_pedido, 
-      eleccion_pago, 
-      canal_pago, 
+    const nuevoId = await PagoModel.crear({
+      id_pedido,
+      eleccion_pago,
+      canal_pago,
       monto,
       bold_reference: payment_link,
       bold_link: bold_link
     });
 
-    const nuevoPago = await PagoModel.obtenerPorId(nuevoId);
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: 'Link de pago generado exitosamente',
       data: {
         id_pago: nuevoId,
-        bold_link: bold_link, 
+        bold_link: bold_link,
         bold_reference: payment_link
       }
     });
 
   } catch (error) {
     console.error('Error al crear pago:', error.response?.data || error.message);
-    res.status(500).json({ success: false, message: 'Error al crear el pago', error: error.response?.data || error.message });
+    return manejarErrorValidacion(error, res);
+  }
+};
+
+// ========== CALLBACK DE BOLD (RETORNO DEL USUARIO) ==========
+export const callbackBold = async (req, res) => {
+  try {
+
+    const { bold_transaction_id, reference } = req.query;
+
+    if (reference) {
+      const [pago] = await sequelize.query(
+        'SELECT id_pago FROM PAGOS WHERE bold_reference = ? LIMIT 1',
+        { replacements: [reference], type: sequelize.QueryTypes.SELECT }
+      );
+
+      if (pago && pago.id_pago) {
+        await PagoModel.confirmarPago(pago.id_pago);
+      }
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Pago procesado</title>
+          <style>
+            body { font-family: sans-serif; text-align: center; padding: 50px; }
+            h1 { color: #28a745; }
+          </style>
+        </head>
+        <body>
+          <h1>Pago procesado</h1>
+          <p>Transacción: ${bold_transaction_id || 'N/A'}</p>
+          <p>Referencia: ${reference || 'N/A'}</p>
+          <p>Serás redirigido en unos segundos...</p>
+          <script>
+            setTimeout(() => {
+              window.location.href = 'http://10.105.99.52:5173/mis-pedidos';
+            }, 3000);
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Error en callback de Bold:', error);
+    res.status(500).send('<h1>Error al procesar el callback</h1>');
   }
 };
 
@@ -223,6 +379,13 @@ export const crearPago = async (req, res) => {
 export const confirmarPago = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pago inválido'
+      });
+    }
 
     const pago = await PagoModel.obtenerPorId(id);
     if (!pago) {
@@ -233,18 +396,15 @@ export const confirmarPago = async (req, res) => {
       return res.status(400).json({ success: false, message: 'El pago ya está confirmado' });
     }
 
-    // Confirmar pago
     await PagoModel.confirmarPago(id);
 
     const pagoActualizado = await PagoModel.obtenerPorId(id);
-    
-    // Obtener el estado actual del pedido
+
     const [pedido] = await sequelize.query(
       'SELECT estado FROM PEDIDOS WHERE id_pedido = ?',
       { replacements: [pago.id_pedido], type: sequelize.QueryTypes.SELECT }
     );
 
-    // Determinar mensaje según el caso
     let mensaje = '';
     if (pedido.estado === 'Pagado') {
       mensaje = 'El pedido ha sido pagado completamente';
@@ -254,15 +414,14 @@ export const confirmarPago = async (req, res) => {
       mensaje = `Pago confirmado. Estado actual del pedido: ${pedido.estado}`;
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: mensaje,
-      data: pagoActualizado 
+      data: pagoActualizado
     });
 
   } catch (error) {
-    console.error('Error al confirmar pago:', error);
-    res.status(500).json({ success: false, message: 'Error al confirmar el pago', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -272,31 +431,37 @@ export const rechazarPago = async (req, res) => {
     const { id } = req.params;
     const { motivo } = req.body;
 
+    if (!validarId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pago inválido'
+      });
+    }
+
     const pago = await PagoModel.obtenerPorId(id);
     if (!pago) {
       return res.status(404).json({ success: false, message: 'Pago no encontrado' });
     }
 
     if (pago.estado === 'Confirmado') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No se puede rechazar un pago ya confirmado' 
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede rechazar un pago ya confirmado'
       });
     }
 
     await PagoModel.rechazarPago(id);
 
     const pagoActualizado = await PagoModel.obtenerPorId(id);
-    res.json({ 
-      success: true, 
-      message: 'Pago rechazado', 
-      motivo: motivo || 'No especificado', 
-      data: pagoActualizado 
+    res.json({
+      success: true,
+      message: 'Pago rechazado',
+      motivo: motivo || 'No especificado',
+      data: pagoActualizado
     });
 
   } catch (error) {
-    console.error('Error al rechazar pago:', error);
-    res.status(500).json({ success: false, message: 'Error al rechazar el pago', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
 
@@ -304,6 +469,13 @@ export const rechazarPago = async (req, res) => {
 export const verificarSaldoPedido = async (req, res) => {
   try {
     const { pedidoId } = req.params;
+
+    if (!validarId(pedidoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido'
+      });
+    }
 
     const [pedido] = await sequelize.query(
       'SELECT * FROM PEDIDOS WHERE id_pedido = ?',
@@ -339,8 +511,6 @@ export const verificarSaldoPedido = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al verificar saldo:', error);
-    res.status(500).json({ success: false, message: 'Error al verificar saldo', error: error.message });
+    return manejarErrorValidacion(error, res);
   }
 };
-

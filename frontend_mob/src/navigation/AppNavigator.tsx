@@ -247,14 +247,14 @@ export default function AppNavigator() {
                                  </UserLayout>
                              )}
                             </Stack.Screen>
-              <Stack.Screen name="DistribucionesExternas">
-                {() => (
-                  <UserLayout>
-                    <DistribucionesExternas />
-                  </UserLayout>
-                )}
-              </Stack.Screen>
 
+              <Stack.Screen name="DistribucionesExternas">
+                              {() => (
+                                <UserLayout>
+                                  <DistribucionesExternas />
+                                </UserLayout>
+                              )}
+                            </Stack.Screen>
 
             <Stack.Screen name="PrincipalCliente">
               {({ navigation }) => (

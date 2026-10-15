@@ -31,9 +31,7 @@ export default function HistorialEntregas() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const esAdmin =
-    Array.isArray((user as any)?.roles) &&
-    (user as any).roles.includes('ADMIN');
+  const esAdmin = user?.isAdmin || false;
 
   const cargarHistorial = useCallback(async () => {
     try {
@@ -41,15 +39,7 @@ export default function HistorialEntregas() {
 
       const data = await distribucionController.getHistorial();
 
-      let filtrado = data.filter((item) => item.estado === 'ENTREGADO');
-
-      if (!esAdmin) {
-        filtrado = filtrado.filter(
-          (item) =>
-            item.id_usuario === (user as any)?.id_usuario ||
-            item.id_usuario === (user as any)?.id
-        );
-      }
+      const filtrado = data.filter((item) => item.estado === 'ENTREGADO');
 
       setHistorial(filtrado);
     } catch (error) {
@@ -59,7 +49,7 @@ export default function HistorialEntregas() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user, esAdmin]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {

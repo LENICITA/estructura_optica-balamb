@@ -54,6 +54,9 @@ export const CatalogoAdmin = ({ navigation }: Props) => {
 
     const [precioMin, setPrecioMin] = useState('');
     const [precioMax, setPrecioMax] = useState('');
+    const [paginaActual, setPaginaActual] = useState(1);
+    const productosPorPagina = 9;
+    const flatListRef = React.useRef<FlatList<ProductModel>>(null);
 
   // CARGAR PRODUCTOS
 
@@ -287,6 +290,16 @@ const aplicarFiltrosAvanzados = async () => {
 
   }, [busqueda, productos, categoriaSeleccionada]);
 
+// Resetear página al cambiar filtros/búsqueda
+useEffect(() => {
+  setPaginaActual(1);
+}, [busqueda, categoriaSeleccionada, marcaSeleccionada, ordenSeleccionado]);
+
+useEffect(() => {
+  if (flatListRef.current) {
+    flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+  }
+}, [paginaActual]);
 
   // ==========================================
   // LIMPIAR BÚSQUEDA
@@ -451,6 +464,41 @@ const filtrarPorMarca = (marca: string) => {
     );
   };
 
+const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina);
+const indiceUltimo = paginaActual * productosPorPagina;
+const indicePrimero = indiceUltimo - productosPorPagina;
+const productosPaginados = productosFiltrados.slice(indicePrimero, indiceUltimo);
+
+const generarPaginas = () => {
+  const paginas: (number | string)[] = [];
+  const delta = 1;
+
+  if (totalPaginas <= 7) {
+    for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+    return paginas;
+  }
+
+  paginas.push(1);
+
+  if (paginaActual > delta + 2) {
+    paginas.push('...');
+  }
+
+  const inicio = Math.max(2, paginaActual - delta);
+  const fin = Math.min(totalPaginas - 1, paginaActual + delta);
+
+  for (let i = inicio; i <= fin; i++) {
+    paginas.push(i);
+  }
+
+  if (paginaActual < totalPaginas - delta - 1) {
+    paginas.push('...');
+  }
+
+  paginas.push(totalPaginas);
+  return paginas;
+};
+
   // LOADING
   if (loading) {
     return (
@@ -548,9 +596,10 @@ const filtrarPorMarca = (marca: string) => {
         <Text style={styles.resultsText}>
           Mostrando{' '}
           <Text style={styles.resultsNumber}>
-            {productosFiltrados.length}
+            {productosPaginados.length}
           </Text>{' '}
-          de {productos.length} productos
+          de {productosFiltrados.length} productos
+          {totalPaginas > 1 && ` (página ${paginaActual} de ${totalPaginas})`}
         </Text>
       </View>
 
@@ -563,12 +612,87 @@ const filtrarPorMarca = (marca: string) => {
         </View>
       ) : (
         <FlatList
-          data={productosFiltrados}
+          ref={flatListRef}
+          data={productosPaginados}
           keyExtractor={(item) => item.id_producto.toString()}
           renderItem={renderProducto}
           numColumns={1}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            totalPaginas > 1 ? (
+              <View style={styles.paginationContainer}>
+
+                <Text style={styles.paginationInfo}>
+                  Página <Text style={styles.paginationInfoBold}>{paginaActual}</Text> de{' '}
+                  <Text style={styles.paginationInfoBold}>{totalPaginas}</Text>
+                </Text>
+
+                <View style={styles.paginationRow}>
+
+                  {/* ANTERIOR */}
+                  <TouchableOpacity
+                    onPress={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                    disabled={paginaActual === 1}
+                    style={[
+                      styles.paginationArrow,
+                      paginaActual === 1 && styles.paginationArrowDisabled,
+                    ]}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={18}
+                      color={paginaActual === 1 ? '#CCCCCC' : COLORS.black}
+                    />
+                  </TouchableOpacity>
+
+                  {/* NÚMEROS */}
+                  {generarPaginas().map((num, idx) =>
+                    num === '...' ? (
+                      <Text key={`dots-${idx}`} style={styles.paginationDots}>
+                        …
+                      </Text>
+                    ) : (
+                      <TouchableOpacity
+                        key={num}
+                        onPress={() => setPaginaActual(num as number)}
+                        style={[
+                          styles.paginationNumber,
+                          paginaActual === num && styles.paginationNumberActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.paginationNumberText,
+                            paginaActual === num && styles.paginationNumberTextActive,
+                          ]}
+                        >
+                          {num}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+
+                  {/* SIGUIENTE */}
+                  <TouchableOpacity
+                    onPress={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                    disabled={paginaActual === totalPaginas}
+                    style={[
+                      styles.paginationArrow,
+                      paginaActual === totalPaginas && styles.paginationArrowDisabled,
+                    ]}
+                  >
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={paginaActual === totalPaginas ? '#CCCCCC' : COLORS.black}
+                    />
+                  </TouchableOpacity>
+
+                </View>
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -1228,6 +1352,83 @@ marcasButton: {
   categoriaItemTextActive: {
     color: COLORS.primary,
     fontWeight: '600',
+  },
+
+  paginationContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+    marginTop: 10,
+  },
+
+  paginationInfo: {
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 12,
+  },
+
+  paginationInfoBold: {
+    fontWeight: '800',
+    color: COLORS.black,
+  },
+
+  paginationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+
+  paginationArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+  },
+
+  paginationArrowDisabled: {
+    borderColor: '#EEEEEE',
+    backgroundColor: '#FAFAFA',
+  },
+
+  paginationNumber: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D7D7D7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+  },
+
+  paginationNumberActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+
+  paginationNumberText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.black,
+  },
+
+  paginationNumberTextActive: {
+    color: COLORS.white,
+  },
+
+  paginationDots: {
+    fontSize: 14,
+    color: '#999999',
+    paddingHorizontal: 4,
+    fontWeight: '700',
   },
 
 });

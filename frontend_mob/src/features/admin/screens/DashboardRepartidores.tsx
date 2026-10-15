@@ -30,7 +30,6 @@ interface Repartidor {
   id: number;
   nombre: string;
   estado: string;
-  pedidos?: number;
   correo?: string;
   telefono?: string;
   ciudad?: string;
@@ -338,19 +337,6 @@ export default function DashboardRepartidores() {
                   </View>
                 </View>
 
-                {/* RESUMEN */}
-                <View style={styles.resumen}>
-                  <View style={styles.resumenItem}>
-                    <Ionicons name="cube-outline" size={16} color="#B90F0F" />
-                    <Text style={styles.resumenText}>
-                      {item.pedidos || 0}{" "}
-                      {(item.pedidos || 0) === 1
-                        ? "pedido entregado"
-                        : "pedidos entregados"}
-                    </Text>
-                  </View>
-                </View>
-
                 {/* VER DETALLES */}
                 <TouchableOpacity
                   style={styles.detalles}
@@ -627,26 +613,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6B7280",
     flex: 1,
-  },
-
-  resumen: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF2F2",
-    borderRadius: 10,
-    marginTop: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  resumenItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  resumenText: {
-    fontSize: 12,
-    color: "#7F1D1D",
-    fontWeight: "600",
   },
 
   detalles: {

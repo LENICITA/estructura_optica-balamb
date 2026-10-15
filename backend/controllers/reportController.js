@@ -8,6 +8,70 @@ import {
     generarGraficoBarrasHorizontales
 } from '../utils/chartGenerator.js';
 
+const manejarErrorValidacion = (error, res) => {
+  if (error.name === 'SequelizeValidationError') {
+    const mensajes = error.errors.map(e => e.message);
+    return res.status(400).json({
+      success: false,
+      message: mensajes[0],
+      errores: mensajes
+    });
+  }
+
+  if (error.name === 'SequelizeDatabaseError') {
+    console.error('Error de base de datos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al procesar la solicitud en la base de datos'
+    });
+  }
+
+  console.error('Error interno no controlado:', error);
+  return res.status(500).json({
+    success: false,
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+};
+
+const REGEX_FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+const TIPOS_PDF_VALIDOS = [
+  'ventas',
+  'inventario',
+  'repartidores',
+  'clientes',
+  'productos-mas-vendidos',
+  'estado-pedidos',
+  'ventas-categoria'
+];
+
+const PERIODOS_VALIDOS = ['diario', 'semanal', 'mensual', 'anual', 'personalizado'];
+
+const LIMITE_MAX = 100;
+
+const validarFecha = (fecha) => {
+  if (!fecha || typeof fecha !== 'string') return false;
+  if (!REGEX_FECHA.test(fecha)) return false;
+  const date = new Date(`${fecha}T00:00:00`);
+  return !isNaN(date.getTime());
+};
+
+const validarRangoFechas = (fechaInicio, fechaFin) => {
+  if (!validarFecha(fechaInicio) || !validarFecha(fechaFin)) return false;
+  const inicio = new Date(`${fechaInicio}T00:00:00`);
+  const fin = new Date(`${fechaFin}T00:00:00`);
+  return inicio <= fin;
+};
+
+const validarLimite = (limite) => {
+  const num = Number(limite);
+  if (isNaN(num)) return false;
+  if (!Number.isInteger(num)) return false;
+  if (num < 1 || num > LIMITE_MAX) return false;
+  return true;
+};
+
 export const reporteVentasPorPeriodo = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
@@ -18,6 +82,13 @@ export const reporteVentasPorPeriodo = async (req, res) => {
                 message: 'Se requieren fechas de inicio y fin (YYYY-MM-DD)'
             });
         }
+
+        if (!validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         const query = `
             SELECT 
@@ -65,14 +136,34 @@ export const reporteVentasPorPeriodo = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de ventas por período:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const reporteProductosMasVendidos = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
+
+        if (!validarLimite(limite)) {
+      return res.status(400).json({
+        success: false,
+        message: `El límite debe ser un número entero entre 1 y ${LIMITE_MAX}`
+      });
+    }
+
+    if ((fecha_inicio && !fecha_fin) || (!fecha_inicio && fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debes enviar ambas fechas o ninguna'
+      });
+    }
+
+    if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = { limite: parseInt(limite) };
@@ -111,14 +202,20 @@ export const reporteProductosMasVendidos = async (req, res) => {
         res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de productos más vendidos:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const reporteDesempenoRepartidores = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -162,14 +259,20 @@ export const reporteDesempenoRepartidores = async (req, res) => {
         res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de desempeño de repartidores:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const reporteEstadoPedidos = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -222,14 +325,27 @@ export const reporteEstadoPedidos = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de estado de pedidos:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const reporteClientesFrecuentes = async (req, res) => {
     try {
         const { limite = 10, fecha_inicio, fecha_fin } = req.query;
+
+        if (!validarLimite(limite)) {
+      return res.status(400).json({
+        success: false,
+        message: `El límite debe ser un número entero entre 1 y ${LIMITE_MAX}`
+      });
+    }
+
+    if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = { limite: parseInt(limite) };
@@ -273,8 +389,7 @@ export const reporteClientesFrecuentes = async (req, res) => {
         res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('Error en reporte de clientes frecuentes:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -358,14 +473,20 @@ export const reporteResumenGeneral = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte resumen general:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const reporteVentasPorCategoria = async (req, res) => {
     try {
         const { fecha_inicio, fecha_fin } = req.query;
+
+        if (fecha_inicio && fecha_fin && !validarRangoFechas(fecha_inicio, fecha_fin)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+      });
+    }
 
         let whereClause = '';
         const replacements = {};
@@ -410,8 +531,7 @@ export const reporteVentasPorCategoria = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de ventas por categoría:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
@@ -474,14 +594,43 @@ export const reporteAnalisisFormulas = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en reporte de análisis de fórmulas:', error);
-        res.status(500).json({ success: false, message: 'Error interno del servidor' });
+        return manejarErrorValidacion(error, res);
     }
 };
 
 export const generarReportePDF = async (req, res) => {
     try {
         const { tipo, periodo, fecha_inicio, fecha_fin } = req.body;
+
+        if (!tipo || !TIPOS_PDF_VALIDOS.includes(tipo)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de reporte inválido. Debe ser uno de: ${TIPOS_PDF_VALIDOS.join(', ')}`
+            });
+        }
+
+        if (!periodo || !PERIODOS_VALIDOS.includes(periodo)) {
+            return res.status(400).json({
+                success: false,
+                message: `Período inválido. Debe ser uno de: ${PERIODOS_VALIDOS.join(', ')}`
+            });
+        }
+
+        if (periodo === 'personalizado') {
+            if (!fecha_inicio || !fecha_fin) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Debes enviar fecha_inicio y fecha_fin para el período personalizado'
+                });
+            }
+
+            if (!validarRangoFechas(fecha_inicio, fecha_fin)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Fechas inválidas. Deben tener formato YYYY-MM-DD y la fecha de inicio debe ser menor o igual a la fecha fin'
+                });
+            }
+        }
 
         console.log(`Generando PDF: ${tipo} - ${periodo}`);
 
@@ -512,11 +661,7 @@ export const generarReportePDF = async (req, res) => {
     } catch (error) {
         console.error('Error al generar PDF:', error);
         if (!res.headersSent) {
-            res.status(500).json({
-                success: false,
-                message: 'Error al generar el reporte',
-                error: error.message
-            });
+            return manejarErrorValidacion(error, res);
         }
     }
 };
